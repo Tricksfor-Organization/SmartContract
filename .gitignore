@@ -35,6 +35,8 @@ dist/
 cache/
 coverage/
 coverage.json
+# Only exclude third-party compiled artifacts; our own contract artifacts are committed
+artifacts/@openzeppelin/
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
