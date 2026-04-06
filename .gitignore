@@ -26,7 +26,15 @@ bld/
 # .NET Core
 project.lock.json
 project.fragment.lock.json
-artifacts/
+
+# Node.js / npm
+node_modules/
+dist/
+
+# Hardhat
+cache/
+coverage/
+coverage.json
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
