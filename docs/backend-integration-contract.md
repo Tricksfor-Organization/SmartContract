@@ -76,9 +76,14 @@ For on-chain cross-checking, use `stakedOwnerOf(tokenId)`. This returns the same
 
 ### What tokens does a wallet currently have staked?
 
-Reconstruct from the event log: collect all `TokenStaked` events where `staker == walletAddress`, then subtract all token IDs for which a subsequent `TokenUnstaked` event exists (with the same `staker`).
+Reconstruct from the event log using an order-aware algorithm: filter `TokenStaked` and `TokenUnstaked` events for `staker == walletAddress`, sort them by chain order (`blockNumber`, then `logIndex`), and process them sequentially.
 
-The result is the set of token IDs that the wallet currently has staked.
+- On `TokenStaked(tokenId)`, add `tokenId` to the wallet's active staked-token set.
+- On `TokenUnstaked(tokenId)`, remove `tokenId` from the wallet's active staked-token set.
+
+The result after processing all events is the set of token IDs that the wallet currently has staked. Equivalently, for each `tokenId`, the latest event for that wallet/token pair determines whether the token is currently in the set.
+
+This order-aware replay is required to correctly handle multiple stake/unstake cycles and re-stakes of the same `tokenId` by the same wallet.
 
 For fresh-block accuracy (see below), cross-check individual tokens using `isStaked(tokenId)` or by requesting a live read from the staking contract.
 
@@ -144,10 +149,16 @@ WalletStakingStatus {
 
 ### Deriving wallet status
 
-1. Query the indexed event log for all `TokenStaked` events where `staker == walletAddress`.
-2. For each token ID found, check whether a subsequent `TokenUnstaked` event exists for that token ID and the same staker.
-3. Tokens with a `TokenStaked` event and no subsequent `TokenUnstaked` event are in the `stakedTokenIds` set.
-4. `hasActiveStake` is `true` if the set is non-empty.
+1. Query the indexed event log for all `TokenStaked` and `TokenUnstaked` events where `staker == walletAddress`.
+2. Sort the combined result in ascending chain order using `blockNumber` and `logIndex`.
+3. Initialize an empty `stakedTokenIds` set.
+4. Replay the sorted events in order:
+   - on `TokenStaked(staker, tokenId, ...)`, add `tokenId` to `stakedTokenIds`
+   - on `TokenUnstaked(staker, tokenId, ...)`, remove `tokenId` from `stakedTokenIds`
+5. After all events have been processed, the remaining values in `stakedTokenIds` are the tokens currently staked by this wallet.
+6. `hasActiveStake` is `true` if the final `stakedTokenIds` set is non-empty.
+
+This order-aware replay is required to correctly handle multiple stake/unstake cycles and re-stakes of the same `tokenId` by the same wallet.
 
 For settlement-time accuracy, validate each token in `stakedTokenIds` using `isStaked(tokenId)` on the staking contract.
 
