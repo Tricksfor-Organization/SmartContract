@@ -150,11 +150,19 @@ namespace Tricksfor.Blockchain.Nethereum.Contracts.TricksforBoosterNFT
                     _contractAddress,
                     new RevokeRoleFunction { Role = role, Account = account });
 
-        public Task<TransactionReceipt> RenounceRoleRequestAndWaitForReceiptAsync(byte[] role, string callerConfirmation)
+        /// <summary>
+        /// Renounces <paramref name="role"/> for the transaction sender.
+        /// </summary>
+        /// <param name="role">The role identifier to renounce.</param>
+        /// <param name="callerConfirmationAddress">
+        /// The caller confirmation address. This must be the same address as the transaction sender,
+        /// otherwise the contract reverts with <c>AccessControlBadConfirmation</c>.
+        /// </param>
+        public Task<TransactionReceipt> RenounceRoleRequestAndWaitForReceiptAsync(byte[] role, string callerConfirmationAddress)
             => _web3.Eth.GetContractTransactionHandler<RenounceRoleFunction>()
                 .SendRequestAndWaitForReceiptAsync(
                     _contractAddress,
-                    new RenounceRoleFunction { Role = role, CallerConfirmation = callerConfirmation });
+                    new RenounceRoleFunction { Role = role, CallerConfirmation = callerConfirmationAddress });
 
         public Task<TransactionReceipt> PauseRequestAndWaitForReceiptAsync()
             => _web3.Eth.GetContractTransactionHandler<PauseFunction>()
