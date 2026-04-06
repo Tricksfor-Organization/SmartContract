@@ -36,9 +36,9 @@ describe("TricksforBoosterStaking", function () {
     await staking.waitForDeployment();
 
     // Mint tokens for tests
-    await nft.mint(alice.address); // token 1
-    await nft.mint(alice.address); // token 2
-    await nft.mint(bob.address);   // token 3
+    await nft.safeMint(alice.address, 1n); // token 1
+    await nft.safeMint(alice.address, 2n); // token 2
+    await nft.safeMint(bob.address, 3n);   // token 3
   });
 
   // ---------------------------------------------------------------------------
