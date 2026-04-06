@@ -13,13 +13,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 /// @dev Does not include staking logic — staking is handled by TricksforBoosterStaking.
 contract TricksforBoosterNFT is ERC721, ERC2981, Ownable, Pausable {
     // -------------------------------------------------------------------------
-    // Errors
-    // -------------------------------------------------------------------------
-
-    /// @notice Thrown when attempting to query or interact with a non-existent token.
-    error TokenDoesNotExist(uint256 tokenId);
-
-    // -------------------------------------------------------------------------
     // State
     // -------------------------------------------------------------------------
 

@@ -1,4 +1,5 @@
 using System.Numerics;
+using Nethereum.Contracts;
 using Nethereum.Contracts.ContractHandlers;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
