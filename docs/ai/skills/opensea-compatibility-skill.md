@@ -25,7 +25,7 @@ The `TricksforBoosterNFT` contract must remain compatible with OpenSea and equiv
 
 ### ERC-721 Compatibility
 - [ ] The contract still correctly implements the ERC-721 standard interface (`IERC721`)
-- [ ] `supportsInterface(bytes4 interfaceId)` correctly returns `true` for ERC-721 (`0x80ac58cd`), ERC-165 (`0x01ffc9a7`), and ERC-2981 (`0x2a55205a`)
+- [ ] `supportsInterface(bytes4 interfaceId)` correctly returns `true` for ERC-721 (`0x80ac58cd`), ERC-165 (`0x01ffc9a7`), ERC-721 Metadata (`IERC721Metadata`, `0x5b5e139f`), and ERC-2981 (`0x2a55205a`) so marketplace metadata detection continues to work as expected
 - [ ] `Transfer` events are emitted on all ownership changes (mint, transfer, burn) — required by ERC-721 and indexed by marketplaces
 - [ ] `Approval` and `ApprovalForAll` events are emitted correctly
 - [ ] The staking contract's use of `transferFrom` does not break marketplace approval flows (the NFT contract itself remains standard)
