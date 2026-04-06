@@ -1,0 +1,20 @@
+{
+  "name": "Tricksfor Booster #1",
+  "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
+  "image": "ipfs://QmExampleCID/1.png",
+  "external_url": "https://tricksfor.com/boosters/1",
+  "attributes": [
+    {
+      "trait_type": "Booster Type",
+      "value": "Gold"
+    },
+    {
+      "trait_type": "Multiplier",
+      "value": "2x"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    }
+  ]
+}
