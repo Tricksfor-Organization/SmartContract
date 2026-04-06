@@ -14,7 +14,7 @@ This repository implements the Solidity smart contracts and Nethereum C# integra
 
 - **Booster NFTs** are in-game items that activate a reward boost **only when staked**. An unstaked Booster NFT confers no in-game advantage.
 - **Game settlement is fully off-chain.** The Tricksfor backend determines game outcomes and applies reward boosts based on indexer-reconstructed staking state.
-- **The contracts express only two truths:** NFT ownership (who owns which Booster NFT) and staking state (which NFTs are currently staked by which wallets).
+- **For gameplay and reward-settlement purposes, the contracts expose two primary truths:** NFT ownership (who owns which Booster NFT) and staking state (which NFTs are currently staked by which wallets).
 - **Booster classification and reward multipliers** are managed in a separate backend project. They are not stored or computed on-chain.
 - Players interact with the contracts via standard ERC-721 `approve` → staking contract `stake(tokenId)` flow.
 
@@ -139,6 +139,6 @@ The `TricksforBoosterNFT` contract must maintain the following for marketplace c
 
 - All contract interactions use typed function message classes and event DTO classes.
 - No raw ABI string decoding.
-- DTO field names match Solidity parameter names exactly.
+- Nethereum DTO bindings must match Solidity parameter definitions exactly where it matters: the `ParameterAttribute` name value must use the exact Solidity parameter name. C# property names may remain idiomatic PascalCase.
 - Integration tests deploy real contracts to a local test node and verify both state and logs.
 - DTOs and contract changes are always updated atomically in the same PR.

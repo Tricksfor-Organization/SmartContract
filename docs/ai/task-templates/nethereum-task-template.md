@@ -143,10 +143,10 @@ Integration tests in this repository must:
 
 Before finalizing Nethereum changes, confirm:
 
-- [ ] Every event DTO field name exactly matches the Solidity event parameter name (case-sensitive)
+- [ ] Every event DTO `[Parameter(type, "solidityName", order, ...)]` attribute uses the exact Solidity event parameter name in its `name` argument (case-sensitive); the C# property name itself does not need to match Solidity casing
 - [ ] Every event DTO field type correctly maps from Solidity to C# (e.g., `address` → `string`, `uint256` → `BigInteger`)
 - [ ] `[Parameter(..., isIndexed: true/false)]` attributes match the Solidity `indexed` keyword on every field
-- [ ] Parameter order in `[Parameter(order)]` attributes matches the Solidity event definition
+- [ ] Parameter order in each event DTO `[Parameter(type, "solidityName", order, ...)]` attribute matches the Solidity event definition
 - [ ] ABI artifacts used in tests match the current contract source
 - [ ] Function message class parameter names and types match the Solidity function signature
 - [ ] Integration tests pass against the current contract ABI
