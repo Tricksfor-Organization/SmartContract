@@ -46,8 +46,28 @@ namespace Tricksfor.Blockchain.Nethereum.Contracts.TricksforBoosterNFT.ContractD
     [Function("symbol", "string")]
     public class SymbolFunction : FunctionMessage { }
 
-    [Function("owner", "address")]
-    public class OwnerFunction : FunctionMessage { }
+    [Function("MINTER_ROLE", "bytes32")]
+    public class MinterRoleFunction : FunctionMessage { }
+
+    [Function("DEFAULT_ADMIN_ROLE", "bytes32")]
+    public class DefaultAdminRoleFunction : FunctionMessage { }
+
+    [Function("hasRole", "bool")]
+    public class HasRoleFunction : FunctionMessage
+    {
+        [Parameter("bytes32", "role", 1)]
+        public byte[] Role { get; set; } = Array.Empty<byte>();
+
+        [Parameter("address", "account", 2)]
+        public string Account { get; set; } = string.Empty;
+    }
+
+    [Function("getRoleAdmin", "bytes32")]
+    public class GetRoleAdminFunction : FunctionMessage
+    {
+        [Parameter("bytes32", "role", 1)]
+        public byte[] Role { get; set; } = Array.Empty<byte>();
+    }
 
     [Function("paused", "bool")]
     public class PausedFunction : FunctionMessage { }
@@ -114,11 +134,14 @@ namespace Tricksfor.Blockchain.Nethereum.Contracts.TricksforBoosterNFT.ContractD
     // Write (transaction) function messages
     // -------------------------------------------------------------------------
 
-    [Function("mint")]
-    public class MintFunction : FunctionMessage
+    [Function("safeMint")]
+    public class SafeMintFunction : FunctionMessage
     {
         [Parameter("address", "to", 1)]
         public string To { get; set; } = string.Empty;
+
+        [Parameter("uint256", "tokenId", 2)]
+        public BigInteger TokenId { get; set; }
     }
 
     [Function("approve")]
@@ -194,21 +217,41 @@ namespace Tricksfor.Blockchain.Nethereum.Contracts.TricksforBoosterNFT.ContractD
         public BigInteger FeeBasisPoints { get; set; }
     }
 
+    [Function("grantRole")]
+    public class GrantRoleFunction : FunctionMessage
+    {
+        [Parameter("bytes32", "role", 1)]
+        public byte[] Role { get; set; } = Array.Empty<byte>();
+
+        [Parameter("address", "account", 2)]
+        public string Account { get; set; } = string.Empty;
+    }
+
+    [Function("revokeRole")]
+    public class RevokeRoleFunction : FunctionMessage
+    {
+        [Parameter("bytes32", "role", 1)]
+        public byte[] Role { get; set; } = Array.Empty<byte>();
+
+        [Parameter("address", "account", 2)]
+        public string Account { get; set; } = string.Empty;
+    }
+
+    [Function("renounceRole")]
+    public class RenounceRoleFunction : FunctionMessage
+    {
+        [Parameter("bytes32", "role", 1)]
+        public byte[] Role { get; set; } = Array.Empty<byte>();
+
+        [Parameter("address", "callerConfirmation", 2)]
+        public string CallerConfirmation { get; set; } = string.Empty;
+    }
+
     [Function("pause")]
     public class PauseFunction : FunctionMessage { }
 
     [Function("unpause")]
     public class UnpauseFunction : FunctionMessage { }
-
-    [Function("transferOwnership")]
-    public class TransferOwnershipFunction : FunctionMessage
-    {
-        [Parameter("address", "newOwner", 1)]
-        public string NewOwner { get; set; } = string.Empty;
-    }
-
-    [Function("renounceOwnership")]
-    public class RenounceOwnershipFunction : FunctionMessage { }
 
     // -------------------------------------------------------------------------
     // Output DTOs

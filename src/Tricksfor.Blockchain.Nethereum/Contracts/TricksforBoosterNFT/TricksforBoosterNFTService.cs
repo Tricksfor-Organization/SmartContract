@@ -52,9 +52,21 @@ namespace Tricksfor.Blockchain.Nethereum.Contracts.TricksforBoosterNFT
             => _web3.Eth.GetContractQueryHandler<SymbolFunction>()
                 .QueryAsync<string>(_contractAddress, new SymbolFunction());
 
-        public Task<string> OwnerQueryAsync()
-            => _web3.Eth.GetContractQueryHandler<OwnerFunction>()
-                .QueryAsync<string>(_contractAddress, new OwnerFunction());
+        public Task<byte[]> MinterRoleQueryAsync()
+            => _web3.Eth.GetContractQueryHandler<MinterRoleFunction>()
+                .QueryAsync<byte[]>(_contractAddress, new MinterRoleFunction());
+
+        public Task<byte[]> DefaultAdminRoleQueryAsync()
+            => _web3.Eth.GetContractQueryHandler<DefaultAdminRoleFunction>()
+                .QueryAsync<byte[]>(_contractAddress, new DefaultAdminRoleFunction());
+
+        public Task<bool> HasRoleQueryAsync(byte[] role, string account)
+            => _web3.Eth.GetContractQueryHandler<HasRoleFunction>()
+                .QueryAsync<bool>(_contractAddress, new HasRoleFunction { Role = role, Account = account });
+
+        public Task<byte[]> GetRoleAdminQueryAsync(byte[] role)
+            => _web3.Eth.GetContractQueryHandler<GetRoleAdminFunction>()
+                .QueryAsync<byte[]>(_contractAddress, new GetRoleAdminFunction { Role = role });
 
         public Task<bool> PausedQueryAsync()
             => _web3.Eth.GetContractQueryHandler<PausedFunction>()
@@ -90,11 +102,11 @@ namespace Tricksfor.Blockchain.Nethereum.Contracts.TricksforBoosterNFT
         // Write functions
         // -------------------------------------------------------------------------
 
-        public Task<TransactionReceipt> MintRequestAndWaitForReceiptAsync(string toAddress)
-            => _web3.Eth.GetContractTransactionHandler<MintFunction>()
+        public Task<TransactionReceipt> SafeMintRequestAndWaitForReceiptAsync(string toAddress, BigInteger tokenId)
+            => _web3.Eth.GetContractTransactionHandler<SafeMintFunction>()
                 .SendRequestAndWaitForReceiptAsync(
                     _contractAddress,
-                    new MintFunction { To = toAddress });
+                    new SafeMintFunction { To = toAddress, TokenId = tokenId });
 
         public Task<TransactionReceipt> ApproveRequestAndWaitForReceiptAsync(string toAddress, BigInteger tokenId)
             => _web3.Eth.GetContractTransactionHandler<ApproveFunction>()
@@ -125,6 +137,24 @@ namespace Tricksfor.Blockchain.Nethereum.Contracts.TricksforBoosterNFT
                 .SendRequestAndWaitForReceiptAsync(
                     _contractAddress,
                     new SetRoyaltyInfoFunction { Receiver = receiver, FeeBasisPoints = feeBasisPoints });
+
+        public Task<TransactionReceipt> GrantRoleRequestAndWaitForReceiptAsync(byte[] role, string account)
+            => _web3.Eth.GetContractTransactionHandler<GrantRoleFunction>()
+                .SendRequestAndWaitForReceiptAsync(
+                    _contractAddress,
+                    new GrantRoleFunction { Role = role, Account = account });
+
+        public Task<TransactionReceipt> RevokeRoleRequestAndWaitForReceiptAsync(byte[] role, string account)
+            => _web3.Eth.GetContractTransactionHandler<RevokeRoleFunction>()
+                .SendRequestAndWaitForReceiptAsync(
+                    _contractAddress,
+                    new RevokeRoleFunction { Role = role, Account = account });
+
+        public Task<TransactionReceipt> RenounceRoleRequestAndWaitForReceiptAsync(byte[] role, string callerConfirmation)
+            => _web3.Eth.GetContractTransactionHandler<RenounceRoleFunction>()
+                .SendRequestAndWaitForReceiptAsync(
+                    _contractAddress,
+                    new RenounceRoleFunction { Role = role, CallerConfirmation = callerConfirmation });
 
         public Task<TransactionReceipt> PauseRequestAndWaitForReceiptAsync()
             => _web3.Eth.GetContractTransactionHandler<PauseFunction>()

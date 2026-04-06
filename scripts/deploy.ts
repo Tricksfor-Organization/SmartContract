@@ -19,6 +19,7 @@ async function main(): Promise<void> {
   await nft.waitForDeployment();
   const nftAddress = await nft.getAddress();
   console.log(`TricksforBoosterNFT deployed to: ${nftAddress}`);
+  console.log(`  Deployer granted DEFAULT_ADMIN_ROLE and MINTER_ROLE`);
 
   // ---------------------------------------------------------------------------
   // Deploy TricksforBoosterStaking
