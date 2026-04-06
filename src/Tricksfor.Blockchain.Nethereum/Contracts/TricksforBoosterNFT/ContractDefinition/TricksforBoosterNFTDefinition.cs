@@ -238,11 +238,19 @@ namespace Tricksfor.Blockchain.Nethereum.Contracts.TricksforBoosterNFT.ContractD
     }
 
     [Function("renounceRole")]
+    /// <summary>
+    /// DTO for OpenZeppelin AccessControl.renounceRole.
+    /// </summary>
     public class RenounceRoleFunction : FunctionMessage
     {
         [Parameter("bytes32", "role", 1)]
         public byte[] Role { get; set; } = Array.Empty<byte>();
 
+        /// <summary>
+        /// Solidity <c>callerConfirmation</c> argument for <c>renounceRole</c>.
+        /// Must be the same address as the transaction sender; otherwise the
+        /// contract call reverts with <c>AccessControlBadConfirmation</c>.
+        /// </summary>
         [Parameter("address", "callerConfirmation", 2)]
         public string CallerConfirmation { get; set; } = string.Empty;
     }
