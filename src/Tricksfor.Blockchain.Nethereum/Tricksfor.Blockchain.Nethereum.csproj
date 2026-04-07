@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nethereum.Web3" Version="4.26.0" />
-    <PackageReference Include="Nethereum.Contracts" Version="4.26.0" />
+    <PackageReference Include="Nethereum.Web3" Version="6.1.0" />
+    <PackageReference Include="Nethereum.Contracts" Version="6.1.0" />
   </ItemGroup>
 
 </Project>
