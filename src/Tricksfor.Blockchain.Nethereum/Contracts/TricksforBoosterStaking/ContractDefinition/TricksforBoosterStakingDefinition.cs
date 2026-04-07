@@ -184,4 +184,25 @@ namespace Tricksfor.Blockchain.Nethereum.Contracts.TricksforBoosterStaking.Contr
 
     [Function("renounceOwnership")]
     public class RenounceOwnershipFunction : FunctionMessage { }
+
+    /// <summary>
+    /// Called by an ERC-721 contract when a token is transferred to this contract via safeTransferFrom.
+    /// Only tokens from the configured nftContract are accepted; all others are rejected.
+    /// Records the from address (the previous owner) as the staker and emits TokenStaked.
+    /// </summary>
+    [Function("onERC721Received", "bytes4")]
+    public class OnERC721ReceivedFunction : FunctionMessage
+    {
+        [Parameter("address", "", 1)]
+        public string Operator { get; set; } = string.Empty;
+
+        [Parameter("address", "from", 2)]
+        public string From { get; set; } = string.Empty;
+
+        [Parameter("uint256", "tokenId", 3)]
+        public BigInteger TokenId { get; set; }
+
+        [Parameter("bytes", "", 4)]
+        public byte[] Data { get; set; } = Array.Empty<byte>();
+    }
 }

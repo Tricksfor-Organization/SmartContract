@@ -277,6 +277,90 @@ describe("TricksforBoosterStaking", function () {
   });
 
   // ---------------------------------------------------------------------------
+  // onERC721Received — IERC721Receiver support
+  // ---------------------------------------------------------------------------
+
+  describe("onERC721Received (safeTransferFrom staking path)", function () {
+    it("accepts a safeTransferFrom from the NFT contract and records the staker", async function () {
+      await nft.connect(alice)["safeTransferFrom(address,address,uint256)"](
+        alice.address,
+        await staking.getAddress(),
+        TOKEN_1
+      );
+      expect(await staking.isStaked(TOKEN_1)).to.be.true;
+      expect(await staking.stakedOwnerOf(TOKEN_1)).to.equal(alice.address);
+      expect(await nft.ownerOf(TOKEN_1)).to.equal(await staking.getAddress());
+    });
+
+    it("emits TokenStaked when receiving via safeTransferFrom", async function () {
+      const tx = await nft.connect(alice)["safeTransferFrom(address,address,uint256)"](
+        alice.address,
+        await staking.getAddress(),
+        TOKEN_1
+      );
+      const receipt = await tx.wait();
+      const block = await hre.ethers.provider.getBlock(receipt!.blockNumber);
+
+      await expect(tx)
+        .to.emit(staking, "TokenStaked")
+        .withArgs(alice.address, TOKEN_1, block!.timestamp);
+    });
+
+    it("reverts safeTransferFrom from an unsupported NFT contract", async function () {
+      // Deploy a second, unrelated NFT collection
+      const nftFactory = await hre.ethers.getContractFactory("TricksforBoosterNFT");
+      const otherNft = await nftFactory.deploy(
+        "Other NFT", "OTHER",
+        "https://other.example.com/",
+        "https://other.example.com/contract",
+        owner.address,
+        500n
+      );
+      await otherNft.waitForDeployment();
+      await otherNft.safeMint(alice.address, TOKEN_1);
+
+      await expect(
+        otherNft.connect(alice)["safeTransferFrom(address,address,uint256)"](
+          alice.address,
+          await staking.getAddress(),
+          TOKEN_1
+        )
+      ).to.be.revertedWithCustomError(staking, "UnsupportedNFTContract");
+    });
+
+    it("reverts safeTransferFrom when contract is paused", async function () {
+      await staking.pause();
+      await expect(
+        nft.connect(alice)["safeTransferFrom(address,address,uint256)"](
+          alice.address,
+          await staking.getAddress(),
+          TOKEN_1
+        )
+      ).to.be.revertedWithCustomError(staking, "EnforcedPause");
+    });
+
+    it("unstake works for a token staked via safeTransferFrom", async function () {
+      await nft.connect(alice)["safeTransferFrom(address,address,uint256)"](
+        alice.address,
+        await staking.getAddress(),
+        TOKEN_1
+      );
+      await staking.connect(alice).unstake(TOKEN_1);
+      expect(await staking.isStaked(TOKEN_1)).to.be.false;
+      expect(await nft.ownerOf(TOKEN_1)).to.equal(alice.address);
+    });
+
+    it("reverts when from is the zero address (mint directly to staking contract)", async function () {
+      // Minting directly to the staking contract via safeMint triggers onERC721Received
+      // with from == address(0). This must revert to prevent a token being held in custody
+      // without staking state (which would trap it with no unstake path).
+      await expect(
+        nft.safeMint(await staking.getAddress(), 99n)
+      ).to.be.revertedWithCustomError(staking, "ZeroAddress");
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // Pause / Unpause
   // ---------------------------------------------------------------------------
 

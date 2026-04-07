@@ -2,6 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
@@ -25,7 +26,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 /// @dev    Pause gates new staking only. Unstaking is always available so players can
 ///         always recover their assets. emergencyWithdraw is an explicit, named, and
 ///         event-emitting admin path — it is not hidden.
-contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable {
+contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721Receiver {
     // -------------------------------------------------------------------------
     // Errors
     // -------------------------------------------------------------------------
@@ -44,6 +45,9 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable {
 
     /// @notice Zero address supplied where a non-zero address is required.
     error ZeroAddress();
+
+    /// @notice Token received from an unsupported NFT contract.
+    error UnsupportedNFTContract();
 
     // -------------------------------------------------------------------------
     // Events (integration-critical — do not rename, reorder, or re-index)
@@ -112,6 +116,30 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable {
         nftContract.transferFrom(caller, address(this), tokenId);
 
         emit TokenStaked(caller, tokenId, block.timestamp);
+    }
+
+    /// @notice Handles the receipt of a Booster NFT transferred via safeTransferFrom.
+    ///         Only accepts tokens from the configured nftContract; reverts for all others.
+    ///         Records `from` as the staker and emits TokenStaked — functionally equivalent
+    ///         to calling stake() but triggered by safeTransferFrom rather than approve+stake.
+    ///         Not available while paused (mirrors stake() pause behaviour).
+    /// @param from    The address that previously owned the token (recorded as staker).
+    /// @param tokenId The token ID being transferred.
+    /// @return The ERC-721 receiver magic value confirming acceptance.
+    function onERC721Received(
+        address /* operator */,
+        address from,
+        uint256 tokenId,
+        bytes calldata /* data */
+    ) external nonReentrant whenNotPaused returns (bytes4) {
+        if (msg.sender != address(nftContract)) revert UnsupportedNFTContract();
+        if (from == address(0)) revert ZeroAddress();
+        if (_stakedBy[tokenId] != address(0)) revert TokenAlreadyStaked();
+
+        _stakedBy[tokenId] = from;
+        emit TokenStaked(from, tokenId, block.timestamp);
+
+        return IERC721Receiver.onERC721Received.selector;
     }
 
     /// @notice Unstakes a Booster NFT and returns it to the original staker.
