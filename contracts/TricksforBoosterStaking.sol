@@ -133,6 +133,7 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721R
         bytes calldata /* data */
     ) external nonReentrant whenNotPaused returns (bytes4) {
         if (msg.sender != address(nftContract)) revert UnsupportedNFTContract();
+        if (from == address(0)) revert ZeroAddress();
         if (_stakedBy[tokenId] != address(0)) revert TokenAlreadyStaked();
 
         _stakedBy[tokenId] = from;

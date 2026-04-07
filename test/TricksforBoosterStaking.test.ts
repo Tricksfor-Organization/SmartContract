@@ -349,6 +349,15 @@ describe("TricksforBoosterStaking", function () {
       expect(await staking.isStaked(TOKEN_1)).to.be.false;
       expect(await nft.ownerOf(TOKEN_1)).to.equal(alice.address);
     });
+
+    it("reverts when from is the zero address (mint directly to staking contract)", async function () {
+      // Minting directly to the staking contract via safeMint triggers onERC721Received
+      // with from == address(0). This must revert to prevent a token being held in custody
+      // without staking state (which would trap it with no unstake path).
+      await expect(
+        nft.safeMint(await staking.getAddress(), 99n)
+      ).to.be.revertedWithCustomError(staking, "ZeroAddress");
+    });
   });
 
   // ---------------------------------------------------------------------------

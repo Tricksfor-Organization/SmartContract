@@ -188,7 +188,7 @@ namespace Tricksfor.Blockchain.Nethereum.Contracts.TricksforBoosterStaking.Contr
     /// <summary>
     /// Called by an ERC-721 contract when a token is transferred to this contract via safeTransferFrom.
     /// Only tokens from the configured nftContract are accepted; all others are rejected.
-    /// Records the sender as the staker and emits TokenStaked.
+    /// Records the from address (the previous owner) as the staker and emits TokenStaked.
     /// </summary>
     [Function("onERC721Received", "bytes4")]
     public class OnERC721ReceivedFunction : FunctionMessage
