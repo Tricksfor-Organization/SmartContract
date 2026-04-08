@@ -9,7 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Tricksfor.Blockchain.Nethereum\Tricksfor.Blockchain.Nethereum.csproj" />
+    <PackageReference Include="Nethereum.Web3" Version="6.1.0" />
+    <PackageReference Include="Nethereum.Contracts" Version="6.1.0" />
   </ItemGroup>
 
 </Project>
