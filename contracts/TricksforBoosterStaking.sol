@@ -89,6 +89,15 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721R
     /// @dev Maps tokenId → original staker address. Zero address means not staked.
     mapping(uint256 => address) private _stakedBy;
 
+    /// @dev Maps tokenId → block.timestamp at which the token was staked.
+    mapping(uint256 => uint256) private _stakedAt;
+
+    /// @dev Maps staker address → list of currently staked token IDs.
+    mapping(address => uint256[]) private _walletTokenIds;
+
+    /// @dev Maps tokenId → index in _walletTokenIds[staker] for O(1) removal.
+    mapping(uint256 => uint256) private _walletTokenIndex;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -112,7 +121,7 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721R
         if (_stakedBy[tokenId] != address(0)) revert TokenAlreadyStaked();
         if (nftContract.ownerOf(tokenId) != caller) revert NotTokenOwner();
 
-        _stakedBy[tokenId] = caller;
+        _recordStake(caller, tokenId);
         nftContract.transferFrom(caller, address(this), tokenId);
 
         emit TokenStaked(caller, tokenId, block.timestamp);
@@ -136,7 +145,7 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721R
         if (from == address(0)) revert ZeroAddress();
         if (_stakedBy[tokenId] != address(0)) revert TokenAlreadyStaked();
 
-        _stakedBy[tokenId] = from;
+        _recordStake(from, tokenId);
         emit TokenStaked(from, tokenId, block.timestamp);
 
         return IERC721Receiver.onERC721Received.selector;
@@ -150,7 +159,7 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721R
         if (originalStaker == address(0)) revert TokenNotStaked();
         if (originalStaker != msg.sender) revert NotOriginalStaker();
 
-        delete _stakedBy[tokenId];
+        _clearStake(originalStaker, tokenId);
         nftContract.transferFrom(address(this), msg.sender, tokenId);
 
         emit TokenUnstaked(msg.sender, tokenId, block.timestamp);
@@ -172,7 +181,7 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721R
         if (recipient == address(0)) revert ZeroAddress();
 
         address originalStaker = _stakedBy[tokenId];
-        delete _stakedBy[tokenId];
+        _clearStake(originalStaker, tokenId);
         nftContract.transferFrom(address(this), recipient, tokenId);
 
         emit EmergencyWithdrawn(originalStaker, tokenId, recipient, block.timestamp);
@@ -207,5 +216,57 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721R
     /// @param tokenId The token ID to query.
     function stakedOwnerOf(uint256 tokenId) external view returns (address) {
         return _stakedBy[tokenId];
+    }
+
+    /// @notice Returns the block timestamp at which a token was staked.
+    ///         Returns zero if the token is not currently staked.
+    /// @param tokenId The token ID to query.
+    function stakedAtOf(uint256 tokenId) external view returns (uint256) {
+        return _stakedAt[tokenId];
+    }
+
+    /// @notice Returns the list of token IDs currently staked by the given wallet.
+    /// @dev    Ordering is not guaranteed. Tokens are stored in an array with swap-and-pop
+    ///         removal: when a token is unstaked or emergency-withdrawn, the last element
+    ///         in the array takes its position. Do not rely on index stability across
+    ///         state-changing transactions.
+    /// @param wallet The address to query.
+    function getWalletStakedTokens(address wallet) external view returns (uint256[] memory) {
+        return _walletTokenIds[wallet];
+    }
+
+    // -------------------------------------------------------------------------
+    // Internal helpers
+    // -------------------------------------------------------------------------
+
+    /// @dev Records all staking state for a token being staked by `staker`.
+    function _recordStake(address staker, uint256 tokenId) internal {
+        _stakedBy[tokenId] = staker;
+        _stakedAt[tokenId] = block.timestamp;
+        _walletTokenIndex[tokenId] = _walletTokenIds[staker].length;
+        _walletTokenIds[staker].push(tokenId);
+    }
+
+    /// @dev Clears all staking state for a token being unstaked from `staker`.
+    function _clearStake(address staker, uint256 tokenId) internal {
+        delete _stakedBy[tokenId];
+        delete _stakedAt[tokenId];
+        _removeFromWallet(staker, tokenId);
+    }
+
+    /// @dev Removes tokenId from _walletTokenIds[staker] using swap-and-pop for O(1) removal.
+    function _removeFromWallet(address staker, uint256 tokenId) internal {
+        uint256[] storage tokens = _walletTokenIds[staker];
+        uint256 index = _walletTokenIndex[tokenId];
+        uint256 lastIndex = tokens.length - 1;
+
+        if (index != lastIndex) {
+            uint256 lastTokenId = tokens[lastIndex];
+            tokens[index] = lastTokenId;
+            _walletTokenIndex[lastTokenId] = index;
+        }
+
+        tokens.pop();
+        delete _walletTokenIndex[tokenId];
     }
 }

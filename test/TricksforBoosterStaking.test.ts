@@ -118,6 +118,14 @@ describe("TricksforBoosterStaking", function () {
       );
     });
 
+    it("reverts if staking contract is not approved (no approval given)", async function () {
+      // alice owns TOKEN_1 but has not approved the staking contract
+      await expect(staking.connect(alice).stake(TOKEN_1)).to.be.revertedWithCustomError(
+        nft,
+        "ERC721InsufficientApproval"
+      );
+    });
+
     it("reverts if token is already staked", async function () {
       await nft.connect(alice).approve(await staking.getAddress(), TOKEN_1);
       await staking.connect(alice).stake(TOKEN_1);
@@ -273,6 +281,110 @@ describe("TricksforBoosterStaking", function () {
       await staking.connect(alice).unstake(TOKEN_1);
       expect(await staking.isStaked(TOKEN_1)).to.be.false;
       expect(await staking.stakedOwnerOf(TOKEN_1)).to.equal(hre.ethers.ZeroAddress);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // stakedAtOf
+  // ---------------------------------------------------------------------------
+
+  describe("stakedAtOf", function () {
+    it("returns zero for a token that is not staked", async function () {
+      expect(await staking.stakedAtOf(TOKEN_1)).to.equal(0n);
+    });
+
+    it("returns the block timestamp at which the token was staked", async function () {
+      await nft.connect(alice).approve(await staking.getAddress(), TOKEN_1);
+      const tx = await staking.connect(alice).stake(TOKEN_1);
+      const receipt = await tx.wait();
+      const block = await hre.ethers.provider.getBlock(receipt!.blockNumber);
+
+      expect(await staking.stakedAtOf(TOKEN_1)).to.equal(block!.timestamp);
+    });
+
+    it("returns zero after the token is unstaked", async function () {
+      await nft.connect(alice).approve(await staking.getAddress(), TOKEN_1);
+      await staking.connect(alice).stake(TOKEN_1);
+      await staking.connect(alice).unstake(TOKEN_1);
+      expect(await staking.stakedAtOf(TOKEN_1)).to.equal(0n);
+    });
+
+    it("reflects the new timestamp when re-staked", async function () {
+      await nft.connect(alice).approve(await staking.getAddress(), TOKEN_1);
+      await staking.connect(alice).stake(TOKEN_1);
+      await staking.connect(alice).unstake(TOKEN_1);
+
+      await nft.connect(alice).approve(await staking.getAddress(), TOKEN_1);
+      const tx2 = await staking.connect(alice).stake(TOKEN_1);
+      const receipt2 = await tx2.wait();
+      const block2 = await hre.ethers.provider.getBlock(receipt2!.blockNumber);
+
+      expect(await staking.stakedAtOf(TOKEN_1)).to.equal(block2!.timestamp);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // getWalletStakedTokens
+  // ---------------------------------------------------------------------------
+
+  describe("getWalletStakedTokens", function () {
+    it("returns an empty array for a wallet with no staked tokens", async function () {
+      const tokens = await staking.getWalletStakedTokens(alice.address);
+      expect(tokens).to.deep.equal([]);
+    });
+
+    it("returns the staked token after one stake", async function () {
+      await nft.connect(alice).approve(await staking.getAddress(), TOKEN_1);
+      await staking.connect(alice).stake(TOKEN_1);
+      const tokens = await staking.getWalletStakedTokens(alice.address);
+      expect(tokens.map((t) => t)).to.deep.equal([TOKEN_1]);
+    });
+
+    it("returns all tokens staked by a wallet", async function () {
+      await nft.connect(alice).approve(await staking.getAddress(), TOKEN_1);
+      await nft.connect(alice).approve(await staking.getAddress(), TOKEN_2);
+      await staking.connect(alice).stake(TOKEN_1);
+      await staking.connect(alice).stake(TOKEN_2);
+      const tokens = await staking.getWalletStakedTokens(alice.address);
+      expect(tokens.map((t) => t).sort()).to.deep.equal([TOKEN_1, TOKEN_2].sort());
+    });
+
+    it("removes the token from the wallet list after unstake", async function () {
+      await nft.connect(alice).approve(await staking.getAddress(), TOKEN_1);
+      await nft.connect(alice).approve(await staking.getAddress(), TOKEN_2);
+      await staking.connect(alice).stake(TOKEN_1);
+      await staking.connect(alice).stake(TOKEN_2);
+      await staking.connect(alice).unstake(TOKEN_1);
+      const tokens = await staking.getWalletStakedTokens(alice.address);
+      expect(tokens.map((t) => t)).to.deep.equal([TOKEN_2]);
+    });
+
+    it("handles unstaking the last token in the list correctly", async function () {
+      await nft.connect(alice).approve(await staking.getAddress(), TOKEN_1);
+      await staking.connect(alice).stake(TOKEN_1);
+      await staking.connect(alice).unstake(TOKEN_1);
+      const tokens = await staking.getWalletStakedTokens(alice.address);
+      expect(tokens).to.deep.equal([]);
+    });
+
+    it("removes the token after an emergency withdrawal", async function () {
+      await nft.connect(alice).approve(await staking.getAddress(), TOKEN_1);
+      await staking.connect(alice).stake(TOKEN_1);
+      await staking.emergencyWithdraw(TOKEN_1, bob.address);
+      const tokens = await staking.getWalletStakedTokens(alice.address);
+      expect(tokens).to.deep.equal([]);
+    });
+
+    it("isolates staked tokens per wallet", async function () {
+      const TOKEN_3 = 3n;
+      await nft.connect(alice).approve(await staking.getAddress(), TOKEN_1);
+      await nft.connect(bob).approve(await staking.getAddress(), TOKEN_3);
+      await staking.connect(alice).stake(TOKEN_1);
+      await staking.connect(bob).stake(TOKEN_3);
+      const aliceTokens = await staking.getWalletStakedTokens(alice.address);
+      const bobTokens = await staking.getWalletStakedTokens(bob.address);
+      expect(aliceTokens.map((t) => t)).to.deep.equal([TOKEN_1]);
+      expect(bobTokens.map((t) => t)).to.deep.equal([TOKEN_3]);
     });
   });
 
