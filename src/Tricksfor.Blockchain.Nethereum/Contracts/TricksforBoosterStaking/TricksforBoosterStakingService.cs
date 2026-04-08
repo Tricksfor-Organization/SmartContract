@@ -81,6 +81,24 @@ namespace Tricksfor.Blockchain.Nethereum.Contracts.TricksforBoosterStaking
             => _web3.Eth.GetContractQueryHandler<StakedOwnerOfFunction>()
                 .QueryAsync<string>(_contractAddress, new StakedOwnerOfFunction { TokenId = tokenId });
 
+        /// <summary>
+        /// Returns the block timestamp at which the given token was staked,
+        /// or zero if the token is not currently staked.
+        /// </summary>
+        public Task<BigInteger> StakedAtOfQueryAsync(BigInteger tokenId)
+            => _web3.Eth.GetContractQueryHandler<StakedAtOfFunction>()
+                .QueryAsync<BigInteger>(_contractAddress, new StakedAtOfFunction { TokenId = tokenId });
+
+        /// <summary>
+        /// Returns all token IDs currently staked by the given wallet address.
+        /// Ordering is not guaranteed — the contract uses swap-and-pop removal.
+        /// </summary>
+        public Task<GetWalletStakedTokensOutputDTO> GetWalletStakedTokensQueryAsync(string walletAddress)
+            => _web3.Eth.GetContractQueryHandler<GetWalletStakedTokensFunction>()
+                .QueryDeserializingToObjectAsync<GetWalletStakedTokensOutputDTO>(
+                    new GetWalletStakedTokensFunction { Wallet = walletAddress },
+                    _contractAddress);
+
         // -------------------------------------------------------------------------
         // Write functions
         // -------------------------------------------------------------------------

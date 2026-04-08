@@ -129,6 +129,47 @@ namespace Tricksfor.Blockchain.Nethereum.Contracts.TricksforBoosterStaking.Contr
         public BigInteger TokenId { get; set; }
     }
 
+    /// <summary>
+    /// Returns the block timestamp at which the given token was staked.
+    /// Returns zero if the token is not currently staked.
+    /// </summary>
+    [Function("stakedAtOf", "uint256")]
+    public class StakedAtOfFunction : FunctionMessage
+    {
+        [Parameter("uint256", "tokenId", 1)]
+        public BigInteger TokenId { get; set; }
+    }
+
+    /// <summary>
+    /// Returns all token IDs currently staked by the given wallet address.
+    /// <para>
+    /// <b>Ordering is not guaranteed.</b> The contract uses a swap-and-pop strategy for
+    /// O(1) removal; when a token is unstaked or emergency-withdrawn, the last element
+    /// in the array takes its position. Do not rely on index stability across
+    /// state-changing transactions.
+    /// </para>
+    /// </summary>
+    [Function("getWalletStakedTokens")]
+    public class GetWalletStakedTokensFunction : FunctionMessage
+    {
+        [Parameter("address", "wallet", 1)]
+        public string Wallet { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Output DTO for <see cref="GetWalletStakedTokensFunction"/>.
+    /// </summary>
+    [FunctionOutput]
+    public class GetWalletStakedTokensOutputDTO : IFunctionOutputDTO
+    {
+        /// <summary>
+        /// The token IDs currently staked by the queried wallet.
+        /// Ordering is not guaranteed — see <see cref="GetWalletStakedTokensFunction"/>.
+        /// </summary>
+        [Parameter("uint256[]", "", 1)]
+        public List<BigInteger> TokenIds { get; set; } = new();
+    }
+
     // -------------------------------------------------------------------------
     // Write (transaction) function messages
     // -------------------------------------------------------------------------

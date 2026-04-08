@@ -226,6 +226,10 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721R
     }
 
     /// @notice Returns the list of token IDs currently staked by the given wallet.
+    /// @dev    Ordering is not guaranteed. Tokens are stored in an array with swap-and-pop
+    ///         removal: when a token is unstaked or emergency-withdrawn, the last element
+    ///         in the array takes its position. Do not rely on index stability across
+    ///         state-changing transactions.
     /// @param wallet The address to query.
     function getWalletStakedTokens(address wallet) external view returns (uint256[] memory) {
         return _walletTokenIds[wallet];
