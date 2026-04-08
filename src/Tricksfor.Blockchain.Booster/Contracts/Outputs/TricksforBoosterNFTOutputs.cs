@@ -1,5 +1,6 @@
 using System.Numerics;
 using Nethereum.ABI.FunctionEncoding.Attributes;
+using Nethereum.Contracts;
 
 namespace Tricksfor.Blockchain.Booster.Contracts.Outputs
 {
