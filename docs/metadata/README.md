@@ -12,7 +12,11 @@ See [`token-example.json`](token-example.json) for a reference token metadata do
 
 Collection-level metadata is served from the URI returned by `contractURI()`. This is an OpenSea extension and is not part of the ERC-721 standard.
 
-See [`collection-example.json`](collection-example.json) for a reference collection metadata document.
+See [`contract-example.json`](contract-example.json) for a reference collection metadata document returned by `contractURI()`.
+
+> **Note:** Replace `0xREPLACE_WITH_ROYALTY_RECIPIENT_ADDRESS` in `contract-example.json` with the actual royalty recipient address before publishing. Using the zero address causes royalties to be permanently lost.
+
+> `collection-example.json` is an earlier alias for the same format and is kept for reference.
 
 ## OpenSea Metadata Standard
 
