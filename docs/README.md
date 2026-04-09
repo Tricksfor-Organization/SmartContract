@@ -25,7 +25,9 @@ This index provides a single entry point to all implementation guidance, referen
 
 | Document | Description |
 |---|---|
-| [Metadata Examples](metadata-examples.md) *(coming soon)* | Example token and collection metadata JSON documents conforming to the OpenSea metadata standard |
+| [Metadata Examples README](metadata/README.md) | Overview of token and collection metadata format, field requirements, and links to example JSON documents |
+| [Token Metadata Example](metadata/token-example.json) | Reference token metadata JSON conforming to the OpenSea metadata standard |
+| [Contract Metadata Example](metadata/contract-example.json) | Reference collection metadata JSON returned by `contractURI()` |
 
 ---
 
@@ -41,6 +43,7 @@ This index provides a single entry point to all implementation guidance, referen
 
 | Document | Description |
 |---|---|
+| [OpenSea Readiness Checklist](opensea-readiness-checklist.md) | Deployment-ready checklist covering ERC-721 compliance, metadata output, `tokenURI` / `contractURI` / ERC-2981 royalty configuration, staking UX implications, and pre-launch smoke tests |
 | [OpenSea Compatibility Skill](ai/skills/opensea-compatibility-skill.md) | Pre-PR checklist covering ERC-721 compliance, metadata output, `tokenURI` / `contractURI` / ERC-2981 royalty support, and staking UX implications for marketplace listings |
 
 ---
