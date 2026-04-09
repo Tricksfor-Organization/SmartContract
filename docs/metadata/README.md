@@ -16,7 +16,7 @@ See [`contract-example.json`](contract-example.json) for a reference collection 
 
 > **Note:** Replace `0xREPLACE_WITH_ROYALTY_RECIPIENT_ADDRESS` in `contract-example.json` with the actual royalty recipient address before publishing. Using the zero address causes royalties to be permanently lost.
 
-> `collection-example.json` is an earlier alias for the same format and is kept for reference.
+> **Warning:** `collection-example.json` is a legacy alias for the same format and is kept only for historical reference. It may still contain an unsafe zero `fee_recipient`, so do **not** copy it as-is for production use. Prefer `contract-example.json` and replace the royalty recipient placeholder before publishing.
 
 ## OpenSea Metadata Standard
 

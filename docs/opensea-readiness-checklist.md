@@ -79,7 +79,7 @@ When a player stakes a Booster NFT:
 
 1. The player calls `approve(stakingContractAddress, tokenId)` (or `setApprovalForAll`) on the NFT contract.
 2. The player calls `stake(tokenId)` on `TricksforBoosterStaking`.
-3. The NFT contract executes a `transferFrom` that moves the token from the player's wallet to the staking contract address.
+3. `TricksforBoosterStaking` calls the NFT contract's `transferFrom` to move the token from the player's wallet to the staking contract address.
 4. The staking contract emits `TokenStaked(staker, tokenId, stakedAt)`.
 
 **The token is now held by the staking contract, not the player's wallet.**
