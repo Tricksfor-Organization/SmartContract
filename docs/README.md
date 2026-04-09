@@ -33,7 +33,7 @@ This index provides a single entry point to all implementation guidance, referen
 
 | Document | Description |
 |---|---|
-| [Indexing Specification](indexing-spec.md) *(coming soon)* | Detailed specification for how the Tricksfor backend indexer processes `TokenStaked` and `TokenUnstaked` events, reconstructs state, and handles reorgs |
+| [Indexing Specification](indexing-spec.md) | Detailed specification for how the Tricksfor backend indexer processes `TokenStaked`, `TokenUnstaked`, and `EmergencyWithdrawn` events, reconstructs state, handles reorgs, and reconciles indexed state against on-chain reads |
 
 ---
 
