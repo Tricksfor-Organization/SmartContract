@@ -26,7 +26,7 @@ public class ContractDeploymentRecord
     [JsonPropertyName("blockNumber")]
     public long BlockNumber { get; init; }
 
-    /// <summary>UTC timestamp when the deployment transaction was mined.</summary>
+    /// <summary>UTC timestamp when this deployment record was created by the deployment runner.</summary>
     [JsonPropertyName("deployedAt")]
     public DateTimeOffset DeployedAt { get; init; }
 

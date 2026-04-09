@@ -13,12 +13,18 @@ using Tricksfor.Blockchain.Booster.Deploy;
 //   Deployment__PrivateKey   — hex-encoded private key of the deployer account
 //
 // Optional environment variables (override appsettings):
-//   DEPLOY_ENV               — environment name ("localhost", "sepolia", "mainnet")
+//   DEPLOY_ENV               — environment name ("localhost", "sepolia", "mainnet").
+//                              Also used as the default value for Deployment:Network when
+//                              it is not explicitly set in appsettings or env vars.
 //   Deployment__RpcUrl       — JSON-RPC endpoint URL
 //   Deployment__ChainId      — EVM chain ID
+//   Deployment__Network      — manifest output subfolder name (defaults to DEPLOY_ENV)
 // ---------------------------------------------------------------------------
 
 var env = Environment.GetEnvironmentVariable("DEPLOY_ENV") ?? "localhost";
+
+Console.WriteLine("=== Tricksfor Booster Deployment Runner ===");
+Console.WriteLine($"[1/6] Loading configuration (environment: {env})...");
 
 var configuration = new ConfigurationBuilder()
     .SetBasePath(AppContext.BaseDirectory)
@@ -30,11 +36,14 @@ var configuration = new ConfigurationBuilder()
 var config = new DeploymentConfig();
 configuration.GetSection("Deployment").Bind(config);
 
-Console.WriteLine("=== Tricksfor Booster Deployment Runner ===");
-Console.WriteLine($"Environment:  {env}");
-Console.WriteLine($"Network:      {config.Network}");
-Console.WriteLine($"RPC URL:      {config.RpcUrl}");
-Console.WriteLine($"Chain ID:     {config.ChainId}");
+// Default config.Network to the selected environment when it has not been
+// explicitly set via appsettings or the Deployment__Network env var.
+if (string.IsNullOrWhiteSpace(config.Network))
+    config.Network = env;
+
+Console.WriteLine($"      Network:      {config.Network}");
+Console.WriteLine($"      RPC URL:      {config.RpcUrl}");
+Console.WriteLine($"      Chain ID:     {config.ChainId}");
 Console.WriteLine();
 
 try

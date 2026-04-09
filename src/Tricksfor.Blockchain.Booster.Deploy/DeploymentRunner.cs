@@ -45,7 +45,7 @@ public sealed class DeploymentRunner
         var deployerAddress = account.Address;
 
         // ---- Step 2: Deploy TricksforBoosterNFT ----------------------------------------
-        _output.WriteLine("[1/4] Deploying TricksforBoosterNFT...");
+        _output.WriteLine("[2/6] Deploying TricksforBoosterNFT...");
 
         var royaltyReceiver = string.IsNullOrWhiteSpace(_config.Nft.RoyaltyReceiver)
             ? deployerAddress
@@ -71,7 +71,7 @@ public sealed class DeploymentRunner
         _output.WriteLine($"      TricksforBoosterNFT deployed at {nftAddress}");
 
         // ---- Step 3: Deploy TricksforBoosterStaking (requires NFT address) ---------------
-        _output.WriteLine("[2/4] Deploying TricksforBoosterStaking...");
+        _output.WriteLine("[3/6] Deploying TricksforBoosterStaking...");
 
         var stakingDeployment = new TricksforBoosterStakingDeployment
         {
@@ -87,15 +87,13 @@ public sealed class DeploymentRunner
 
         _output.WriteLine($"      TricksforBoosterStaking deployed at {stakingAddress}");
 
-        var deployedAt = DateTimeOffset.UtcNow;
-
         var nftRecord = new ContractDeploymentRecord
         {
             ContractName = "TricksforBoosterNFT",
             Address = nftAddress,
             TransactionHash = nftReceipt.TransactionHash,
             BlockNumber = (long)nftReceipt.BlockNumber.Value,
-            DeployedAt = deployedAt,
+            DeployedAt = DateTimeOffset.UtcNow,
             ConstructorArgs = new object[]
             {
                 _config.Nft.Name,
@@ -113,12 +111,12 @@ public sealed class DeploymentRunner
             Address = stakingAddress,
             TransactionHash = stakingReceipt.TransactionHash,
             BlockNumber = (long)stakingReceipt.BlockNumber.Value,
-            DeployedAt = deployedAt,
+            DeployedAt = DateTimeOffset.UtcNow,
             ConstructorArgs = new object[] { nftAddress },
         };
 
         // ---- Step 4: Persist manifests --------------------------------------------------
-        _output.WriteLine("[3/4] Writing deployment manifests...");
+        _output.WriteLine("[4/6] Writing deployment manifests...");
 
         var nftPath = ManifestWriter.Write(nftRecord, _config.DeploymentsOutputPath, _config.Network);
         var stakingPath = ManifestWriter.Write(stakingRecord, _config.DeploymentsOutputPath, _config.Network);
@@ -127,7 +125,7 @@ public sealed class DeploymentRunner
         _output.WriteLine($"      {stakingPath}");
 
         // ---- Step 5: Post-deploy sanity checks ------------------------------------------
-        _output.WriteLine("[4/4] Running sanity checks...");
+        _output.WriteLine("[5/6] Running sanity checks...");
 
         var checker = new PostDeploySanityChecker(web3);
         var sanityResults = await checker.RunAsync(_config, nftAddress, stakingAddress);
@@ -147,7 +145,8 @@ public sealed class DeploymentRunner
                 string.Join(Environment.NewLine, details));
         }
 
-        // ---- Step 6: Summary ------------------------------------------------------------
+        // ---- Step 6: Deployment summary -------------------------------------------------
+        _output.WriteLine("[6/6] Deployment summary...");
         PrintSummary(nftRecord, stakingRecord, deployerAddress);
 
         return new DeploymentResult(nftRecord, stakingRecord, sanityResults);
@@ -185,6 +184,9 @@ public sealed class DeploymentRunner
         if (string.IsNullOrWhiteSpace(_config.RpcUrl))
             errors.Add("Deployment:RpcUrl is required.");
 
+        if (_config.ChainId <= 0)
+            errors.Add("Deployment:ChainId must be a positive integer.");
+
         if (string.IsNullOrWhiteSpace(_config.PrivateKey))
             errors.Add("Deployment:PrivateKey is required. " +
                        "Set the Deployment__PrivateKey environment variable.");
@@ -194,6 +196,15 @@ public sealed class DeploymentRunner
 
         if (string.IsNullOrWhiteSpace(_config.Nft.Symbol))
             errors.Add("Deployment:Nft:Symbol is required.");
+
+        if (_config.Nft.RoyaltyFeeBasisPoints < 0 || _config.Nft.RoyaltyFeeBasisPoints > 10_000)
+            errors.Add("Deployment:Nft:RoyaltyFeeBasisPoints must be between 0 and 10 000 (inclusive).");
+
+        if (!string.IsNullOrWhiteSpace(_config.Nft.RoyaltyReceiver) &&
+            _config.Nft.RoyaltyReceiver.Equals(
+                "0x0000000000000000000000000000000000000000",
+                StringComparison.OrdinalIgnoreCase))
+            errors.Add("Deployment:Nft:RoyaltyReceiver must not be the zero address.");
 
         if (errors.Count > 0)
             throw new DeploymentException(

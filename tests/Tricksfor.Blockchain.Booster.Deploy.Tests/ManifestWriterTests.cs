@@ -68,7 +68,7 @@ public class ManifestWriterTests : IDisposable
         var path = ManifestWriter.Write(record, _tempRoot, "localhost");
 
         var content = File.ReadAllText(path);
-        var doc = JsonDocument.Parse(content); // throws if invalid JSON
+        using var doc = JsonDocument.Parse(content); // throws if invalid JSON
 
         Assert.Equal("TricksforBoosterNFT", doc.RootElement.GetProperty("contractName").GetString());
         Assert.Equal("0xABC", doc.RootElement.GetProperty("address").GetString());
@@ -97,7 +97,7 @@ public class ManifestWriterTests : IDisposable
         ManifestWriter.Write(recordV1, _tempRoot, "localhost");
         var path = ManifestWriter.Write(recordV2, _tempRoot, "localhost");
 
-        var doc = JsonDocument.Parse(File.ReadAllText(path));
+        using var doc = JsonDocument.Parse(File.ReadAllText(path));
         Assert.Equal("0x222", doc.RootElement.GetProperty("address").GetString());
     }
 

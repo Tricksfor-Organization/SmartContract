@@ -8,8 +8,11 @@ public class DeploymentConfig
 {
     /// <summary>
     /// Short network name used for manifest folder naming (e.g. "localhost", "sepolia", "mainnet").
+    /// Leave empty in the base appsettings.json; set it in the network-specific file
+    /// (e.g. appsettings.localhost.json) or via the <c>Deployment__Network</c> environment
+    /// variable. When still empty after binding, Program.cs defaults it to <c>DEPLOY_ENV</c>.
     /// </summary>
-    public string Network { get; set; } = "localhost";
+    public string Network { get; set; } = string.Empty;
 
     /// <summary>
     /// JSON-RPC endpoint for the target EVM network (e.g. "https://mainnet.infura.io/v3/...").
