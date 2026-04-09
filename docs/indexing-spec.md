@@ -88,21 +88,24 @@ Stores every raw staking event log entry, exactly as observed on-chain. This is 
 |---|---|---|
 | `id` | serial / UUID | Internal row identifier |
 | `chain_id` | integer | EVM chain ID |
-| `contract_address` | text | Staking contract address (checksummed) |
-| `transaction_hash` | text | Transaction hash |
+| `contract_address` | text | Staking contract address, persisted in canonical EIP-55 checksum format with `0x` prefix |
+| `transaction_hash` | text | Transaction hash, persisted as lowercase hexadecimal with `0x` prefix |
 | `log_index` | integer | Log index within the block |
 | `block_number` | bigint | Block number |
-| `block_hash` | text | Block hash (used for reorg detection) |
-| `block_timestamp` | bigint | Block timestamp in Unix seconds |
+| `block_hash` | text | Block hash, persisted as lowercase hexadecimal with `0x` prefix (used for reorg detection) |
+| `block_timestamp` | bigint | Block timestamp in Unix seconds (from the block header; equal to the `stakedAt` / `unstakedAt` / `withdrawnAt` value emitted by the contract, since the contracts use `block.timestamp`) |
+| `event_timestamp` | bigint | The timestamp parameter decoded directly from the event log (`stakedAt`, `unstakedAt`, or `withdrawnAt`); included as an explicit column so state-rebuild rules that reference the event timestamp field can be traced directly to a persisted value without relying solely on `block_timestamp` |
 | `event_type` | text | `TokenStaked`, `TokenUnstaked`, or `EmergencyWithdrawn` |
-| `staker` | text | Wallet address that staked the token (from `staker` / `originalStaker` field) |
-| `token_id` | text | NFT token ID (stored as decimal string to avoid integer overflow on large IDs) |
-| `recipient` | text | Recipient address — populated only for `EmergencyWithdrawn`; null for other event types |
+| `staker` | text | Wallet address that staked the token (from `staker` / `originalStaker` field), persisted in canonical EIP-55 checksum format with `0x` prefix |
+| `token_id` | text | NFT token ID, stored as a canonical decimal string with no leading zeros (`0` stored as `"0"`; non-zero values must not include leading zeros, so the same token is never stored as distinct keys such as `"1"` and `"01"`) |
+| `recipient` | text | Recipient address — populated only for `EmergencyWithdrawn`; null for other event types; when populated, persisted in canonical EIP-55 checksum format with `0x` prefix |
 | `created_at` | timestamp | Wall-clock time at which the indexer persisted this row |
+
+**Canonicalization requirement:** Before any insert or upsert, the indexer must normalize all address and hash fields to the canonical formats defined above. Inputs that differ only by casing or `0x` prefix must be converted to the same persisted representation before uniqueness checks are evaluated.
 
 **Unique constraint:** `(chain_id, contract_address, transaction_hash, log_index)`
 
-This unique constraint enforces idempotency at the persistence layer: attempting to insert the same event twice is a no-op (or a constraint error that the indexer treats as "already processed").
+This unique constraint enforces idempotency at the persistence layer only if `contract_address` and `transaction_hash` have been normalized to their canonical forms before insert/upsert. With that normalization in place, attempting to insert the same event twice is a no-op (or a constraint error that the indexer treats as "already processed"), and equivalent textual variants of the same on-chain log cannot create duplicate rows.
 
 ---
 
@@ -113,15 +116,15 @@ Stores the current derived staking state for each token ID. Updated each time a 
 | Column | Type | Description |
 |---|---|---|
 | `chain_id` | integer | EVM chain ID |
-| `contract_address` | text | Staking contract address |
-| `token_id` | text | NFT token ID |
+| `contract_address` | text | Staking contract address, in canonical EIP-55 checksum format with `0x` prefix |
+| `token_id` | text | NFT token ID, in canonical decimal format (no leading zeros) |
 | `is_staked` | boolean | `true` if the token is currently staked |
-| `staked_by` | text | Wallet address of current staker; null if not staked |
-| `staked_at` | bigint | Block timestamp from the most recent `TokenStaked` event; null if never staked |
-| `staked_in_tx` | text | Transaction hash of the most recent `TokenStaked` event |
+| `staked_by` | text | Wallet address of current staker, in canonical EIP-55 checksum format with `0x` prefix; null if not staked |
+| `staked_at` | bigint | `event_timestamp` from the most recent `TokenStaked` event; null if never staked |
+| `staked_in_tx` | text | Transaction hash of the most recent `TokenStaked` event, lowercase hex with `0x` prefix |
 | `staked_in_block` | bigint | Block number of the most recent `TokenStaked` event |
-| `last_unstaked_at` | bigint | Block timestamp from the most recent `TokenUnstaked` or `EmergencyWithdrawn` event; null if never unstaked |
-| `last_unstake_tx` | text | Transaction hash of the most recent unstake or emergency-withdraw event |
+| `last_unstaked_at` | bigint | `event_timestamp` from the most recent `TokenUnstaked` or `EmergencyWithdrawn` event; null if never unstaked |
+| `last_unstake_tx` | text | Transaction hash of the most recent unstake or emergency-withdraw event, lowercase hex with `0x` prefix |
 | `last_unstake_block` | bigint | Block number of the most recent unstake or emergency-withdraw event |
 | `last_event_block` | bigint | Block number of the most recently processed event for this token |
 | `last_event_log_index` | integer | Log index of the most recently processed event for this token |
@@ -138,9 +141,9 @@ Stores the current set of staked token IDs for each wallet. Updated each time a 
 | Column | Type | Description |
 |---|---|---|
 | `chain_id` | integer | EVM chain ID |
-| `contract_address` | text | Staking contract address |
-| `wallet_address` | text | Wallet address |
-| `staked_token_ids` | text[] / JSON array | Current set of token IDs staked by this wallet |
+| `contract_address` | text | Staking contract address, in canonical EIP-55 checksum format with `0x` prefix |
+| `wallet_address` | text | Wallet address, in canonical EIP-55 checksum format with `0x` prefix |
+| `staked_token_ids` | text[] / JSON array | Current set of token IDs staked by this wallet, each in canonical decimal format (no leading zeros) |
 | `has_active_stake` | boolean | `true` if `staked_token_ids` is non-empty |
 | `last_event_block` | bigint | Block number of the most recently processed event for this wallet |
 | `last_event_log_index` | integer | Log index of the most recently processed event for this wallet |
@@ -157,7 +160,7 @@ The indexer processes events in the following sequence.
 1. **Subscribe** to logs from the `TricksforBoosterStaking` contract address using Nethereum Log Processor.
 2. **For each log entry received:**
    - a. Decode the event type and fields using the appropriate Nethereum event DTO (`TokenStakedEventDTO`, `TokenUnstakedEventDTO`, or `EmergencyWithdrawnEventDTO`).
-   - b. Derive the event identity tuple: `(chainId, contractAddress, transactionHash, logIndex)`.
+   - b. Normalize all address and hash fields to their canonical forms: EIP-55 checksum with `0x` prefix for addresses; lowercase hexadecimal with `0x` prefix for transaction and block hashes; canonical decimal (no leading zeros) for token IDs. Derive the event identity tuple: `(chainId, contractAddress, transactionHash, logIndex)` using the normalized values.
    - c. Begin a database transaction. Attempt to insert a new row into `booster_nft_stake_events`. If the unique constraint fires (event already persisted), roll back and skip to the next event — this is the idempotency guard (see [Idempotency](#idempotency)).
    - d. Update `booster_nft_token_status` according to the [Token State Rules](#token-state-reconstruction-rules).
    - e. Update `booster_nft_wallet_status` according to the [Wallet State Rules](#wallet-state-reconstruction-rules).
