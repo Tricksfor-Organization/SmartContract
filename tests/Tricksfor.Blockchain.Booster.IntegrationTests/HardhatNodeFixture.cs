@@ -75,10 +75,14 @@ public sealed class HardhatNodeFixture : IAsyncLifetime
 
     private void StartHardhatNode(string hardhatRoot)
     {
+        var hardhatExecutable = OperatingSystem.IsWindows()
+            ? Path.Combine(hardhatRoot, "node_modules", ".bin", "hardhat.cmd")
+            : Path.Combine(hardhatRoot, "node_modules", ".bin", "hardhat");
+
         var psi = new ProcessStartInfo
         {
-            FileName = "/bin/bash",
-            Arguments = $"-c \"./node_modules/.bin/hardhat node --port {Port}\"",
+            FileName = hardhatExecutable,
+            Arguments = $"node --port {Port}",
             WorkingDirectory = hardhatRoot,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -88,6 +92,14 @@ public sealed class HardhatNodeFixture : IAsyncLifetime
 
         _hardhatProcess = Process.Start(psi)
             ?? throw new InvalidOperationException("Failed to start Hardhat node process.");
+
+        // Drain stdout/stderr asynchronously so OS pipe buffers never fill up and block
+        // the process. Hardhat is chatty (it logs every RPC call), so not consuming these
+        // streams can cause the node to hang under load.
+        _hardhatProcess.OutputDataReceived += (_, _) => { };
+        _hardhatProcess.ErrorDataReceived += (_, _) => { };
+        _hardhatProcess.BeginOutputReadLine();
+        _hardhatProcess.BeginErrorReadLine();
     }
 
     private static async Task WaitForRpcAsync(int timeoutSeconds)
@@ -99,7 +111,7 @@ public sealed class HardhatNodeFixture : IAsyncLifetime
         {
             try
             {
-                var response = await http.PostAsync(
+                using var response = await http.PostAsync(
                     $"http://127.0.0.1:{Port}",
                     new StringContent(
                         "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_chainId\",\"params\":[]}",

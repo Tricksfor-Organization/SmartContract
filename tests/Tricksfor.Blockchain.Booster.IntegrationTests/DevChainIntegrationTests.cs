@@ -1,6 +1,8 @@
 using System.Numerics;
+using Nethereum.Contracts;
 using Nethereum.Web3;
 using Tricksfor.Blockchain.Booster.Contracts.Deployment;
+using Tricksfor.Blockchain.Booster.Contracts.Functions;
 using Tricksfor.Blockchain.Booster.Services;
 using Xunit;
 
@@ -230,9 +232,12 @@ public class DevChainIntegrationTests
         var nftServiceAsAccount1 = new BoosterNFTService(_node.Web3Account1, nftAddress);
         await nftServiceAsAccount1.SetApprovalForAllRequestAndWaitForReceiptAsync(stakingAddress, approved: true);
 
-        // Account1 tries to stake token #20 which is owned by account0 — must revert
-        await Assert.ThrowsAnyAsync<Exception>(
+        // Account1 tries to stake token #20 which is owned by account0 — must revert with NotTokenOwner
+        var ex = await Assert.ThrowsAnyAsync<Exception>(
             () => stakingServiceAsAccount1.StakeRequestAndWaitForReceiptAsync(20));
+        var customEx = Assert.IsType<SmartContractCustomErrorRevertException>(ex);
+        Assert.Equal(ErrorSelector("NotTokenOwner()"), customEx.ExceptionEncodedData,
+            StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -249,9 +254,12 @@ public class DevChainIntegrationTests
         await nftService.SetApprovalForAllRequestAndWaitForReceiptAsync(stakingAddress, approved: true);
         await stakingService.StakeRequestAndWaitForReceiptAsync(30);
 
-        // Token #30 is already staked — second stake must revert
-        await Assert.ThrowsAnyAsync<Exception>(
+        // Token #30 is already staked — second stake must revert with TokenAlreadyStaked
+        var ex = await Assert.ThrowsAnyAsync<Exception>(
             () => stakingService.StakeRequestAndWaitForReceiptAsync(30));
+        var customEx = Assert.IsType<SmartContractCustomErrorRevertException>(ex);
+        Assert.Equal(ErrorSelector("TokenAlreadyStaked()"), customEx.ExceptionEncodedData,
+            StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -268,10 +276,13 @@ public class DevChainIntegrationTests
         await nftService.SetApprovalForAllRequestAndWaitForReceiptAsync(stakingAddress, approved: true);
         await stakingService.StakeRequestAndWaitForReceiptAsync(40);
 
-        // Account1 tries to unstake a token staked by account0 — must revert
+        // Account1 tries to unstake a token staked by account0 — must revert with NotOriginalStaker
         var stakingServiceAsAccount1 = new BoosterStakingService(_node.Web3Account1, stakingAddress);
-        await Assert.ThrowsAnyAsync<Exception>(
+        var ex = await Assert.ThrowsAnyAsync<Exception>(
             () => stakingServiceAsAccount1.UnstakeRequestAndWaitForReceiptAsync(40));
+        var customEx = Assert.IsType<SmartContractCustomErrorRevertException>(ex);
+        Assert.Equal(ErrorSelector("NotOriginalStaker()"), customEx.ExceptionEncodedData,
+            StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -302,34 +313,57 @@ public class DevChainIntegrationTests
     }
 
     /// <summary>
-    /// Sending a token via safeTransferFrom from an NFT contract that is NOT the configured
-    /// nftContract is rejected with UnsupportedNFTContract.
+    /// Sending a token from an unsupported NFT contract to the staking contract via
+    /// <c>safeTransferFrom</c> triggers <c>onERC721Received</c>, which must revert with
+    /// <c>UnsupportedNFTContract</c> because <c>msg.sender</c> is not the configured collection.
     ///
-    /// A second NFT deployment simulates an unsupported collection.
+    /// A second NFT deployment simulates the unsupported collection.
     /// </summary>
     [Fact]
     public async Task OnERC721Received_UnsupportedNFTContract_Reverts()
     {
-        // Deploy the "real" pair (staking accepts only this NFT contract)
-        var (_, stakingService, _, stakingAddress) =
+        // Deploy the "real" pair: staking contract accepts only nftA
+        var (_, _, _, stakingAddress) =
             await DeployContractsAsync(_node.Web3Account0);
 
-        // Deploy a second "unsupported" NFT contract
-        var (unsupportedNftService, _, _, _) =
+        // Deploy a second "unsupported" NFT contract (nftB)
+        var (unsupportedNftService, _, unsupportedNftAddress, _) =
             await DeployContractsAsync(_node.Web3Account0);
 
         var wallet = HardhatNodeFixture.Account0Address;
         await unsupportedNftService.SafeMintRequestAndWaitForReceiptAsync(wallet, 50);
-        await unsupportedNftService.SetApprovalForAllRequestAndWaitForReceiptAsync(stakingAddress, approved: true);
 
-        // Trying to stake via the approve+stake path uses the staking contract's stake() function
-        // which checks nftContract.ownerOf — will revert with NotTokenOwner because the staking
-        // contract queries the configured nftContract (not the unsupported one)
-        await Assert.ThrowsAnyAsync<Exception>(
-            () => stakingService.StakeRequestAndWaitForReceiptAsync(50));
+        // Call safeTransferFrom on nftB to push the token to the staking contract.
+        // The staking contract's onERC721Received sees msg.sender = nftB != nftA and
+        // must revert with UnsupportedNFTContract.
+        var ex = await Assert.ThrowsAnyAsync<Exception>(
+            () => _node.Web3Account0.Eth
+                .GetContractTransactionHandler<SafeTransferFromFunction>()
+                .SendRequestAndWaitForReceiptAsync(
+                    unsupportedNftAddress,
+                    new SafeTransferFromFunction
+                    {
+                        From = wallet,
+                        To = stakingAddress,
+                        TokenId = 50,
+                    }));
+        var customEx = Assert.IsType<SmartContractCustomErrorRevertException>(ex);
+        Assert.Equal(ErrorSelector("UnsupportedNFTContract()"), customEx.ExceptionEncodedData,
+            StringComparer.OrdinalIgnoreCase);
     }
 
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Computes the 4-byte ABI selector for a custom Solidity error, e.g.
+    /// <c>"NotTokenOwner()"</c>. The result matches the format returned by
+    /// <see cref="SmartContractCustomErrorRevertException.ExceptionEncodedData"/>.
+    /// </summary>
+    private static string ErrorSelector(string errorSignature)
+    {
+        var hash = new Nethereum.Util.Sha3Keccack().CalculateHash(errorSignature);
+        return "0x" + hash[..8];
+    }
 }
