@@ -330,55 +330,12 @@ jobs:
           DEPLOY_ENV: ${{ env.DEPLOY_ENV }}
           NFT_OUTCOME: ${{ steps.verify-nft.outcome }}
           STAKING_OUTCOME: ${{ steps.verify-staking.outcome }}
+          # Optional per-environment variables: set these in the GitHub Environment
+          # to provide the explorer display name and browser base URL without editing
+          # this workflow. If not set, the fields are left empty in the manifest.
+          EXPLORER_NAME: ${{ vars.EXPLORER_NAME }}
+          EXPLORER_BASE_URL: ${{ vars.EXPLORER_BASE_URL }}
         run: |
-          # Map Hardhat network key to human-readable explorer name and browser URL.
-          case "$NETWORK_KEY" in
-            mainnet)
-              EXPLORER_NAME="Etherscan"
-              EXPLORER_BROWSER_BASE="https://etherscan.io/address"
-              ;;
-            sepolia)
-              EXPLORER_NAME="Etherscan (Sepolia)"
-              EXPLORER_BROWSER_BASE="https://sepolia.etherscan.io/address"
-              ;;
-            polygon)
-              EXPLORER_NAME="PolygonScan"
-              EXPLORER_BROWSER_BASE="https://polygonscan.com/address"
-              ;;
-            polygon_amoy)
-              EXPLORER_NAME="PolygonScan (Amoy)"
-              EXPLORER_BROWSER_BASE="https://amoy.polygonscan.com/address"
-              ;;
-            optimism)
-              EXPLORER_NAME="Optimism Explorer"
-              EXPLORER_BROWSER_BASE="https://optimistic.etherscan.io/address"
-              ;;
-            optimism_sepolia)
-              EXPLORER_NAME="Optimism Explorer (Sepolia)"
-              EXPLORER_BROWSER_BASE="https://sepolia-optimism.etherscan.io/address"
-              ;;
-            bsc)
-              EXPLORER_NAME="BscScan"
-              EXPLORER_BROWSER_BASE="https://bscscan.com/address"
-              ;;
-            bsc_testnet)
-              EXPLORER_NAME="BscScan (Testnet)"
-              EXPLORER_BROWSER_BASE="https://testnet.bscscan.com/address"
-              ;;
-            avalanche)
-              EXPLORER_NAME="Snowtrace"
-              EXPLORER_BROWSER_BASE="https://snowtrace.io/address"
-              ;;
-            avalanche_fuji)
-              EXPLORER_NAME="Snowtrace (Fuji)"
-              EXPLORER_BROWSER_BASE="https://testnet.snowtrace.io/address"
-              ;;
-            *)
-              EXPLORER_NAME="$NETWORK_KEY"
-              EXPLORER_BROWSER_BASE=""
-              ;;
-          esac
-
           update_manifest() {
             local MANIFEST="$1"
             local OUTCOME="$2"
@@ -391,8 +348,8 @@ jobs:
             local CONTRACT_ADDRESS
             CONTRACT_ADDRESS=$(jq -r '.address' "$MANIFEST")
             local EXPLORER_URL=""
-            if [[ -n "$EXPLORER_BROWSER_BASE" && -n "$CONTRACT_ADDRESS" ]]; then
-              EXPLORER_URL="${EXPLORER_BROWSER_BASE}/${CONTRACT_ADDRESS}"
+            if [[ -n "$EXPLORER_BASE_URL" && -n "$CONTRACT_ADDRESS" ]]; then
+              EXPLORER_URL="${EXPLORER_BASE_URL}/${CONTRACT_ADDRESS}"
             fi
 
             # Map GitHub step outcome to a verification status string.
@@ -404,13 +361,15 @@ jobs:
             esac
 
             # Merge the verification section into the existing manifest in-place.
+            # chainTarget uses DEPLOY_ENV (e.g. "polygon-mainnet") to uniquely
+            # identify the deployment target rather than the Hardhat network name.
             local TIMESTAMP
             TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-            jq --arg explorerName  "$EXPLORER_NAME" \
-               --arg chainTarget   "$NETWORK_KEY"   \
-               --arg explorerUrl   "$EXPLORER_URL"  \
-               --arg status        "$STATUS"         \
-               --arg verifiedAt    "$TIMESTAMP"      \
+            jq --arg explorerName  "$EXPLORER_NAME"  \
+               --arg chainTarget   "$DEPLOY_ENV"     \
+               --arg explorerUrl   "$EXPLORER_URL"   \
+               --arg status        "$STATUS"          \
+               --arg verifiedAt    "$TIMESTAMP"       \
                '. + { verification: {
                  explorerName:  $explorerName,
                  chainTarget:   $chainTarget,

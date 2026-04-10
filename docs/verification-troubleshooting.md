@@ -24,12 +24,17 @@ The `verify-contracts` job is **non-blocking**: it does not roll back the deploy
 
 ## Retained Artifacts
 
-Regardless of outcome, these artifacts are always uploaded:
+When verification runs (`VERIFY_ENABLED=true`), these verification artifacts are uploaded regardless of whether verification succeeds or fails:
 
 | Artifact name | Contents | Retention |
 |---|---|---|
 | `verify-transcript-{env}-{tag}` | Raw stdout/stderr from both `hardhat verify` runs | 30 days |
 | `verify-manifests-{env}-{tag}` | Deployment manifests updated with `verification.*` fields | 90 days |
+
+The original deployment manifests are uploaded by the `deploy-contracts` job unconditionally:
+
+| Artifact name | Contents | Retention |
+|---|---|---|
 | `deployment-manifests-{env}-{tag}` | Original manifests from the `deploy-contracts` job | 90 days |
 
 ---
@@ -110,6 +115,8 @@ Regardless of outcome, these artifacts are always uploaded:
 3. Set `NETWORK_KEY` to the correct value.
 4. Re-run the `verify-contracts` job.
 
+See [`docs/github-environments-setup.md`](github-environments-setup.md#network_key-values-per-environment) for the full variable table including `EXPLORER_NAME` and `EXPLORER_BASE_URL` values.
+
 | Environment name    | `NETWORK_KEY` value |
 |---------------------|---------------------|
 | `ethereum-sepolia`  | `sepolia`           |
@@ -164,7 +171,32 @@ Constructor arguments are stored in the deployment manifest at `deployments/{env
 
 ## Deployment Manifest Verification Section
 
-After a successful verification run, each contract's manifest is updated with a `verification` object:
+After verification runs, each contract's manifest is updated with a `verification` object. The field values come from GitHub Environment variables set per deployment target:
+
+- `chainTarget` is the GitHub Environment name (`DEPLOY_ENV`), e.g. `polygon-mainnet`, uniquely identifying the deployment target.
+- `explorerName` and `explorerUrl` are populated from the optional `EXPLORER_NAME` and `EXPLORER_BASE_URL` environment variables. They are empty strings if those variables are not configured.
+
+**Example — `polygon-mainnet` environment:**
+
+```json
+{
+  "contractName": "TricksforBoosterNFT",
+  "address": "0x...",
+  "transactionHash": "0x...",
+  "blockNumber": 12345678,
+  "deployedAt": "2025-01-01T00:00:00Z",
+  "constructorArgs": [],
+  "verification": {
+    "explorerName": "PolygonScan",
+    "chainTarget": "polygon-mainnet",
+    "explorerUrl": "https://polygonscan.com/address/0x...",
+    "status": "verified",
+    "verifiedAt": "2025-01-01T00:01:00Z"
+  }
+}
+```
+
+**Example — `ethereum-mainnet` environment:**
 
 ```json
 {
@@ -176,7 +208,7 @@ After a successful verification run, each contract's manifest is updated with a 
   "constructorArgs": [],
   "verification": {
     "explorerName": "Etherscan",
-    "chainTarget": "mainnet",
+    "chainTarget": "ethereum-mainnet",
     "explorerUrl": "https://etherscan.io/address/0x...",
     "status": "verified",
     "verifiedAt": "2025-01-01T00:01:00Z"
