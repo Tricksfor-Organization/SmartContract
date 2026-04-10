@@ -120,7 +120,7 @@ var nftDeployment = new TricksforBoosterNFTDeployment
     BaseUri              = "https://api.tricksfor.com/metadata/",
     ContractMetadataUri  = "https://api.tricksfor.com/contract-metadata.json",
     RoyaltyReceiver      = royaltyWallet,
-    RoyaltyFeeBasisPoints = 500   // 5 % (500 basis points)
+    RoyaltyFeeBasisPoints = 500   // 5% (500 basis points)
 };
 
 var receipt = await web3.Eth

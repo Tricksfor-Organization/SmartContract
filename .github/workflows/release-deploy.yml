@@ -466,7 +466,7 @@ jobs:
         if: steps.check-publish.outputs.skip != 'true'
         run: |
           NUGET_VERSION="${GITHUB_REF_NAME#v}"
-          echo "Packing Tricksfor.SmartContracts version $NUGET_VERSION"
+          echo "Packing Tricksfor.Blockchain.Booster as Tricksfor.SmartContracts version $NUGET_VERSION"
           dotnet pack src/Tricksfor.Blockchain.Booster/Tricksfor.Blockchain.Booster.csproj \
             --configuration Release \
             --output ./nupkg \
