@@ -122,6 +122,17 @@ const config: HardhatUserConfig = {
           browserURL: "https://amoy.polygonscan.com",
         },
       },
+      // Optimism mainnet: the hardhat-verify built-in entry uses "optimisticEthereum"
+      // (not "optimism"). Adding an explicit customChains entry ensures the plugin
+      // resolves the explorer URL correctly when --network optimism is used.
+      {
+        network: "optimism",
+        chainId: 10,
+        urls: {
+          apiURL: "https://api-optimistic.etherscan.io/api",
+          browserURL: "https://optimistic.etherscan.io",
+        },
+      },
       {
         network: "optimism_sepolia",
         chainId: 11155420,
