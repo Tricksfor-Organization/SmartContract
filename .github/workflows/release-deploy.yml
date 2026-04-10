@@ -453,17 +453,17 @@ jobs:
         if: steps.check-publish.outputs.skip != 'true'
         run: |
           NUGET_VERSION="${GITHUB_REF_NAME#v}"
-          # Require MAJOR.MINOR.PATCH with an optional pre-release suffix.
-          # Pre-release identifiers must be non-empty alphanumeric/hyphen segments separated by dots.
-          # Purely numeric identifiers must not have a leading zero (strict semver 2.0.0 rule).
-          # Examples of valid versions: 1.2.3   1.2.3-rc.1   1.2.3-beta.2   1.2.3-0.3.7
-          # Examples of invalid versions: 1.2.3-01   1.2.3-   foo
-          NUMERIC_ID="(0|[1-9][0-9]*)"
-          ALPHANUM_ID="[a-zA-Z0-9-]*[a-zA-Z][a-zA-Z0-9-]*"
-          PRE_ID="(${NUMERIC_ID}|${ALPHANUM_ID})"
+          # Validate against a semver 2.0.0-compatible pattern:
+          #   MAJOR.MINOR.PATCH with an optional dot-separated pre-release suffix.
+          # Each pre-release identifier is either a purely numeric value (no leading zero)
+          # or an alphanumeric/hyphen identifier containing at least one letter.
+          # This matches NuGet's accepted pre-release label syntax.
+          # Valid examples:   1.2.3   1.2.3-rc.1   1.2.3-beta.2   1.2.3-0.3.7
+          # Invalid examples: 1.2.3-01   1.2.3-   foo   1.2
+          PRE_ID="(0|[1-9][0-9]*|[a-zA-Z0-9-]*[a-zA-Z][a-zA-Z0-9-]*)"
           SEMVER_RE="^[0-9]+\.[0-9]+\.[0-9]+(-${PRE_ID}(\.${PRE_ID})*)?$"
           if ! [[ "$NUGET_VERSION" =~ $SEMVER_RE ]]; then
-            echo "::error::Release tag '$GITHUB_REF_NAME' does not produce a valid NuGet version ('$NUGET_VERSION'). Expected: vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-prerelease (e.g. v1.2.3 or v1.2.3-rc.1)."
+            echo "::error::Release tag '$GITHUB_REF_NAME' does not produce a valid NuGet version ('$NUGET_VERSION'). Expected: MAJOR.MINOR.PATCH or MAJOR.MINOR.PATCH-prerelease (e.g. 1.2.3 or 1.2.3-rc.1)."
             exit 1
           fi
           echo "NuGet version validated: $NUGET_VERSION"
