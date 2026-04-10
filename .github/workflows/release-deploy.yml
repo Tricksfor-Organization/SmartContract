@@ -1,0 +1,425 @@
+# Release-triggered deployment workflow for Tricksfor smart contracts.
+#
+# Triggered by: GitHub Release published event.
+# Architecture reference: docs/release-deployment-architecture.md
+#
+# Job graph:
+#   test
+#    └── deploy-contracts   (environment-scoped; chain secrets: RPC_URL, DEPLOYER_PRIVATE_KEY)
+#          ├── verify-contracts  (environment-scoped; uses RPC_URL + EXPLORER_API_KEY)
+#          └── publish-nuget
+#
+# Environment resolution:
+#   The target GitHub Environment is read from the DEPLOY_ENV environment variable
+#   configured in the repository. The release tag is used to determine if the
+#   release is stable (v1.2.3) or pre-release (v1.2.3-rc.1).
+#   Mainnet environments are blocked for pre-release tags.
+#
+# Required GitHub Environments (one per deploy target):
+#   ethereum-sepolia, ethereum-mainnet,
+#   polygon-amoy, polygon-mainnet,
+#   optimism-sepolia, optimism-mainnet,
+#   bsc-testnet, bsc-mainnet,
+#   avalanche-fuji, avalanche-mainnet
+#
+# Each environment must be configured with:
+#   Secrets: RPC_URL, DEPLOYER_PRIVATE_KEY, EXPLORER_API_KEY (mainnet)
+#   Variables: CHAIN_ID, DEPLOY_ENV, NETWORK_KEY, VERIFY_ENABLED, NUGET_PUBLISH_ENABLED
+#
+# Repository-level secrets:
+#   NUGET_API_KEY  — used only by publish-nuget job
+#
+# See docs/github-environments-setup.md for full setup instructions.
+
+name: Release — Deploy Contracts
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write   # required for GitHub Packages NuGet publish (optional path)
+
+# ---------------------------------------------------------------------------
+# 1. Resolve environment and validate tag
+# ---------------------------------------------------------------------------
+jobs:
+  resolve-environment:
+    name: Resolve target environment
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_env: ${{ steps.resolve.outputs.deploy_env }}
+      is_prerelease: ${{ steps.resolve.outputs.is_prerelease }}
+      is_mainnet: ${{ steps.resolve.outputs.is_mainnet }}
+      tag: ${{ steps.resolve.outputs.tag }}
+    steps:
+      - name: Resolve deployment environment from release
+        id: resolve
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          IS_PRERELEASE="${{ github.event.release.prerelease }}"
+
+          # Stable tag: vMAJOR.MINOR.PATCH with no pre-release suffix
+          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            STABLE=true
+          else
+            STABLE=false
+          fi
+
+          # Pre-release flag from the event (true/false string)
+          if [[ "$IS_PRERELEASE" == "true" || "$STABLE" == "false" ]]; then
+            IS_PRE=true
+          else
+            IS_PRE=false
+          fi
+
+          # DEPLOY_ENV must be set as a repository-level variable (Settings → Variables).
+          # It maps directly to one of the named GitHub Environments.
+          # The resolve-environment job runs without an environment scope, so it reads
+          # only the repository-level vars.DEPLOY_ENV — not any environment-level override.
+          DEPLOY_ENV="${{ vars.DEPLOY_ENV }}"
+
+          if [[ -z "$DEPLOY_ENV" ]]; then
+            echo "::error::DEPLOY_ENV repository variable is not set. " \
+                 "Configure it under Settings → Secrets and variables → Actions → Variables."
+            exit 1
+          fi
+
+          # Derive whether this targets a mainnet environment
+          if [[ "$DEPLOY_ENV" == *"-mainnet" ]]; then
+            IS_MAINNET=true
+          else
+            IS_MAINNET=false
+          fi
+
+          # Block pre-release tags from deploying to mainnet
+          if [[ "$IS_PRE" == "true" && "$IS_MAINNET" == "true" ]]; then
+            echo "::error::Pre-release tag '$TAG' cannot deploy to mainnet environment '$DEPLOY_ENV'. " \
+                 "Only stable tags (vMAJOR.MINOR.PATCH) are allowed on mainnet."
+            exit 1
+          fi
+
+          echo "Tag:          $TAG"
+          echo "Stable:       $STABLE"
+          echo "Pre-release:  $IS_PRE"
+          echo "Deploy env:   $DEPLOY_ENV"
+          echo "Is mainnet:   $IS_MAINNET"
+
+          echo "deploy_env=$DEPLOY_ENV"   >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=$IS_PRE"    >> "$GITHUB_OUTPUT"
+          echo "is_mainnet=$IS_MAINNET"   >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG"                 >> "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------------------
+  # 2. Run tests (no secrets required)
+  # ---------------------------------------------------------------------------
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: resolve-environment
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Run Hardhat tests
+        run: ./node_modules/.bin/hardhat test
+
+      - name: Restore .NET dependencies
+        run: dotnet restore
+
+      - name: Run .NET integration tests
+        run: dotnet test tests/Tricksfor.Blockchain.Booster.IntegrationTests/ --configuration Release
+
+  # ---------------------------------------------------------------------------
+  # 3. Deploy contracts (environment-scoped; chain secrets injected here)
+  # ---------------------------------------------------------------------------
+  deploy-contracts:
+    name: Deploy contracts (${{ needs.resolve-environment.outputs.deploy_env }})
+    runs-on: ubuntu-latest
+    needs: [resolve-environment, test]
+    environment: ${{ needs.resolve-environment.outputs.deploy_env }}
+    env:
+      DEPLOY_ENV: ${{ needs.resolve-environment.outputs.deploy_env }}
+    outputs:
+      nft_address: ${{ steps.deploy.outputs.nft_address }}
+      staking_address: ${{ steps.deploy.outputs.staking_address }}
+      network_name: ${{ steps.deploy.outputs.network_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore .NET dependencies
+        run: dotnet restore
+
+      - name: Validate deployment params file exists
+        run: |
+          PARAMS_FILE="deployments/config/${{ env.DEPLOY_ENV }}/deployment-params.json"
+          if [[ ! -f "$PARAMS_FILE" ]]; then
+            echo "::error::Deployment params file not found: $PARAMS_FILE"
+            echo "::error::Create deployments/config/${{ env.DEPLOY_ENV }}/deployment-params.json before deploying."
+            exit 1
+          fi
+          echo "Deployment params file found: $PARAMS_FILE"
+
+      - name: Publish deployment runner
+        run: |
+          dotnet publish src/Tricksfor.Blockchain.Booster.Deploy \
+            --configuration Release \
+            --output ./runner-output
+
+      - name: Copy deployment params
+        run: |
+          cp "deployments/config/${{ env.DEPLOY_ENV }}/deployment-params.json" \
+             "runner-output/appsettings.${{ env.DEPLOY_ENV }}.json"
+
+      - name: Run deployment
+        id: deploy
+        env:
+          DEPLOY_ENV: ${{ env.DEPLOY_ENV }}
+          Deployment__RpcUrl: ${{ secrets.RPC_URL }}
+          Deployment__PrivateKey: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          Deployment__ChainId: ${{ vars.CHAIN_ID }}
+          Deployment__Network: ${{ env.DEPLOY_ENV }}
+        run: |
+          dotnet runner-output/Tricksfor.Blockchain.Booster.Deploy.dll
+
+          # Extract deployed addresses from manifests for downstream jobs
+          NFT_MANIFEST="deployments/${{ env.DEPLOY_ENV }}/TricksforBoosterNFT.json"
+          STAKING_MANIFEST="deployments/${{ env.DEPLOY_ENV }}/TricksforBoosterStaking.json"
+
+          if [[ -f "$NFT_MANIFEST" ]]; then
+            NFT_ADDRESS=$(jq -r '.address' "$NFT_MANIFEST")
+            echo "nft_address=$NFT_ADDRESS" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::NFT manifest not found at $NFT_MANIFEST"
+          fi
+
+          if [[ -f "$STAKING_MANIFEST" ]]; then
+            STAKING_ADDRESS=$(jq -r '.address' "$STAKING_MANIFEST")
+            echo "staking_address=$STAKING_ADDRESS" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Staking manifest not found at $STAKING_MANIFEST"
+          fi
+
+          echo "network_name=${{ env.DEPLOY_ENV }}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload deployment manifests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-manifests-${{ needs.resolve-environment.outputs.deploy_env }}-${{ needs.resolve-environment.outputs.tag }}
+          path: deployments/${{ env.DEPLOY_ENV }}/
+          retention-days: 90
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # 4. Verify contracts on block explorer (non-blocking)
+  # ---------------------------------------------------------------------------
+  verify-contracts:
+    name: Verify contracts (${{ needs.resolve-environment.outputs.deploy_env }})
+    runs-on: ubuntu-latest
+    needs: [resolve-environment, deploy-contracts]
+    if: needs.deploy-contracts.result == 'success'
+    environment: ${{ needs.resolve-environment.outputs.deploy_env }}
+    env:
+      DEPLOY_ENV: ${{ needs.resolve-environment.outputs.deploy_env }}
+    continue-on-error: true
+    steps:
+      - name: Check if verification is enabled
+        id: check-verify
+        run: |
+          VERIFY_ENABLED="${{ vars.VERIFY_ENABLED }}"
+          if [[ "$VERIFY_ENABLED" != "true" ]]; then
+            echo "Verification is disabled for environment ${{ env.DEPLOY_ENV }} (VERIFY_ENABLED=$VERIFY_ENABLED)."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.check-verify.outputs.skip != 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: steps.check-verify.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Node.js dependencies
+        if: steps.check-verify.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Download deployment manifests
+        if: steps.check-verify.outputs.skip != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-manifests-${{ needs.resolve-environment.outputs.deploy_env }}-${{ needs.resolve-environment.outputs.tag }}
+          path: deployments/${{ env.DEPLOY_ENV }}/
+
+      - name: Verify TricksforBoosterNFT
+        if: steps.check-verify.outputs.skip != 'true'
+        env:
+          RPC_URL: ${{ secrets.RPC_URL }}
+          ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_API_KEY }}
+          NETWORK_KEY: ${{ vars.NETWORK_KEY }}
+        run: |
+          NFT_MANIFEST="deployments/${{ env.DEPLOY_ENV }}/TricksforBoosterNFT.json"
+          NFT_ADDRESS=$(jq -r '.address' "$NFT_MANIFEST")
+
+          # Build a Bash array from the JSON array — avoids eval and is safe against
+          # values that contain spaces or shell-special characters.
+          readarray -t CONSTRUCTOR_ARGS < <(jq -r '.constructorArgs[]' "$NFT_MANIFEST")
+
+          echo "Verifying TricksforBoosterNFT at $NFT_ADDRESS on network $NETWORK_KEY"
+          ./node_modules/.bin/hardhat verify --no-compile --network "$NETWORK_KEY" \
+            "$NFT_ADDRESS" "${CONSTRUCTOR_ARGS[@]}" \
+            2>&1 | tee /tmp/verify-nft.txt
+
+      - name: Verify TricksforBoosterStaking
+        if: steps.check-verify.outputs.skip != 'true'
+        env:
+          RPC_URL: ${{ secrets.RPC_URL }}
+          ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_API_KEY }}
+          NETWORK_KEY: ${{ vars.NETWORK_KEY }}
+        run: |
+          STAKING_MANIFEST="deployments/${{ env.DEPLOY_ENV }}/TricksforBoosterStaking.json"
+          STAKING_ADDRESS=$(jq -r '.address' "$STAKING_MANIFEST")
+
+          # Build a Bash array from the JSON array — avoids eval and is safe against
+          # values that contain spaces or shell-special characters.
+          readarray -t CONSTRUCTOR_ARGS < <(jq -r '.constructorArgs[]' "$STAKING_MANIFEST")
+
+          echo "Verifying TricksforBoosterStaking at $STAKING_ADDRESS on network $NETWORK_KEY"
+          ./node_modules/.bin/hardhat verify --no-compile --network "$NETWORK_KEY" \
+            "$STAKING_ADDRESS" "${CONSTRUCTOR_ARGS[@]}" \
+            2>&1 | tee /tmp/verify-staking.txt
+
+      - name: Upload verification transcript
+        if: steps.check-verify.outputs.skip != 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-transcript-${{ needs.resolve-environment.outputs.deploy_env }}-${{ needs.resolve-environment.outputs.tag }}
+          path: /tmp/verify-*.txt
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # 5. Publish NuGet package (non-blocking)
+  # ---------------------------------------------------------------------------
+  publish-nuget:
+    name: Publish NuGet package
+    runs-on: ubuntu-latest
+    needs: [resolve-environment, deploy-contracts]
+    if: needs.deploy-contracts.result == 'success'
+    continue-on-error: true
+    steps:
+      - name: Check publish conditions
+        id: check-publish
+        run: |
+          NUGET_PUBLISH_ENABLED="${{ vars.NUGET_PUBLISH_ENABLED }}"
+          IS_DRAFT="${{ github.event.release.draft }}"
+          TAG="${{ needs.resolve-environment.outputs.tag }}"
+          IS_PRERELEASE="${{ needs.resolve-environment.outputs.is_prerelease }}"
+
+          # Must be explicitly enabled
+          if [[ "$NUGET_PUBLISH_ENABLED" != "true" ]]; then
+            echo "NuGet publish is disabled (NUGET_PUBLISH_ENABLED=$NUGET_PUBLISH_ENABLED). Skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Draft releases are not published
+          if [[ "$IS_DRAFT" == "true" ]]; then
+            echo "Draft release detected. Skipping NuGet publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Pre-release packages are published to GitHub Packages only, not nuget.org
+          if [[ "$IS_PRERELEASE" == "true" ]]; then
+            echo "pre_release_only=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "pre_release_only=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        if: steps.check-publish.outputs.skip != 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        if: steps.check-publish.outputs.skip != 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore .NET dependencies
+        if: steps.check-publish.outputs.skip != 'true'
+        run: dotnet restore
+
+      - name: Pack NuGet package
+        if: steps.check-publish.outputs.skip != 'true'
+        run: |
+          NUGET_VERSION="${GITHUB_REF_NAME#v}"
+          echo "Packing Tricksfor.Blockchain.Nethereum version $NUGET_VERSION"
+          dotnet pack src/Tricksfor.Blockchain.Nethereum/Tricksfor.Blockchain.Nethereum.csproj \
+            --configuration Release \
+            --output ./nupkg \
+            /p:PackageVersion="$NUGET_VERSION"
+
+      - name: Publish to nuget.org (stable releases only)
+        if: >-
+          steps.check-publish.outputs.skip != 'true' &&
+          steps.check-publish.outputs.pre_release_only != 'true'
+        run: |
+          dotnet nuget push ./nupkg/*.nupkg \
+            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json
+
+      - name: Publish to GitHub Packages (pre-release)
+        if: >-
+          steps.check-publish.outputs.skip != 'true' &&
+          steps.check-publish.outputs.pre_release_only == 'true'
+        run: |
+          dotnet nuget add source \
+            --username "${{ github.repository_owner }}" \
+            --password "${{ secrets.GITHUB_TOKEN }}" \
+            --store-password-in-clear-text \
+            --name github \
+            "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+
+          dotnet nuget push ./nupkg/*.nupkg \
+            --source github
+
+      - name: Upload NuGet package artifact
+        if: steps.check-publish.outputs.skip != 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package-${{ needs.resolve-environment.outputs.tag }}
+          path: ./nupkg/*.nupkg
+          retention-days: 90
+          if-no-files-found: warn
