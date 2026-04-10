@@ -39,12 +39,12 @@ GitHub Release published
 
 | Tag pattern | Channel | Allowed deploy targets |
 |---|---|---|
-| `v*.*.*` (e.g. `v1.2.3`) | Stable | Any environment, including mainnet |
+| `^v\d+\.\d+\.\d+$` (e.g. `v1.2.3`) | Stable | Any environment, including mainnet |
 | `v*.*.*-rc.*` (e.g. `v1.2.3-rc.1`) | Release candidate | Testnet environments only |
 | `v*.*.*-beta.*` | Beta | Testnet environments only |
 | `v*.*.*-alpha.*` | Alpha | Testnet environments only |
 
-Mainnet environments (`ethereum-mainnet`, `polygon-mainnet`, `optimism-mainnet`, `bsc-mainnet`, `avalanche-mainnet`) must only be targeted by stable releases (tags matching `v*.*.*` without a pre-release suffix). Workflows must enforce this by checking the GitHub release `prerelease` property and failing fast if a pre-release tag targets a mainnet environment.
+Mainnet environments (`ethereum-mainnet`, `polygon-mainnet`, `optimism-mainnet`, `bsc-mainnet`, `avalanche-mainnet`) must only be targeted by stable releases whose tags match `^v\d+\.\d+\.\d+$`. Workflows must enforce this by requiring `github.event.release.prerelease == false` **and** validating that the tag matches the stable regex, failing fast if either condition is not met.
 
 ### Non-secret workflow selectors
 
@@ -67,11 +67,10 @@ The following inputs are acceptable as release-level selectors (none of these ar
 The version comes exclusively from the Git tag attached to the GitHub Release. The workflow extracts the version with:
 
 ```yaml
-version: ${{ github.ref_name }}            # e.g. v1.2.3
-nuget_version: ${{ github.ref_name }}      # used directly as NuGet package version
+version: ${{ github.ref_name }}            # e.g. v1.2.3 (full tag, used for Git references)
 ```
 
-The `v` prefix is retained in the Git tag but stripped when needed for NuGet SemVer:
+The `v` prefix must be stripped for NuGet SemVer. Always derive `NUGET_VERSION` via the shell substitution below — do **not** pass the raw `${{ github.ref_name }}` directly to `dotnet pack`:
 
 ```bash
 NUGET_VERSION="${GITHUB_REF_NAME#v}"       # strips leading 'v' → 1.2.3
@@ -83,13 +82,16 @@ Pre-release tags (e.g. `v1.2.3-rc.1`) produce NuGet package versions with the pr
 
 ### Deployment manifest versioning
 
-Each deployment manifest file (`deployments/{network}/{ContractName}.json`) includes:
-- `releaseTag`: the full Git tag (e.g. `v1.2.3`)
+Each deployment manifest file (`deployments/{network}/{ContractName}.json`) contains the following fields, matching the current `ContractDeploymentRecord` schema:
+
+- `contractName`: the Solidity contract name (e.g. `"TricksforBoosterNFT"`)
+- `address`: the deployed contract address (checksummed hex)
+- `transactionHash`: deployment transaction hash
+- `blockNumber`: block number at deployment
 - `deployedAt`: ISO-8601 UTC timestamp
-- `contractAddress`
-- `transactionHash`
-- `blockNumber`
-- `constructorArgs`
+- `constructorArgs`: constructor arguments in declaration order
+
+> **Note:** `releaseTag` is not part of the current manifest schema. Adding it would require a code change to `ContractDeploymentRecord`, `ManifestWriter`, and related tests. If this field is adopted in the future it must be implemented as an explicit schema change — update the record, the writer, the `deployments/README.md`, and all tests together as a single atomic change.
 
 ---
 
@@ -176,7 +178,11 @@ Every workflow run must emit a non-secret summary log that includes:
 - deployer address (derived from private key but not the key itself)
 - contract addresses deployed
 
-Secrets must never appear in log output. Workflows must not print secret values even in masked form.
+Secrets must never appear in log output. Workflows and deployment runners must not print secret values even in masked form.
+
+This prohibition explicitly includes `RPC_URL`: the raw RPC endpoint must never be written to startup logs, step logs, exception messages, or summaries. If endpoint diagnostics are needed, log only non-secret network metadata such as the configured environment name or chain ID, not the URL itself.
+
+> **Implementation note:** `Program.cs` currently logs `RPC URL: {config.RpcUrl}` at startup. Because `RPC_URL` is classified as a secret in this architecture, that log line must be removed before this pipeline is deployed. Log only completely non-secret metadata at startup — the configured environment name and chain ID are sufficient for diagnostics.
 
 ---
 
@@ -211,7 +217,10 @@ The deployment runner (`src/Tricksfor.Blockchain.Booster.Deploy`) reads all chai
 - `Deployment__RpcUrl` → from `RPC_URL` environment secret
 - `Deployment__ChainId` → from `CHAIN_ID` environment variable
 - `Deployment__PrivateKey` → from `DEPLOYER_PRIVATE_KEY` environment secret
-- `DEPLOY_ENV` → set to the environment name (e.g. `polygon-mainnet`)
+- `DEPLOY_ENV` → set to the **full `{chain}-{stage}` environment name** (e.g. `polygon-mainnet`)
+- `Deployment__Network` → can be set separately if the manifest folder name should differ from `DEPLOY_ENV`; defaults to the value of `DEPLOY_ENV`
+
+> **Manifest folder naming:** In a multi-chain pipeline, using the full `{chain}-{stage}` name as `Deployment__Network` is the recommended approach. This avoids the ambiguity of short names (e.g., plain `mainnet` is not unique across Ethereum, Polygon, and BNB Smart Chain). The existing `deployments/README.md` shows short names (`sepolia`, `mainnet`) from the single-chain era; the multi-chain convention extends this to `ethereum-mainnet`, `polygon-amoy`, etc. When running the pipeline, `Deployment__Network` should be set explicitly to the `{chain}-{stage}` key so manifests are written to unambiguous paths (e.g. `deployments/polygon-mainnet/`).
 
 ### Adding a new chain
 
@@ -287,23 +296,34 @@ deployments/config/
 
 ### Workflow integration
 
-The workflow copies (not symlinks — symlinks are unreliable across CI runners) the parameter file to the runner's working directory as `appsettings.{DEPLOY_ENV}.json` before running the deployment:
+The deployment runner loads `appsettings.{DEPLOY_ENV}.json` from `AppContext.BaseDirectory` (the published binary output directory), not from the repository source tree. The `.csproj` currently only copies `appsettings.json` and `appsettings.localhost.json` to the output directory automatically.
+
+To make the per-environment params file available at runtime, the workflow must:
+1. Publish the runner to an explicit output directory.
+2. Copy the params file into that same output directory under the expected filename.
+3. Run the published binary from that directory.
 
 ```yaml
+- name: Publish deployment runner
+  run: dotnet publish src/Tricksfor.Blockchain.Booster.Deploy \
+          --configuration Release \
+          --output ./runner-output
+
 - name: Copy deployment params
   run: cp deployments/config/${{ env.DEPLOY_ENV }}/deployment-params.json \
-          src/Tricksfor.Blockchain.Booster.Deploy/appsettings.${{ env.DEPLOY_ENV }}.json
+          runner-output/appsettings.${{ env.DEPLOY_ENV }}.json
+
+- name: Run deployment
+  run: dotnet runner-output/Tricksfor.Blockchain.Booster.Deploy.dll
+  env:
+    DEPLOY_ENV: ${{ env.DEPLOY_ENV }}
+    Deployment__RpcUrl: ${{ secrets.RPC_URL }}
+    Deployment__PrivateKey: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+    Deployment__ChainId: ${{ vars.CHAIN_ID }}
+    Deployment__Network: ${{ env.DEPLOY_ENV }}
 ```
 
-Secrets are injected via environment variables and take highest priority, overriding any appsettings value:
-
-```yaml
-env:
-  DEPLOY_ENV: ${{ vars.ENVIRONMENT_NAME }}
-  Deployment__RpcUrl: ${{ secrets.RPC_URL }}
-  Deployment__PrivateKey: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
-  Deployment__ChainId: ${{ vars.CHAIN_ID }}
-```
+Secrets are injected via environment variables and take highest priority over any appsettings value. The `deployment-params.json` only needs to supply non-secret constructor arguments (`Nft.Name`, `Nft.Symbol`, `Nft.BaseUri`, etc.) that are not overridden by env vars.
 
 ---
 
@@ -331,10 +351,12 @@ deploy-contracts job completes
         ▼
 verify-contracts job starts
         ├── npm ci (restore node_modules)
+        ├── Use committed artifacts/ exactly as produced for deployment
+        ├── Do not run: npx hardhat compile
         ├── Read contract addresses from deployment manifests
         ├── Read constructor args from deployment manifests
-        ├── Run: npx hardhat verify --network {NETWORK_KEY} {NFT_ADDRESS} {NFT_ARGS...}
-        └── Run: npx hardhat verify --network {NETWORK_KEY} {STAKING_ADDRESS} {STAKING_ARGS...}
+        ├── Run: npx hardhat verify --no-compile --network {NETWORK_KEY} {NFT_ADDRESS} {NFT_ARGS...}
+        └── Run: npx hardhat verify --no-compile --network {NETWORK_KEY} {STAKING_ADDRESS} {STAKING_ARGS...}
 ```
 
 ### Explorer endpoints per chain
@@ -352,7 +374,9 @@ verify-contracts job starts
 | `avalanche-fuji` | `avalanche_fuji` | `https://api-testnet.snowtrace.io/api` |
 | `avalanche-mainnet` | `avalanche` | `https://api.snowtrace.io/api` |
 
-`EXPLORER_API_KEY` is provided from the GitHub Environment secret and passed to Hardhat verify as `ETHERSCAN_API_KEY` (the Hardhat Verify plugin reads this environment variable by default for all Etherscan-compatible explorers).
+`EXPLORER_API_KEY` is intended to be provided from the GitHub Environment secret and exposed to Hardhat verification via `ETHERSCAN_API_KEY` (which the Hardhat Verify plugin reads by default for all Etherscan-compatible explorers).
+
+> **Implementation note:** the network names and explorer endpoints above are the target mapping for the release pipeline, but they are **not yet configured** in `hardhat.config.ts`. A required follow-up change is to add the corresponding `networks` entries and the `etherscan` / `verify` configuration block to `hardhat.config.ts` so that `npx hardhat verify --no-compile --network {NETWORK_KEY}` actually works for each of these chains. Until that change is in place, verification will fail for any network other than `localhost`.
 
 ### What must be preserved for verification
 
@@ -378,7 +402,7 @@ verify-contracts job starts
 
 | Included | Description |
 |---|---|
-| Nethereum event DTOs | C# classes matching all `Staked`, `Unstaked`, `EmergencyWithdrawn` event signatures |
+| Nethereum event DTOs | C# classes matching all `TokenStaked`, `TokenUnstaked`, `EmergencyWithdrawn` event signatures |
 | Nethereum function message types | C# classes for all public contract functions |
 | Contract definition classes | ABI-encoded contract definitions used by `Nethereum.Contracts` |
 | ABI artifacts | The compiled ABI JSON embedded as resources (optional, if required by consumers) |
@@ -435,7 +459,7 @@ The `publish-nuget` job additionally checks:
 
 1. The `NUGET_PUBLISH_ENABLED` variable is `true`.
 2. The triggering release is not a GitHub draft release.
-3. The triggering release tag matches the stable pattern (`v*.*.*` without pre-release suffix) when publishing to nuget.org.
+3. The triggering release tag matches the stable pattern (`^v\d+\.\d+\.\d+$`) when publishing to nuget.org.
    - Pre-release packages may be published to GitHub Packages but not to nuget.org unless explicitly enabled.
 
 ---
