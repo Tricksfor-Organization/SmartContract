@@ -281,11 +281,14 @@ jobs:
 
       - name: Verify TricksforBoosterNFT
         if: steps.check-verify.outputs.skip != 'true'
+        id: verify-nft
+        continue-on-error: true
         env:
           RPC_URL: ${{ secrets.RPC_URL }}
           ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_API_KEY }}
           NETWORK_KEY: ${{ vars.NETWORK_KEY }}
         run: |
+          set -o pipefail
           NFT_MANIFEST="deployments/${{ env.DEPLOY_ENV }}/TricksforBoosterNFT.json"
           NFT_ADDRESS=$(jq -r '.address' "$NFT_MANIFEST")
 
@@ -300,11 +303,14 @@ jobs:
 
       - name: Verify TricksforBoosterStaking
         if: steps.check-verify.outputs.skip != 'true'
+        id: verify-staking
+        continue-on-error: true
         env:
           RPC_URL: ${{ secrets.RPC_URL }}
           ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_API_KEY }}
           NETWORK_KEY: ${{ vars.NETWORK_KEY }}
         run: |
+          set -o pipefail
           STAKING_MANIFEST="deployments/${{ env.DEPLOY_ENV }}/TricksforBoosterStaking.json"
           STAKING_ADDRESS=$(jq -r '.address' "$STAKING_MANIFEST")
 
@@ -317,14 +323,89 @@ jobs:
             "$STAKING_ADDRESS" "${CONSTRUCTOR_ARGS[@]}" \
             2>&1 | tee /tmp/verify-staking.txt
 
+      - name: Write verification status to manifests
+        if: always() && steps.check-verify.outputs.skip != 'true'
+        env:
+          NETWORK_KEY: ${{ vars.NETWORK_KEY }}
+          DEPLOY_ENV: ${{ env.DEPLOY_ENV }}
+          NFT_OUTCOME: ${{ steps.verify-nft.outcome }}
+          STAKING_OUTCOME: ${{ steps.verify-staking.outcome }}
+          # Optional per-environment variables: set these in the GitHub Environment
+          # to provide the explorer display name and browser base URL without editing
+          # this workflow. If not set, the fields are left empty in the manifest.
+          EXPLORER_NAME: ${{ vars.EXPLORER_NAME }}
+          EXPLORER_BASE_URL: ${{ vars.EXPLORER_BASE_URL }}
+        run: |
+          update_manifest() {
+            local MANIFEST="$1"
+            local OUTCOME="$2"
+
+            if [[ ! -f "$MANIFEST" ]]; then
+              echo "::warning::Manifest not found for verification update: $MANIFEST"
+              return
+            fi
+
+            local CONTRACT_ADDRESS
+            CONTRACT_ADDRESS=$(jq -r '.address' "$MANIFEST")
+            local EXPLORER_URL=""
+            if [[ -n "$EXPLORER_BASE_URL" && -n "$CONTRACT_ADDRESS" ]]; then
+              EXPLORER_URL="${EXPLORER_BASE_URL}/${CONTRACT_ADDRESS}"
+            fi
+
+            # Map GitHub step outcome to a verification status string.
+            local STATUS
+            case "$OUTCOME" in
+              success)  STATUS="verified" ;;
+              failure)  STATUS="failed"   ;;
+              *)        STATUS="unknown"  ;;
+            esac
+
+            # Merge the verification section into the existing manifest in-place.
+            # chainTarget uses DEPLOY_ENV (e.g. "polygon-mainnet") to uniquely
+            # identify the deployment target rather than the Hardhat network name.
+            local TIMESTAMP
+            TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            jq --arg explorerName  "$EXPLORER_NAME"  \
+               --arg chainTarget   "$DEPLOY_ENV"     \
+               --arg explorerUrl   "$EXPLORER_URL"   \
+               --arg status        "$STATUS"          \
+               --arg verifiedAt    "$TIMESTAMP"       \
+               '. + { verification: {
+                 explorerName:  $explorerName,
+                 chainTarget:   $chainTarget,
+                 explorerUrl:   $explorerUrl,
+                 status:        $status,
+                 verifiedAt:    $verifiedAt
+               } }' "$MANIFEST" > "${MANIFEST}.tmp" && mv "${MANIFEST}.tmp" "$MANIFEST"
+
+            echo "Updated manifest $MANIFEST with verification status: $STATUS"
+          }
+
+          update_manifest \
+            "deployments/$DEPLOY_ENV/TricksforBoosterNFT.json" \
+            "$NFT_OUTCOME"
+
+          update_manifest \
+            "deployments/$DEPLOY_ENV/TricksforBoosterStaking.json" \
+            "$STAKING_OUTCOME"
+
       - name: Upload verification transcript
-        if: steps.check-verify.outputs.skip != 'true' && always()
+        if: always() && steps.check-verify.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: verify-transcript-${{ needs.resolve-environment.outputs.deploy_env }}-${{ needs.resolve-environment.outputs.tag }}
           path: /tmp/verify-*.txt
           retention-days: 30
           if-no-files-found: ignore
+
+      - name: Upload verification manifests
+        if: always() && steps.check-verify.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-manifests-${{ needs.resolve-environment.outputs.deploy_env }}-${{ needs.resolve-environment.outputs.tag }}
+          path: deployments/${{ env.DEPLOY_ENV }}/
+          retention-days: 90
+          if-no-files-found: warn
 
   # ---------------------------------------------------------------------------
   # 5. Publish NuGet package (non-blocking)

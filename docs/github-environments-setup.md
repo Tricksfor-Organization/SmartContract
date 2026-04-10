@@ -66,21 +66,25 @@ Set the following **Environment Variables** for each environment:
 | `NETWORK_KEY`         | Yes      | Hardhat network name for the `--network` flag during verification | `sepolia`          |
 | `VERIFY_ENABLED`      | No       | Set to `true` to enable block-explorer verification           | `true`                 |
 | `NUGET_PUBLISH_ENABLED` | No     | Set to `true` to publish the NuGet package on deploy          | `false`                |
+| `EXPLORER_NAME`       | No       | Human-readable block explorer name, written to the deployment manifest's `verification.explorerName` field | `Etherscan` |
+| `EXPLORER_BASE_URL`   | No       | Block explorer contract browser URL prefix (without trailing slash), used to build `verification.explorerUrl` | `https://etherscan.io/address` |
+
+`EXPLORER_NAME` and `EXPLORER_BASE_URL` are optional convenience fields. If not set, `verification.explorerName` and `verification.explorerUrl` in the manifest will be empty strings. They are useful for operators who want rich manifest output and have no impact on whether verification succeeds or fails.
 
 ### NETWORK_KEY values per environment
 
-| Environment name   | `NETWORK_KEY` value |
-|--------------------|---------------------|
-| `ethereum-sepolia`  | `sepolia`           |
-| `ethereum-mainnet`  | `mainnet`           |
-| `polygon-amoy`      | `polygon_amoy`      |
-| `polygon-mainnet`   | `polygon`           |
-| `optimism-sepolia`  | `optimism_sepolia`  |
-| `optimism-mainnet`  | `optimism`          |
-| `bsc-testnet`       | `bsc_testnet`       |
-| `bsc-mainnet`       | `bsc`               |
-| `avalanche-fuji`    | `avalanche_fuji`    |
-| `avalanche-mainnet` | `avalanche`         |
+| Environment name   | `NETWORK_KEY` value | `EXPLORER_NAME`              | `EXPLORER_BASE_URL`                         |
+|--------------------|---------------------|------------------------------|---------------------------------------------|
+| `ethereum-sepolia`  | `sepolia`           | `Etherscan (Sepolia)`        | `https://sepolia.etherscan.io/address`      |
+| `ethereum-mainnet`  | `mainnet`           | `Etherscan`                  | `https://etherscan.io/address`              |
+| `polygon-amoy`      | `polygon_amoy`      | `PolygonScan (Amoy)`         | `https://amoy.polygonscan.com/address`      |
+| `polygon-mainnet`   | `polygon`           | `PolygonScan`                | `https://polygonscan.com/address`           |
+| `optimism-sepolia`  | `optimism_sepolia`  | `Optimism Explorer (Sepolia)`| `https://sepolia-optimism.etherscan.io/address` |
+| `optimism-mainnet`  | `optimism`          | `Optimism Explorer`          | `https://optimistic.etherscan.io/address`   |
+| `bsc-testnet`       | `bsc_testnet`       | `BscScan (Testnet)`          | `https://testnet.bscscan.com/address`       |
+| `bsc-mainnet`       | `bsc`               | `BscScan`                    | `https://bscscan.com/address`               |
+| `avalanche-fuji`    | `avalanche_fuji`    | `Snowtrace (Fuji)`           | `https://testnet.snowtrace.io/address`      |
+| `avalanche-mainnet` | `avalanche`         | `Snowtrace`                  | `https://snowtrace.io/address`              |
 
 ---
 
