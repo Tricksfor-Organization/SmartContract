@@ -17,6 +17,7 @@ This index provides a single entry point to all implementation guidance, referen
 
 | Document | Description |
 |---|---|
+| [Release Deployment Architecture](release-deployment-architecture.md) | Source-of-truth architecture for the release-driven multi-network deployment pipeline: trigger model, environment strategy, secrets model, network strategy (Ethereum, Polygon, Optimism, BNB Smart Chain, Avalanche), verification, NuGet publishing, versioning, and failure handling |
 | [Deployment Instructions](deployment.md) *(coming soon)* | Step-by-step instructions for deploying both contracts to a target network, including constructor arguments, verification, and post-deployment checks |
 
 ---
