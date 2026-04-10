@@ -394,9 +394,13 @@ verify-contracts job starts
 
 | Property | Value |
 |---|---|
-| Package ID | `Tricksfor.Blockchain.Nethereum` |
+| Package ID | `Tricksfor.SmartContracts` |
+| Project | `src/Tricksfor.Blockchain.Booster/Tricksfor.Blockchain.Booster.csproj` |
 | Target framework | `net8.0` |
 | Package source | nuget.org (primary) and/or GitHub Packages |
+
+See [docs/nuget-packaging.md](./nuget-packaging.md) for the full versioning strategy,
+pre-release suffix rules, and breaking-change guidance.
 
 ### What is included in the package
 
@@ -404,8 +408,9 @@ verify-contracts job starts
 |---|---|
 | Nethereum event DTOs | C# classes matching all `TokenStaked`, `TokenUnstaked`, `EmergencyWithdrawn` event signatures |
 | Nethereum function message types | C# classes for all public contract functions |
-| Contract definition classes | ABI-encoded contract definitions used by `Nethereum.Contracts` |
-| ABI artifacts | The compiled ABI JSON embedded as resources (optional, if required by consumers) |
+| Deployment messages | `TricksforBoosterNFTDeployment`, `TricksforBoosterStakingDeployment` |
+| Contract service wrappers | `BoosterStakingService`, `BoosterNFTService` |
+| Embedded ABI + bytecode | `TricksforBoosterNFTAbi`, `TricksforBoosterStakingAbi` |
 
 The package does **not** include:
 - Deployment runner (`Tricksfor.Blockchain.Booster.Deploy`)
@@ -425,7 +430,7 @@ The NuGet package version is derived from the Git tag of the triggering release,
 The workflow injects the version at pack time:
 
 ```bash
-dotnet pack src/Tricksfor.Blockchain.Nethereum/Tricksfor.Blockchain.Nethereum.csproj \
+dotnet pack src/Tricksfor.Blockchain.Booster/Tricksfor.Blockchain.Booster.csproj \
   --configuration Release \
   --output ./nupkg \
   /p:PackageVersion="${GITHUB_REF_NAME#v}"
