@@ -5,8 +5,8 @@
 #
 # Job graph:
 #   test
-#    └── deploy-contracts   (environment-scoped; secrets injected here only)
-#          ├── verify-contracts
+#    └── deploy-contracts   (environment-scoped; chain secrets: RPC_URL, DEPLOYER_PRIVATE_KEY)
+#          ├── verify-contracts  (environment-scoped; uses RPC_URL + EXPLORER_API_KEY)
 #          └── publish-nuget
 #
 # Environment resolution:
@@ -24,7 +24,7 @@
 #
 # Each environment must be configured with:
 #   Secrets: RPC_URL, DEPLOYER_PRIVATE_KEY, EXPLORER_API_KEY (mainnet)
-#   Variables: CHAIN_ID, DEPLOY_ENV, VERIFY_ENABLED, NUGET_PUBLISH_ENABLED
+#   Variables: CHAIN_ID, DEPLOY_ENV, NETWORK_KEY, VERIFY_ENABLED, NUGET_PUBLISH_ENABLED
 #
 # Repository-level secrets:
 #   NUGET_API_KEY  — used only by publish-nuget job
@@ -75,16 +75,15 @@ jobs:
             IS_PRE=false
           fi
 
-          # DEPLOY_ENV must be set at the repository or environment level.
+          # DEPLOY_ENV must be set as a repository-level variable (Settings → Variables).
           # It maps directly to one of the named GitHub Environments.
-          # We read it from the repo-level variable DEPLOY_ENV (set via
-          # Settings → Variables) or fall back to the release tag body
-          # convention described in docs/release-deployment-architecture.md.
+          # The resolve-environment job runs without an environment scope, so it reads
+          # only the repository-level vars.DEPLOY_ENV — not any environment-level override.
           DEPLOY_ENV="${{ vars.DEPLOY_ENV }}"
 
           if [[ -z "$DEPLOY_ENV" ]]; then
             echo "::error::DEPLOY_ENV repository variable is not set. " \
-                 "Configure it in Settings → Variables or in the GitHub Environment."
+                 "Configure it under Settings → Secrets and variables → Actions → Variables."
             exit 1
           fi
 
@@ -148,7 +147,7 @@ jobs:
         run: dotnet test tests/Tricksfor.Blockchain.Booster.IntegrationTests/ --configuration Release
 
   # ---------------------------------------------------------------------------
-  # 3. Deploy contracts (environment-scoped — secrets injected here only)
+  # 3. Deploy contracts (environment-scoped; chain secrets injected here)
   # ---------------------------------------------------------------------------
   deploy-contracts:
     name: Deploy contracts (${{ needs.resolve-environment.outputs.deploy_env }})
@@ -283,29 +282,39 @@ jobs:
       - name: Verify TricksforBoosterNFT
         if: steps.check-verify.outputs.skip != 'true'
         env:
+          RPC_URL: ${{ secrets.RPC_URL }}
           ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_API_KEY }}
           NETWORK_KEY: ${{ vars.NETWORK_KEY }}
         run: |
           NFT_MANIFEST="deployments/${{ env.DEPLOY_ENV }}/TricksforBoosterNFT.json"
           NFT_ADDRESS=$(jq -r '.address' "$NFT_MANIFEST")
-          CONSTRUCTOR_ARGS=$(jq -r '.constructorArgs | @sh' "$NFT_MANIFEST")
+
+          # Build a Bash array from the JSON array — avoids eval and is safe against
+          # values that contain spaces or shell-special characters.
+          readarray -t CONSTRUCTOR_ARGS < <(jq -r '.constructorArgs[]' "$NFT_MANIFEST")
 
           echo "Verifying TricksforBoosterNFT at $NFT_ADDRESS on network $NETWORK_KEY"
-          eval "./node_modules/.bin/hardhat verify --no-compile --network $NETWORK_KEY $NFT_ADDRESS $CONSTRUCTOR_ARGS" \
+          ./node_modules/.bin/hardhat verify --no-compile --network "$NETWORK_KEY" \
+            "$NFT_ADDRESS" "${CONSTRUCTOR_ARGS[@]}" \
             2>&1 | tee /tmp/verify-nft.txt
 
       - name: Verify TricksforBoosterStaking
         if: steps.check-verify.outputs.skip != 'true'
         env:
+          RPC_URL: ${{ secrets.RPC_URL }}
           ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_API_KEY }}
           NETWORK_KEY: ${{ vars.NETWORK_KEY }}
         run: |
           STAKING_MANIFEST="deployments/${{ env.DEPLOY_ENV }}/TricksforBoosterStaking.json"
           STAKING_ADDRESS=$(jq -r '.address' "$STAKING_MANIFEST")
-          CONSTRUCTOR_ARGS=$(jq -r '.constructorArgs | @sh' "$STAKING_MANIFEST")
+
+          # Build a Bash array from the JSON array — avoids eval and is safe against
+          # values that contain spaces or shell-special characters.
+          readarray -t CONSTRUCTOR_ARGS < <(jq -r '.constructorArgs[]' "$STAKING_MANIFEST")
 
           echo "Verifying TricksforBoosterStaking at $STAKING_ADDRESS on network $NETWORK_KEY"
-          eval "./node_modules/.bin/hardhat verify --no-compile --network $NETWORK_KEY $STAKING_ADDRESS $CONSTRUCTOR_ARGS" \
+          ./node_modules/.bin/hardhat verify --no-compile --network "$NETWORK_KEY" \
+            "$STAKING_ADDRESS" "${CONSTRUCTOR_ARGS[@]}" \
             2>&1 | tee /tmp/verify-staking.txt
 
       - name: Upload verification transcript

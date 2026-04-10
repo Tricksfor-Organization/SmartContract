@@ -24,8 +24,11 @@ subtask("compile:solidity:solc:get-build").setAction(
 // RPC URLs for each network are injected at runtime via environment variables
 // so that secrets are never committed. The verify workflow uses --no-compile
 // and passes the network key from the GitHub Environment variable NETWORK_KEY.
+// Returns an empty string when the variable is not set so that hardhat fails
+// immediately with a connection error rather than silently falling back to
+// localhost and misconfiguring non-local deployments or verifications.
 const rpcUrl = (envVar: string): string =>
-  process.env[envVar] ?? "http://127.0.0.1:8545";
+  process.env[envVar]?.trim() ?? "";
 
 const config: HardhatUserConfig = {
   solidity: {

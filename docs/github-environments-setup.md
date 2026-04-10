@@ -100,9 +100,7 @@ Set the following **Repository Variable** under **Settings → Secrets and varia
 
 | Variable name | Required | Description                                                                    |
 |---------------|----------|--------------------------------------------------------------------------------|
-| `DEPLOY_ENV`  | Yes      | The default target GitHub Environment for deployments (e.g. `ethereum-sepolia`) |
-
-> **Note:** `DEPLOY_ENV` can be overridden at the environment level. The repository-level value acts as a default for the `resolve-environment` job.
+| `DEPLOY_ENV`  | Yes      | The target GitHub Environment for deployments (e.g. `ethereum-sepolia`). Must be set as a repository-level variable — the `resolve-environment` job runs without an environment scope and can only read repository-level variables. |
 
 ---
 
