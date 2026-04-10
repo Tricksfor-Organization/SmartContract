@@ -1,0 +1,15 @@
+{
+  "Deployment": {
+    "Network": "polygon-mainnet",
+    "ChainId": 137,
+    "DeploymentsOutputPath": "deployments",
+    "Nft": {
+      "Name": "TricksforBooster",
+      "Symbol": "TFB",
+      "BaseUri": "https://meta.tricksfor.gg/booster/",
+      "ContractMetadataUri": "https://meta.tricksfor.gg/booster/contract.json",
+      "RoyaltyReceiver": "",
+      "RoyaltyFeeBasisPoints": 500
+    }
+  }
+}

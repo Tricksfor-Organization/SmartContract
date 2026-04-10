@@ -42,8 +42,8 @@ if (string.IsNullOrWhiteSpace(config.Network))
     config.Network = env;
 
 Console.WriteLine($"      Network:      {config.Network}");
-Console.WriteLine($"      RPC URL:      {config.RpcUrl}");
 Console.WriteLine($"      Chain ID:     {config.ChainId}");
+// RPC_URL is classified as a secret and must never be written to logs.
 Console.WriteLine();
 
 try

@@ -1,0 +1,15 @@
+{
+  "Deployment": {
+    "Network": "optimism-mainnet",
+    "ChainId": 10,
+    "DeploymentsOutputPath": "deployments",
+    "Nft": {
+      "Name": "TricksforBooster",
+      "Symbol": "TFB",
+      "BaseUri": "https://meta.tricksfor.gg/booster/",
+      "ContractMetadataUri": "https://meta.tricksfor.gg/booster/contract.json",
+      "RoyaltyReceiver": "",
+      "RoyaltyFeeBasisPoints": 500
+    }
+  }
+}
