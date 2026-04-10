@@ -6,11 +6,40 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <RootNamespace>Tricksfor.Blockchain.Booster</RootNamespace>
+
+    <!-- NuGet package identity -->
+    <PackageId>Tricksfor.SmartContracts</PackageId>
+    <Title>Tricksfor Smart Contract Definitions</Title>
+    <Description>
+      Nethereum contract definitions, event DTOs, function messages, deployment messages, and
+      contract service wrappers for the Tricksfor Booster NFT collection and staking contracts.
+      Intended for use by downstream log processors, indexers, and any .NET application that
+      interacts with or monitors the Tricksfor on-chain ecosystem.
+    </Description>
+    <Authors>Tricksfor Organization</Authors>
+    <Company>Tricksfor Organization</Company>
+    <PackageTags>ethereum;blockchain;nft;staking;nethereum;smart-contracts;tricksfor;erc721</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Tricksfor-Organization/SmartContract</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/Tricksfor-Organization/SmartContract</PackageProjectUrl>
+    <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
+
+    <!-- Package version is injected at pack time via /p:PackageVersion from the release tag -->
+    <!-- Do not hard-code a version here; see .github/workflows/release-deploy.yml            -->
+
+    <!-- Documentation -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Nethereum.Web3" Version="6.1.0" />
     <PackageReference Include="Nethereum.Contracts" Version="6.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.nuget.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
