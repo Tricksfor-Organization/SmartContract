@@ -134,12 +134,15 @@ GitHub Release published
         │
         ▼
   deploy-contracts job (environment-scoped)
-        │
+        │  (propagates NUGET_PUBLISH_ENABLED from environment variable)
         └─► publish-nuget job
                   │
-                  ├── dotnet pack (version injected from release tag)
-                  ├── dotnet nuget push → nuget.org   (stable releases)
-                  └── dotnet nuget push → GitHub Packages   (pre-release)
+                  ├── validate version format (fail fast on bad tag)
+                  ├── dotnet pack → .nupkg + .snupkg (version from release tag)
+                  ├── upload .nupkg + .snupkg as workflow artifacts (always)
+                  ├── dotnet nuget push .nupkg → nuget.org   (stable releases)
+                  ├── dotnet nuget push .snupkg → nuget.org symbol server   (stable releases)
+                  └── dotnet nuget push .nupkg → GitHub Packages   (pre-release)
 ```
 
 ### Manual pack (local verification)
@@ -154,8 +157,29 @@ dotnet pack src/Tricksfor.Blockchain.Booster/Tricksfor.Blockchain.Booster.csproj
   /p:PackageVersion="1.0.0-local"
 ```
 
+This produces both `Tricksfor.SmartContracts.1.0.0-local.nupkg` (the main package) and
+`Tricksfor.SmartContracts.1.0.0-local.snupkg` (the symbol package).
+
 Inspect the produced `.nupkg` with [NuGet Package Explorer](https://github.com/NuGetPackageExplorer/NuGetPackageExplorer)
 or by extracting the zip archive to verify contents.
+
+---
+
+## Symbol packages
+
+The project is configured to produce a `.snupkg` symbol package alongside the main `.nupkg`:
+
+```xml
+<IncludeSymbols>true</IncludeSymbols>
+<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+```
+
+The `.snupkg` contains the PDB file, which enables step-into debugging for consumers of the package.
+It is pushed to the nuget.org symbol server as part of the stable release workflow and uploaded as a
+workflow artifact on every run regardless of publish outcome.
+
+GitHub Packages does not support the `.snupkg` format; only the main `.nupkg` is pushed to GitHub
+Packages for pre-release versions.
 
 ---
 
@@ -166,5 +190,10 @@ or by extracting the zip archive to verify contents.
 | `NUGET_API_KEY` | Secret | Repository | API key for nuget.org push |
 | `GITHUB_TOKEN` | Automatic | Repository | API key for GitHub Packages push |
 | `NUGET_PUBLISH_ENABLED` | Variable | Environment | Set `true` to enable publishing for a given environment |
+
+`NUGET_PUBLISH_ENABLED` is read from the GitHub Environment associated with the `deploy-contracts`
+job. The `publish-nuget` job receives the value as a job output, so it honours the per-environment
+setting without needing its own environment scope (and without triggering an extra approval gate on
+mainnet environments).
 
 See [github-environments-setup.md](./github-environments-setup.md) for configuration instructions.

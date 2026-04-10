@@ -28,6 +28,10 @@
     <!-- Package version is injected at pack time via /p:PackageVersion from the release tag -->
     <!-- Do not hard-code a version here; see .github/workflows/release-deploy.yml            -->
 
+    <!-- Symbol package — produces a .snupkg uploaded to nuget.org's symbol server -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
     <!-- Documentation -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>

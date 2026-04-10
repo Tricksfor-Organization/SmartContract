@@ -160,6 +160,7 @@ jobs:
       nft_address: ${{ steps.deploy.outputs.nft_address }}
       staking_address: ${{ steps.deploy.outputs.staking_address }}
       network_name: ${{ steps.deploy.outputs.network_name }}
+      nuget_publish_enabled: ${{ vars.NUGET_PUBLISH_ENABLED }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -420,7 +421,7 @@ jobs:
       - name: Check publish conditions
         id: check-publish
         run: |
-          NUGET_PUBLISH_ENABLED="${{ vars.NUGET_PUBLISH_ENABLED }}"
+          NUGET_PUBLISH_ENABLED="${{ needs.deploy-contracts.outputs.nuget_publish_enabled }}"
           IS_DRAFT="${{ github.event.release.draft }}"
           TAG="${{ needs.resolve-environment.outputs.tag }}"
           IS_PRERELEASE="${{ needs.resolve-environment.outputs.is_prerelease }}"
@@ -447,6 +448,25 @@ jobs:
           fi
 
           echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Validate NuGet version format
+        if: steps.check-publish.outputs.skip != 'true'
+        run: |
+          NUGET_VERSION="${GITHUB_REF_NAME#v}"
+          # Require MAJOR.MINOR.PATCH with an optional pre-release suffix.
+          # Pre-release identifiers must be non-empty alphanumeric/hyphen segments separated by dots.
+          # Purely numeric identifiers must not have a leading zero (strict semver 2.0.0 rule).
+          # Examples of valid versions: 1.2.3   1.2.3-rc.1   1.2.3-beta.2   1.2.3-0.3.7
+          # Examples of invalid versions: 1.2.3-01   1.2.3-   foo
+          NUMERIC_ID="(0|[1-9][0-9]*)"
+          ALPHANUM_ID="[a-zA-Z0-9-]*[a-zA-Z][a-zA-Z0-9-]*"
+          PRE_ID="(${NUMERIC_ID}|${ALPHANUM_ID})"
+          SEMVER_RE="^[0-9]+\.[0-9]+\.[0-9]+(-${PRE_ID}(\.${PRE_ID})*)?$"
+          if ! [[ "$NUGET_VERSION" =~ $SEMVER_RE ]]; then
+            echo "::error::Release tag '$GITHUB_REF_NAME' does not produce a valid NuGet version ('$NUGET_VERSION'). Expected: vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-prerelease (e.g. v1.2.3 or v1.2.3-rc.1)."
+            exit 1
+          fi
+          echo "NuGet version validated: $NUGET_VERSION"
 
       - name: Checkout
         if: steps.check-publish.outputs.skip != 'true'
@@ -481,6 +501,12 @@ jobs:
             --api-key "${{ secrets.NUGET_API_KEY }}" \
             --source https://api.nuget.org/v3/index.json
 
+          # Push symbol package (.snupkg) to the nuget.org symbol server
+          # The symbol package is linked to the main package by package ID + version.
+          dotnet nuget push ./nupkg/*.snupkg \
+            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json
+
       - name: Publish to GitHub Packages (pre-release)
         if: >-
           steps.check-publish.outputs.skip != 'true' &&
@@ -501,6 +527,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nuget-package-${{ needs.resolve-environment.outputs.tag }}
-          path: ./nupkg/*.nupkg
+          path: |
+            ./nupkg/*.nupkg
+            ./nupkg/*.snupkg
           retention-days: 90
           if-no-files-found: warn
