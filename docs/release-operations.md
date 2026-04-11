@@ -153,6 +153,11 @@ Set the following under **Settings → Secrets and variables → Actions → Var
 
 ### Recommended variable values per environment
 
+> **`NFT_BASE_DOMAIN` note:** The table below shows `nft.tricksfor.com` for all environments,
+> which is the production custom domain. For testnet environments you may omit `NFT_BASE_DOMAIN`
+> (falling back to `{CF_PAGES_PROJECT}.pages.dev`) or configure a separate testnet domain to
+> avoid deploying testnet contracts with production metadata URLs.
+
 | Environment name    | `CHAIN_ID` | `NETWORK_KEY`      | `CF_PAGES_PROJECT` | `NFT_BASE_DOMAIN`   | `VERIFY_ENABLED` | `NUGET_PUBLISH_ENABLED` | `EXPLORER_NAME`               | `EXPLORER_BASE_URL`                             |
 |---------------------|------------|--------------------|--------------------|---------------------|------------------|-------------------------|-------------------------------|--------------------------------------------------|
 | `ethereum-sepolia`  | `11155111` | `sepolia`          | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `false`                 | `Etherscan (Sepolia)`         | `https://sepolia.etherscan.io/address`          |

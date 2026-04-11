@@ -170,8 +170,7 @@ wrangler login
 
 # Deploy nft-assets/ to your Pages project
 wrangler pages deploy nft-assets/ \
-  --project-name tricksfor-nft \
-  --commit-dirty=true
+  --project-name tricksfor-nft
 ```
 
 Or use the Cloudflare dashboard: **Workers & Pages → {project} → Deployments → Upload**.
