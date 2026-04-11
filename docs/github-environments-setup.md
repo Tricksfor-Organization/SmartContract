@@ -63,7 +63,6 @@ Set the following **Environment Variables** for each environment:
 | Variable name         | Required | Description                                                    | Example                |
 |-----------------------|----------|----------------------------------------------------------------|------------------------|
 | `CHAIN_ID`            | Yes      | EVM chain ID for the target network                           | `11155111`             |
-| `DEPLOY_ENV`          | Yes      | GitHub Environment name (must match the environment name exactly) | `ethereum-sepolia`  |
 | `NETWORK_KEY`         | Yes      | Hardhat network name for the `--network` flag during verification | `sepolia`          |
 | `CLOUDFLARE_ACCOUNT_ID` | Yes    | Cloudflare account ID (visible in the dashboard URL)          | `a1b2c3d4e5f6...`      |
 | `CF_PAGES_PROJECT`    | Yes      | Cloudflare Pages project name for NFT asset hosting           | `tricksfor-nft`        |
@@ -72,6 +71,8 @@ Set the following **Environment Variables** for each environment:
 | `NUGET_PUBLISH_ENABLED` | No     | Set to `true` to publish the NuGet package on deploy          | `false`                |
 | `EXPLORER_NAME`       | No       | Human-readable block explorer name, written to the deployment manifest's `verification.explorerName` field | `Etherscan` |
 | `EXPLORER_BASE_URL`   | No       | Block explorer contract browser URL prefix (without trailing slash), used to build `verification.explorerUrl` | `https://etherscan.io/address` |
+
+> **`DEPLOY_ENV` is not an environment variable.** It must be set as a **repository-level variable** under **Settings → Secrets and variables → Actions → Variables**. The `resolve-environment` job runs without an environment scope and cannot read per-environment variables; it reads `DEPLOY_ENV` exclusively from the repository level.
 
 `EXPLORER_NAME` and `EXPLORER_BASE_URL` are optional convenience fields. If not set, `verification.explorerName` and `verification.explorerUrl` in the manifest will be empty strings. They are useful for operators who want rich manifest output and have no impact on whether verification succeeds or fails.
 
@@ -139,7 +140,7 @@ Edit the appropriate file before deploying to update NFT name, symbol, base URI,
 ## Triggering a Deployment
 
 1. Ensure the target GitHub Environment is configured with all required secrets and variables (including Cloudflare Pages credentials — see [`docs/cloudflare-pages-setup.md`](cloudflare-pages-setup.md)).
-2. Ensure the `DEPLOY_ENV` repository variable (or the target environment's `DEPLOY_ENV` variable) is set to the desired environment name.
+2. Ensure the `DEPLOY_ENV` **repository variable** is set to the desired environment name. `DEPLOY_ENV` must be a repository-level variable — the `resolve-environment` job runs without an environment scope and can only read repository-level variables.
 3. Ensure all token metadata JSON files and images are present under `nft-assets/` before publishing the release.
 4. Update `deployments/config/{env}/deployment-params.json` if NFT name, symbol, or royalty parameters need to change (base URI and contract URI are resolved from the `deploy-metadata` job automatically).
 5. Publish a GitHub Release with the appropriate tag:

@@ -153,23 +153,24 @@ Set the following under **Settings → Secrets and variables → Actions → Var
 
 ### Recommended variable values per environment
 
-> **`NFT_BASE_DOMAIN` note:** The table below shows `nft.tricksfor.com` for all environments,
-> which is the production custom domain. For testnet environments you may omit `NFT_BASE_DOMAIN`
-> (falling back to `{CF_PAGES_PROJECT}.pages.dev`) or configure a separate testnet domain to
-> avoid deploying testnet contracts with production metadata URLs.
+> **Use separate Cloudflare Pages projects and domains for testnet and mainnet environments.**
+> Every release deploys to Cloudflare Pages before deploying contracts. If all environments
+> share the same project (`tricksfor-nft`) and domain (`nft.tricksfor.com`), a testnet
+> release will overwrite production metadata. Use `tricksfor-nft-preview` /
+> `nft-preview.tricksfor.com` for all non-production environments to isolate them completely.
 
-| Environment name    | `CHAIN_ID` | `NETWORK_KEY`      | `CF_PAGES_PROJECT` | `NFT_BASE_DOMAIN`   | `VERIFY_ENABLED` | `NUGET_PUBLISH_ENABLED` | `EXPLORER_NAME`               | `EXPLORER_BASE_URL`                             |
-|---------------------|------------|--------------------|--------------------|---------------------|------------------|-------------------------|-------------------------------|--------------------------------------------------|
-| `ethereum-sepolia`  | `11155111` | `sepolia`          | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `false`                 | `Etherscan (Sepolia)`         | `https://sepolia.etherscan.io/address`          |
-| `ethereum-mainnet`  | `1`        | `mainnet`          | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `true`                  | `Etherscan`                   | `https://etherscan.io/address`                  |
-| `polygon-amoy`      | `80002`    | `polygon_amoy`     | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `false`                 | `PolygonScan (Amoy)`          | `https://amoy.polygonscan.com/address`          |
-| `polygon-mainnet`   | `137`      | `polygon`          | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `true`                  | `PolygonScan`                 | `https://polygonscan.com/address`               |
-| `optimism-sepolia`  | `11155420` | `optimism_sepolia` | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `false`                 | `Optimism Explorer (Sepolia)` | `https://sepolia-optimism.etherscan.io/address` |
-| `optimism-mainnet`  | `10`       | `optimism`         | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `true`                  | `Optimism Explorer`           | `https://optimistic.etherscan.io/address`       |
-| `bsc-testnet`       | `97`       | `bsc_testnet`      | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `false`                 | `BscScan (Testnet)`           | `https://testnet.bscscan.com/address`           |
-| `bsc-mainnet`       | `56`       | `bsc`              | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `true`                  | `BscScan`                     | `https://bscscan.com/address`                   |
-| `avalanche-fuji`    | `43113`    | `avalanche_fuji`   | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `false`                 | `Snowtrace (Fuji)`            | `https://testnet.snowtrace.io/address`          |
-| `avalanche-mainnet` | `43114`    | `avalanche`        | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `true`                  | `Snowtrace`                   | `https://snowtrace.io/address`                  |
+| Environment name    | `CHAIN_ID` | `NETWORK_KEY`      | `CF_PAGES_PROJECT`      | `NFT_BASE_DOMAIN`            | `VERIFY_ENABLED` | `NUGET_PUBLISH_ENABLED` | `EXPLORER_NAME`               | `EXPLORER_BASE_URL`                             |
+|---------------------|------------|--------------------|--------------------------|-----------------------------|------------------|-------------------------|-------------------------------|--------------------------------------------------|
+| `ethereum-sepolia`  | `11155111` | `sepolia`          | `tricksfor-nft-preview`  | `nft-preview.tricksfor.com` | `true`           | `false`                 | `Etherscan (Sepolia)`         | `https://sepolia.etherscan.io/address`          |
+| `ethereum-mainnet`  | `1`        | `mainnet`          | `tricksfor-nft`          | `nft.tricksfor.com`         | `true`           | `true`                  | `Etherscan`                   | `https://etherscan.io/address`                  |
+| `polygon-amoy`      | `80002`    | `polygon_amoy`     | `tricksfor-nft-preview`  | `nft-preview.tricksfor.com` | `true`           | `false`                 | `PolygonScan (Amoy)`          | `https://amoy.polygonscan.com/address`          |
+| `polygon-mainnet`   | `137`      | `polygon`          | `tricksfor-nft`          | `nft.tricksfor.com`         | `true`           | `true`                  | `PolygonScan`                 | `https://polygonscan.com/address`               |
+| `optimism-sepolia`  | `11155420` | `optimism_sepolia` | `tricksfor-nft-preview`  | `nft-preview.tricksfor.com` | `true`           | `false`                 | `Optimism Explorer (Sepolia)` | `https://sepolia-optimism.etherscan.io/address` |
+| `optimism-mainnet`  | `10`       | `optimism`         | `tricksfor-nft`          | `nft.tricksfor.com`         | `true`           | `true`                  | `Optimism Explorer`           | `https://optimistic.etherscan.io/address`       |
+| `bsc-testnet`       | `97`       | `bsc_testnet`      | `tricksfor-nft-preview`  | `nft-preview.tricksfor.com` | `true`           | `false`                 | `BscScan (Testnet)`           | `https://testnet.bscscan.com/address`           |
+| `bsc-mainnet`       | `56`       | `bsc`              | `tricksfor-nft`          | `nft.tricksfor.com`         | `true`           | `true`                  | `BscScan`                     | `https://bscscan.com/address`                   |
+| `avalanche-fuji`    | `43113`    | `avalanche_fuji`   | `tricksfor-nft-preview`  | `nft-preview.tricksfor.com` | `true`           | `false`                 | `Snowtrace (Fuji)`            | `https://testnet.snowtrace.io/address`          |
+| `avalanche-mainnet` | `43114`    | `avalanche`        | `tricksfor-nft`          | `nft.tricksfor.com`         | `true`           | `true`                  | `Snowtrace`                   | `https://snowtrace.io/address`                  |
 
 ---
 

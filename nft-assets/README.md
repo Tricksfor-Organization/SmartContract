@@ -75,9 +75,10 @@ See `docs/metadata/token-example.json` for a full reference example.
 
 `contract/collection.json` is the collection-level metadata returned by `contractURI()`.
 The `fee_recipient` field is part of the **OpenSea collection metadata** format (not the
-contract's ERC-2981 royalty receiver). Before publishing to mainnet, replace
-`0xREPLACE_WITH_ROYALTY_RECIPIENT_ADDRESS` with the actual address. **Using the zero address
-causes OpenSea royalty payments to be permanently lost.**
+contract's ERC-2981 royalty receiver). The file currently uses `0x000000000000000000000000000000000000dEaD`
+as a placeholder. **Before publishing to mainnet, replace it with the actual royalty recipient
+address. Using the burn address (`0xdEaD`) means OpenSea royalty payments will be permanently
+lost — they cannot be recovered.**
 
 > Note: The contract's ERC-2981 royalty receiver is set separately via the `RoyaltyReceiver`
 > field in `deployments/config/{env}/deployment-params.json`. When left empty (`""`), the
