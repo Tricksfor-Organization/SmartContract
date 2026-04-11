@@ -35,12 +35,16 @@ Before triggering any release, confirm that the following are in place:
 | Prerequisite | Where to verify |
 |---|---|
 | Target GitHub Environment exists | **Settings → Environments** |
-| All required Environment Secrets are set | **Settings → Environments → {env} → Secrets** |
-| All required Environment Variables are set | **Settings → Environments → {env} → Variables** |
+| All required Environment Secrets are set (including `CLOUDFLARE_API_TOKEN`) | **Settings → Environments → {env} → Secrets** |
+| All required Environment Variables are set (including `CLOUDFLARE_ACCOUNT_ID`, `CF_PAGES_PROJECT`) | **Settings → Environments → {env} → Variables** |
 | Repository variable `DEPLOY_ENV` is set | **Settings → Secrets and variables → Actions → Variables** |
 | `NUGET_API_KEY` repository secret is set (if publishing) | **Settings → Secrets and variables → Actions → Secrets** |
+| Token metadata JSON files present under `nft-assets/metadata/` | `nft-assets/metadata/` directory in the repository |
+| Token image files present under `nft-assets/images/` | `nft-assets/images/` directory in the repository |
+| Collection metadata present at `nft-assets/contract/collection.json` | `nft-assets/contract/collection.json` |
 | Deployment params file exists for the target environment | `deployments/config/{env}/deployment-params.json` |
 | Hardhat network and explorer config exists for the target | `hardhat.config.ts` |
+| Cloudflare Pages project created and custom domain bound (if applicable) | [`docs/cloudflare-pages-setup.md`](cloudflare-pages-setup.md) |
 
 If any of these are missing, the workflow will fail fast with a clear error message rather than
 attempting a partial deployment.
@@ -90,6 +94,7 @@ Set the following under **Settings → Environments → {env-name} → Secrets**
 |-----------------------|-----------------------|--------------------------------------------------|
 | `RPC_URL`             | Always                | JSON-RPC endpoint URL for the target network     |
 | `DEPLOYER_PRIVATE_KEY`| Always                | Hex-encoded private key of the deployer wallet   |
+| `CLOUDFLARE_API_TOKEN`| Always                | Cloudflare API token with **Cloudflare Pages: Edit** permission |
 | `EXPLORER_API_KEY`    | When `VERIFY_ENABLED=true` | API key for the block explorer's verification API |
 
 > **Security rule:** These values must never be committed, logged, or passed as workflow inputs.
@@ -120,6 +125,9 @@ Set the following under **Settings → Environments → {env-name} → Variables
 |------------------------|----------|--------------------------------------------------------------------|------------------------|
 | `CHAIN_ID`             | Yes      | EVM chain ID for the target network                                | `11155111`             |
 | `NETWORK_KEY`          | Yes      | Hardhat network name for the `--network` flag during verification  | `sepolia`              |
+| `CLOUDFLARE_ACCOUNT_ID`| Yes      | Cloudflare account ID (visible in the dashboard URL)               | `a1b2c3d4e5f6...`      |
+| `CF_PAGES_PROJECT`     | Yes      | Cloudflare Pages project name for NFT asset hosting                | `tricksfor-nft`        |
+| `NFT_BASE_DOMAIN`      | No       | Custom domain for the Pages site (no protocol or trailing slash)   | `nft.tricksfor.com`    |
 | `VERIFY_ENABLED`       | No       | Set to `true` to enable block-explorer verification                | `true`                 |
 | `NUGET_PUBLISH_ENABLED`| No       | Set to `true` to publish the NuGet package on deploy               | `false`                |
 | `EXPLORER_NAME`        | No       | Human-readable explorer name — written to the deployment manifest  | `Etherscan`            |
@@ -128,6 +136,8 @@ Set the following under **Settings → Environments → {env-name} → Variables
 `EXPLORER_NAME` and `EXPLORER_BASE_URL` are optional. If not set, the `verification.explorerName`
 and `verification.explorerUrl` fields in the deployment manifest will be empty strings. They have
 no impact on whether verification succeeds.
+
+For Cloudflare Pages setup instructions see [`docs/cloudflare-pages-setup.md`](cloudflare-pages-setup.md).
 
 ### Repository variable
 
@@ -143,18 +153,18 @@ Set the following under **Settings → Secrets and variables → Actions → Var
 
 ### Recommended variable values per environment
 
-| Environment name    | `CHAIN_ID` | `NETWORK_KEY`      | `VERIFY_ENABLED` | `NUGET_PUBLISH_ENABLED` | `EXPLORER_NAME`               | `EXPLORER_BASE_URL`                             |
-|---------------------|------------|--------------------|------------------|-------------------------|-------------------------------|--------------------------------------------------|
-| `ethereum-sepolia`  | `11155111` | `sepolia`          | `true`           | `false`                 | `Etherscan (Sepolia)`         | `https://sepolia.etherscan.io/address`          |
-| `ethereum-mainnet`  | `1`        | `mainnet`          | `true`           | `true`                  | `Etherscan`                   | `https://etherscan.io/address`                  |
-| `polygon-amoy`      | `80002`    | `polygon_amoy`     | `true`           | `false`                 | `PolygonScan (Amoy)`          | `https://amoy.polygonscan.com/address`          |
-| `polygon-mainnet`   | `137`      | `polygon`          | `true`           | `true`                  | `PolygonScan`                 | `https://polygonscan.com/address`               |
-| `optimism-sepolia`  | `11155420` | `optimism_sepolia` | `true`           | `false`                 | `Optimism Explorer (Sepolia)` | `https://sepolia-optimism.etherscan.io/address` |
-| `optimism-mainnet`  | `10`       | `optimism`         | `true`           | `true`                  | `Optimism Explorer`           | `https://optimistic.etherscan.io/address`       |
-| `bsc-testnet`       | `97`       | `bsc_testnet`      | `true`           | `false`                 | `BscScan (Testnet)`           | `https://testnet.bscscan.com/address`           |
-| `bsc-mainnet`       | `56`       | `bsc`              | `true`           | `true`                  | `BscScan`                     | `https://bscscan.com/address`                   |
-| `avalanche-fuji`    | `43113`    | `avalanche_fuji`   | `true`           | `false`                 | `Snowtrace (Fuji)`            | `https://testnet.snowtrace.io/address`          |
-| `avalanche-mainnet` | `43114`    | `avalanche`        | `true`           | `true`                  | `Snowtrace`                   | `https://snowtrace.io/address`                  |
+| Environment name    | `CHAIN_ID` | `NETWORK_KEY`      | `CF_PAGES_PROJECT` | `NFT_BASE_DOMAIN`   | `VERIFY_ENABLED` | `NUGET_PUBLISH_ENABLED` | `EXPLORER_NAME`               | `EXPLORER_BASE_URL`                             |
+|---------------------|------------|--------------------|--------------------|---------------------|------------------|-------------------------|-------------------------------|--------------------------------------------------|
+| `ethereum-sepolia`  | `11155111` | `sepolia`          | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `false`                 | `Etherscan (Sepolia)`         | `https://sepolia.etherscan.io/address`          |
+| `ethereum-mainnet`  | `1`        | `mainnet`          | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `true`                  | `Etherscan`                   | `https://etherscan.io/address`                  |
+| `polygon-amoy`      | `80002`    | `polygon_amoy`     | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `false`                 | `PolygonScan (Amoy)`          | `https://amoy.polygonscan.com/address`          |
+| `polygon-mainnet`   | `137`      | `polygon`          | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `true`                  | `PolygonScan`                 | `https://polygonscan.com/address`               |
+| `optimism-sepolia`  | `11155420` | `optimism_sepolia` | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `false`                 | `Optimism Explorer (Sepolia)` | `https://sepolia-optimism.etherscan.io/address` |
+| `optimism-mainnet`  | `10`       | `optimism`         | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `true`                  | `Optimism Explorer`           | `https://optimistic.etherscan.io/address`       |
+| `bsc-testnet`       | `97`       | `bsc_testnet`      | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `false`                 | `BscScan (Testnet)`           | `https://testnet.bscscan.com/address`           |
+| `bsc-mainnet`       | `56`       | `bsc`              | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `true`                  | `BscScan`                     | `https://bscscan.com/address`                   |
+| `avalanche-fuji`    | `43113`    | `avalanche_fuji`   | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `false`                 | `Snowtrace (Fuji)`            | `https://testnet.snowtrace.io/address`          |
+| `avalanche-mainnet` | `43114`    | `avalanche`        | `tricksfor-nft`    | `nft.tricksfor.com` | `true`           | `true`                  | `Snowtrace`                   | `https://snowtrace.io/address`                  |
 
 ---
 
@@ -188,14 +198,20 @@ deployments/config/
     "Nft": {
       "Name": "TricksforBooster",
       "Symbol": "TFB",
-      "BaseUri": "https://meta.tricksfor.gg/booster/",
-      "ContractMetadataUri": "https://meta.tricksfor.gg/booster/contract.json",
+      "BaseUri": "https://nft.tricksfor.com/metadata/",
+      "ContractMetadataUri": "https://nft.tricksfor.com/contract/collection.json",
       "RoyaltyReceiver": "0xYOUR_ROYALTY_RECEIVER_ADDRESS",
       "RoyaltyFeeBasisPoints": 500
     }
   }
 }
 ```
+
+> **Note:** `BaseUri` and `ContractMetadataUri` in `deployment-params.json` serve as
+> documentation defaults. During a release, the `deploy-metadata` workflow job resolves the
+> final values from Cloudflare Pages and overrides them via environment variables
+> (`Deployment__Nft__BaseUri`, `Deployment__Nft__ContractMetadataUri`). The contract is
+> always deployed with the live Pages URLs regardless of what is written in this file.
 
 ### Parameter reference
 
@@ -204,10 +220,10 @@ deployments/config/
 | `Deployment.Network` | Deployment target name — should match `DEPLOY_ENV` | No | deployment-params.json |
 | `Deployment.ChainId` | EVM chain ID — can also be set via `CHAIN_ID` env variable | No | deployment-params.json or `CHAIN_ID` variable |
 | `Deployment.DeploymentsOutputPath` | Root folder where manifests are written | No | deployment-params.json |
-| `Deployment.Nft.Name` | ERC-721 token name (`NFT_NAME` in the issue) | No | deployment-params.json |
-| `Deployment.Nft.Symbol` | ERC-721 token symbol (`NFT_SYMBOL`) | No | deployment-params.json |
-| `Deployment.Nft.BaseUri` | Base URI prepended to every token ID (`BASE_TOKEN_URI`) | No | deployment-params.json |
-| `Deployment.Nft.ContractMetadataUri` | OpenSea `contractURI()` value (`CONTRACT_URI`) | No | deployment-params.json |
+| `Deployment.Nft.Name` | ERC-721 token name | No | deployment-params.json |
+| `Deployment.Nft.Symbol` | ERC-721 token symbol | No | deployment-params.json |
+| `Deployment.Nft.BaseUri` | Base URI for token metadata — **overridden at runtime** by `deploy-metadata` | No | `deploy-metadata` job output (falls back to deployment-params.json) |
+| `Deployment.Nft.ContractMetadataUri` | OpenSea `contractURI()` value — **overridden at runtime** by `deploy-metadata` | No | `deploy-metadata` job output (falls back to deployment-params.json) |
 | `Deployment.Nft.RoyaltyReceiver` | ERC-2981 royalty receiver address; leave `""` to use deployer address | No | deployment-params.json |
 | `Deployment.Nft.RoyaltyFeeBasisPoints` | ERC-2981 royalty fee in basis points (500 = 5%) | No | deployment-params.json |
 | RPC endpoint URL | JSON-RPC provider URL | **Secret** | `RPC_URL` environment secret |
@@ -222,11 +238,14 @@ deployments/config/
 
 When the same value is present in multiple sources, the highest-priority source wins:
 
-1. Environment variables (`Deployment__RpcUrl`, `Deployment__PrivateKey`, `Deployment__ChainId`, `Deployment__Network`)
+1. Environment variables (`Deployment__RpcUrl`, `Deployment__PrivateKey`, `Deployment__ChainId`, `Deployment__Network`, `Deployment__Nft__BaseUri`, `Deployment__Nft__ContractMetadataUri`)
 2. `appsettings.{DEPLOY_ENV}.json` (the per-environment params file copied into the runner output directory)
 3. `appsettings.json` (default values bundled with the runner)
 
-Secrets injected as environment variables always take precedence over any file-based value.
+Secrets and workflow-resolved values injected as environment variables always take precedence
+over any file-based value. `BaseUri` and `ContractMetadataUri` are always injected by the
+`deploy-metadata` job, so the values in `deployment-params.json` are treated as documentation
+defaults only.
 
 ---
 
@@ -360,8 +379,11 @@ mainnet environment:
 Before publishing the release:
 
 - [ ] Confirm `DEPLOY_ENV` repository variable points to the correct environment
-- [ ] Confirm the target environment exists and is fully configured (secrets + variables)
-- [ ] Confirm `deployments/config/{env}/deployment-params.json` has the correct NFT parameters
+- [ ] Confirm the target environment exists and is fully configured (secrets + variables, including `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CF_PAGES_PROJECT`)
+- [ ] Confirm `nft-assets/metadata/` contains all token metadata JSON files for the collection
+- [ ] Confirm `nft-assets/images/` contains all token image files
+- [ ] Confirm `nft-assets/contract/collection.json` has the correct collection metadata (royalty recipient address must not be the zero address for mainnet)
+- [ ] Confirm `deployments/config/{env}/deployment-params.json` has the correct NFT name, symbol, and royalty parameters
 - [ ] Choose the correct tag type for the target:
   - Testnet → pre-release tag (`v1.2.3-rc.1`) or stable tag (`v1.2.3`) both work
   - Mainnet → stable tag only (`v1.2.3`)
@@ -382,8 +404,9 @@ The `release-deploy.yml` workflow starts automatically.
 1. Go to **Actions → Release — Deploy Contracts** to view the running workflow.
 2. Monitor the `resolve-environment` job for tag validation errors.
 3. Monitor the `test` job for any test failures.
-4. If deploying to mainnet, approve the pending deployment in the `deploy-contracts` job.
-5. Check the `verify-contracts` and `publish-nuget` jobs after `deploy-contracts` completes.
+4. Monitor the `deploy-metadata` job — if this fails, `deploy-contracts` will not run.
+5. If deploying to mainnet, approve the pending deployment in the `deploy-metadata` and `deploy-contracts` jobs.
+6. Check the `verify-contracts` and `publish-nuget` jobs after `deploy-contracts` completes.
 
 ---
 
@@ -406,9 +429,17 @@ GitHub Release published
              │
              ▼
 ┌─────────────────────────┐
+│    deploy-metadata      │  Environment-scoped. Deploys nft-assets/ to
+│    (environment gate    │  Cloudflare Pages. Resolves BASE_TOKEN_URI
+│     for mainnet)        │  and CONTRACT_URI. Blocking.
+└────────────┬────────────┘
+             │
+             ▼
+┌─────────────────────────┐
 │    deploy-contracts     │  Environment-scoped. Injects RPC_URL,
-│    (environment gate    │  DEPLOYER_PRIVATE_KEY. Runs deployment runner.
-│     for mainnet)        │  Writes deployment manifests. Uploads as artifacts.
+│    (environment gate    │  DEPLOYER_PRIVATE_KEY, resolved metadata URLs.
+│     for mainnet)        │  Runs deployment runner.
+│                         │  Writes deployment manifests. Uploads as artifacts.
 └───────┬─────────────────┘
         │                 │
         ▼                 ▼
@@ -426,6 +457,7 @@ GitHub Release published
 |---|---|---|---|
 | `resolve-environment` | None | Yes | No |
 | `test` | None | Yes | No |
+| `deploy-metadata` | `{DEPLOY_ENV}` | Yes | No |
 | `deploy-contracts` | `{DEPLOY_ENV}` | Yes | No |
 | `verify-contracts` | `{DEPLOY_ENV}` | No | Yes |
 | `publish-nuget` | None | No | Yes |
@@ -433,6 +465,21 @@ GitHub Release published
 ---
 
 ## 11. Failure Recovery
+
+### Metadata deployment fails (`deploy-metadata`)
+
+When `deploy-metadata` fails, `deploy-contracts` is automatically skipped. No on-chain state
+is changed — this is a safe failure point.
+
+**Recovery steps:**
+
+1. Open the failed workflow run in **Actions**.
+2. Check the `deploy-metadata` job logs for the root cause:
+   - `CF_PAGES_PROJECT not set` → configure the `CF_PAGES_PROJECT` environment variable.
+   - Cloudflare authentication error → verify `CLOUDFLARE_API_TOKEN` has **Cloudflare Pages: Edit** permission.
+   - `CLOUDFLARE_ACCOUNT_ID` mismatch → confirm the account ID value in the environment variables.
+3. Fix the root cause, then re-run the `deploy-metadata` job (if the issue was transient) or
+   publish a new release.
 
 ### Deployment fails (`deploy-contracts`)
 

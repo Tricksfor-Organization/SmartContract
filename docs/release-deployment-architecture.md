@@ -12,9 +12,10 @@ This document is the source-of-truth design reference for the Tricksfor SmartCon
 4. [Secrets Model](#4-secrets-model)
 5. [Network Model](#5-network-model)
 6. [Deployment Parameter Model](#6-deployment-parameter-model)
-7. [Verification Model](#7-verification-model)
-8. [NuGet Publishing Model](#8-nuget-publishing-model)
-9. [Failure Handling Model](#9-failure-handling-model)
+7. [Metadata Hosting Model](#7-metadata-hosting-model)
+8. [Verification Model](#8-verification-model)
+9. [NuGet Publishing Model](#9-nuget-publishing-model)
+10. [Failure Handling Model](#10-failure-handling-model)
 
 ---
 
@@ -327,7 +328,86 @@ Secrets are injected via environment variables and take highest priority over an
 
 ---
 
-## 7. Verification Model
+## 7. Metadata Hosting Model
+
+### Static metadata and images on Cloudflare Pages
+
+NFT token metadata and images for the Tricksfor Booster collection are static and hosted on
+Cloudflare Pages. The repository stores all static assets under [`nft-assets/`](../nft-assets/README.md).
+
+```
+nft-assets/
+├── metadata/    ← token metadata JSON files (one per token ID)
+├── images/      ← NFT image assets (one per token ID)
+├── contract/    ← collection metadata (collection.json)
+└── _headers     ← Cloudflare Pages response headers
+```
+
+### URL conventions
+
+| Asset | URL |
+|---|---|
+| Token metadata | `https://nft.tricksfor.com/metadata/{tokenId}.json` |
+| Collection metadata | `https://nft.tricksfor.com/contract/collection.json` |
+| Token image | `https://nft.tricksfor.com/images/{tokenId}.png` |
+
+### Contract parameter derivation
+
+| Contract parameter | Derived value |
+|---|---|
+| `BASE_TOKEN_URI` | `https://nft.tricksfor.com/metadata/` |
+| `CONTRACT_URI` | `https://nft.tricksfor.com/contract/collection.json` |
+
+### deploy-metadata job
+
+The `deploy-metadata` job in `release-deploy.yml` runs between `test` and `deploy-contracts`:
+
+```
+test
+ └── deploy-metadata   (environment-scoped; Cloudflare Pages secrets)
+       └── deploy-contracts   (environment-scoped; chain secrets)
+             ├── verify-contracts
+             └── publish-nuget
+```
+
+The job:
+1. Deploys `nft-assets/` to Cloudflare Pages via `cloudflare/pages-action@v1`.
+2. Resolves the final base URI from `NFT_BASE_DOMAIN` (environment variable) or falls back to `{CF_PAGES_PROJECT}.pages.dev`.
+3. Outputs `base_token_uri` and `contract_uri`.
+
+`deploy-contracts` receives these outputs and passes them as environment variable overrides
+to the deployment runner:
+
+```yaml
+Deployment__Nft__BaseUri:         <from deploy-metadata>
+Deployment__Nft__ContractMetadataUri: <from deploy-metadata>
+```
+
+These values take highest precedence over any value in `deployment-params.json`, ensuring
+the contract is always deployed with the exact URLs that were verified live.
+
+### Required GitHub Environment configuration
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `CLOUDFLARE_API_TOKEN` | Secret | Yes | Cloudflare API token with Cloudflare Pages: Edit |
+| `CLOUDFLARE_ACCOUNT_ID` | Variable | Yes | Cloudflare account ID |
+| `CF_PAGES_PROJECT` | Variable | Yes | Cloudflare Pages project name |
+| `NFT_BASE_DOMAIN` | Variable | No | Custom domain; falls back to `{project}.pages.dev` |
+
+See [`docs/cloudflare-pages-setup.md`](cloudflare-pages-setup.md) for the full setup guide.
+
+### Stability guarantee
+
+Once the custom domain is bound and the contract is deployed with those URLs:
+- metadata paths are immutable (`/metadata/{tokenId}.json`)
+- image paths are immutable (`/images/{tokenId}.png`)
+- collection metadata path is immutable (`/contract/collection.json`)
+- Cloudflare Pages propagates new deployments to the same paths, preserving URL stability
+
+---
+
+## 8. Verification Model
 
 ### When verification runs
 
@@ -388,7 +468,7 @@ verify-contracts job starts
 
 ---
 
-## 8. NuGet Publishing Model
+## 9. NuGet Publishing Model
 
 ### Package identity
 
@@ -484,18 +564,27 @@ The `publish-nuget` job additionally checks:
 
 ---
 
-## 9. Failure Handling Model
+## 10. Failure Handling Model
 
 ### Job dependency graph
 
 ```
 test
- └── deploy-contracts
-       ├── verify-contracts
-       └── publish-nuget
+ └── deploy-metadata
+       └── deploy-contracts
+             ├── verify-contracts
+             └── publish-nuget
 ```
 
 All jobs are separate and independently retryable. `verify-contracts` and `publish-nuget` are set to `needs: [deploy-contracts]` but are independent of each other (`verify-contracts` does not block `publish-nuget`).
+
+### Metadata deployment fails
+
+If `deploy-metadata` fails, `deploy-contracts` is automatically skipped. The workflow:
+
+1. Marks the `deploy-metadata` job as failed.
+2. Leaves no contract deployed (the failure is safe — no on-chain state was changed).
+3. Allows the operator to investigate the Cloudflare Pages error and re-run the workflow by publishing a new release.
 
 ### Deployment succeeds, verification fails
 
@@ -552,10 +641,14 @@ Regardless of job outcome, the following artifacts are always uploaded:
 | Non-secret config | Checked-in `deployment-params.json` per environment |
 | Chain selection | One GitHub Environment per chain/stage |
 | Mainnet approval | Required reviewers on all `*-mainnet` environments |
+| NFT asset hosting | Cloudflare Pages, deployed from `nft-assets/` directory |
+| Metadata base URI source | Resolved by `deploy-metadata` job from `NFT_BASE_DOMAIN` or `CF_PAGES_PROJECT` |
+| Contract deployment blocked by metadata | Yes — `deploy-contracts` requires `deploy-metadata` to succeed |
 | Contract verification | Hardhat Verify, separate job, skippable per environment |
 | NuGet package ID | `Tricksfor.SmartContracts` |
 | NuGet version source | Git tag (strip leading `v`) |
 | NuGet publish target | nuget.org (primary), GitHub Packages (optional) |
+| Metadata deployment failure | **Blocking** — `deploy-contracts` does not run |
 | Verification failure | Non-blocking, artifact retained, job retryable |
 | NuGet publish failure | Non-blocking, `.nupkg` retained, job retryable |
 | Deployment failure | Blocks dependent jobs, artifacts retained |
