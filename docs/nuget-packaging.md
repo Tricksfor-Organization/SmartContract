@@ -174,7 +174,10 @@ The project is configured to produce a `.snupkg` symbol package alongside the ma
 <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 ```
 
-The `.snupkg` contains the PDB file, which enables step-into debugging for consumers of the package.
+The `.snupkg` contains the PDB file, which helps consumers debug the package and resolve symbols.
+Source-level step-into debugging typically also requires SourceLink metadata to be configured during
+the build; the symbol package alone does not guarantee that experience.
+
 It is pushed to the nuget.org symbol server as part of the stable release workflow and uploaded as a
 workflow artifact on every run regardless of publish outcome.
 

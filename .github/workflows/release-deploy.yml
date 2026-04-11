@@ -455,13 +455,15 @@ jobs:
           NUGET_VERSION="${GITHUB_REF_NAME#v}"
           # Validate against a semver 2.0.0-compatible pattern:
           #   MAJOR.MINOR.PATCH with an optional dot-separated pre-release suffix.
+          # Each core version component must be either 0 or a non-zero number without leading zeroes.
           # Each pre-release identifier is either a purely numeric value (no leading zero)
           # or an alphanumeric/hyphen identifier containing at least one letter.
           # This matches NuGet's accepted pre-release label syntax.
           # Valid examples:   1.2.3   1.2.3-rc.1   1.2.3-beta.2   1.2.3-0.3.7
-          # Invalid examples: 1.2.3-01   1.2.3-   foo   1.2
+          # Invalid examples: 01.2.3   1.02.3   1.2.03   1.2.3-01   1.2.3-   foo   1.2
+          CORE_NUM="(0|[1-9][0-9]*)"
           PRE_ID="(0|[1-9][0-9]*|[a-zA-Z0-9-]*[a-zA-Z][a-zA-Z0-9-]*)"
-          SEMVER_RE="^[0-9]+\.[0-9]+\.[0-9]+(-${PRE_ID}(\.${PRE_ID})*)?$"
+          SEMVER_RE="^${CORE_NUM}\.${CORE_NUM}\.${CORE_NUM}(-${PRE_ID}(\.${PRE_ID})*)?$"
           if ! [[ "$NUGET_VERSION" =~ $SEMVER_RE ]]; then
             echo "::error::Release tag '$GITHUB_REF_NAME' does not produce a valid NuGet version ('$NUGET_VERSION'). Expected: MAJOR.MINOR.PATCH or MAJOR.MINOR.PATCH-prerelease (e.g. 1.2.3 or 1.2.3-rc.1)."
             exit 1
@@ -499,13 +501,15 @@ jobs:
         run: |
           dotnet nuget push ./nupkg/*.nupkg \
             --api-key "${{ secrets.NUGET_API_KEY }}" \
-            --source https://api.nuget.org/v3/index.json
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
 
           # Push symbol package (.snupkg) to the nuget.org symbol server
           # The symbol package is linked to the main package by package ID + version.
           dotnet nuget push ./nupkg/*.snupkg \
             --api-key "${{ secrets.NUGET_API_KEY }}" \
-            --source https://api.nuget.org/v3/index.json
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
 
       - name: Publish to GitHub Packages (pre-release)
         if: >-
