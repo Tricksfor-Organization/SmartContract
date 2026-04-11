@@ -5,9 +5,10 @@
 #
 # Job graph:
 #   test
-#    └── deploy-contracts   (environment-scoped; chain secrets: RPC_URL, DEPLOYER_PRIVATE_KEY)
-#          ├── verify-contracts  (environment-scoped; uses RPC_URL + EXPLORER_API_KEY)
-#          └── publish-nuget
+#    └── deploy-metadata  (environment-scoped; deploys nft-assets/ to Cloudflare Pages)
+#          └── deploy-contracts   (environment-scoped; chain secrets: RPC_URL, DEPLOYER_PRIVATE_KEY)
+#                ├── verify-contracts  (environment-scoped; uses RPC_URL + EXPLORER_API_KEY)
+#                └── publish-nuget
 #
 # Environment resolution:
 #   The target GitHub Environment is read from the DEPLOY_ENV environment variable
@@ -23,13 +24,15 @@
 #   avalanche-fuji, avalanche-mainnet
 #
 # Each environment must be configured with:
-#   Secrets: RPC_URL, DEPLOYER_PRIVATE_KEY, EXPLORER_API_KEY (mainnet)
-#   Variables: CHAIN_ID, DEPLOY_ENV, NETWORK_KEY, VERIFY_ENABLED, NUGET_PUBLISH_ENABLED
+#   Secrets: RPC_URL, DEPLOYER_PRIVATE_KEY, EXPLORER_API_KEY (mainnet), CLOUDFLARE_API_TOKEN
+#   Variables: CHAIN_ID, DEPLOY_ENV, NETWORK_KEY, VERIFY_ENABLED, NUGET_PUBLISH_ENABLED,
+#              CLOUDFLARE_ACCOUNT_ID, CF_PAGES_PROJECT, NFT_BASE_DOMAIN
 #
 # Repository-level secrets:
 #   NUGET_API_KEY  — used only by publish-nuget job
 #
 # See docs/github-environments-setup.md for full setup instructions.
+# See docs/cloudflare-pages-setup.md for Cloudflare Pages configuration.
 
 name: Release — Deploy Contracts
 
@@ -147,12 +150,128 @@ jobs:
         run: dotnet test tests/Tricksfor.Blockchain.Booster.IntegrationTests/ --configuration Release
 
   # ---------------------------------------------------------------------------
-  # 3. Deploy contracts (environment-scoped; chain secrets injected here)
+  # 3. Deploy NFT metadata and images to Cloudflare Pages (blocking)
+  # ---------------------------------------------------------------------------
+  deploy-metadata:
+    name: Deploy NFT metadata (${{ needs.resolve-environment.outputs.deploy_env }})
+    runs-on: ubuntu-latest
+    needs: [resolve-environment, test]
+    environment: ${{ needs.resolve-environment.outputs.deploy_env }}
+    env:
+      DEPLOY_ENV: ${{ needs.resolve-environment.outputs.deploy_env }}
+    outputs:
+      base_token_uri: ${{ steps.resolve-urls.outputs.base_token_uri }}
+      contract_uri: ${{ steps.resolve-urls.outputs.contract_uri }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Cloudflare Pages configuration
+        id: check-cf
+        run: |
+          CF_PAGES_PROJECT="${{ vars.CF_PAGES_PROJECT }}"
+          CLOUDFLARE_ACCOUNT_ID="${{ vars.CLOUDFLARE_ACCOUNT_ID }}"
+          CLOUDFLARE_API_TOKEN="${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          MISSING_CONFIG=0
+
+          if [[ -z "$CF_PAGES_PROJECT" ]]; then
+            echo "::error::CF_PAGES_PROJECT variable is not set for environment $DEPLOY_ENV."
+            echo "::error::Configure it under Settings → Environments → $DEPLOY_ENV → Variables."
+            MISSING_CONFIG=1
+          fi
+
+          if [[ -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "::error::CLOUDFLARE_ACCOUNT_ID variable is not set for environment $DEPLOY_ENV."
+            echo "::error::Configure it under Settings → Environments → $DEPLOY_ENV → Variables."
+            MISSING_CONFIG=1
+          fi
+
+          if [[ -z "$CLOUDFLARE_API_TOKEN" ]]; then
+            echo "::error::CLOUDFLARE_API_TOKEN secret is not set for environment $DEPLOY_ENV."
+            echo "::error::Configure it under Settings → Environments → $DEPLOY_ENV → Secrets."
+            MISSING_CONFIG=1
+          fi
+
+          if [[ "$MISSING_CONFIG" -ne 0 ]]; then
+            exit 1
+          fi
+
+          echo "Cloudflare Pages project: $CF_PAGES_PROJECT"
+          echo "Cloudflare account ID is configured."
+          echo "Cloudflare API token is configured."
+
+      - name: Deploy NFT assets to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: ${{ vars.CF_PAGES_PROJECT }}
+          directory: nft-assets
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve final metadata URLs
+        id: resolve-urls
+        run: |
+          NFT_BASE_DOMAIN="${{ vars.NFT_BASE_DOMAIN }}"
+          CF_PAGES_PROJECT="${{ vars.CF_PAGES_PROJECT }}"
+
+          if [[ -n "$NFT_BASE_DOMAIN" ]]; then
+            if [[ "$NFT_BASE_DOMAIN" == http://* || "$NFT_BASE_DOMAIN" == https://* ]]; then
+              echo "::error::NFT_BASE_DOMAIN must be a host only (for example: nft.example.com), without http:// or https://."
+              exit 1
+            fi
+
+            if [[ "$NFT_BASE_DOMAIN" == */* ]]; then
+              echo "::error::NFT_BASE_DOMAIN must not contain a path or trailing slash. Provide host only (for example: nft.example.com)."
+              exit 1
+            fi
+
+            if [[ "$NFT_BASE_DOMAIN" =~ [[:space:]] ]]; then
+              echo "::error::NFT_BASE_DOMAIN must not contain whitespace. Provide host only (for example: nft.example.com)."
+              exit 1
+            fi
+
+            DOMAIN="$NFT_BASE_DOMAIN"
+          else
+            # Fall back to the default Cloudflare Pages project domain
+            DOMAIN="${CF_PAGES_PROJECT}.pages.dev"
+            echo "::warning::NFT_BASE_DOMAIN is not set; using Cloudflare Pages default domain: $DOMAIN"
+          fi
+
+          BASE_TOKEN_URI="https://${DOMAIN}/metadata/"
+          CONTRACT_URI="https://${DOMAIN}/contract/collection.json"
+
+          echo "base_token_uri=$BASE_TOKEN_URI" >> "$GITHUB_OUTPUT"
+          echo "contract_uri=$CONTRACT_URI" >> "$GITHUB_OUTPUT"
+
+          echo "Resolved base token URI: $BASE_TOKEN_URI"
+          echo "Resolved contract URI:   $CONTRACT_URI"
+
+      - name: Verify metadata URLs are reachable
+        run: |
+          CONTRACT_URI="${{ steps.resolve-urls.outputs.contract_uri }}"
+
+          echo "Checking reachability: $CONTRACT_URI"
+          for i in 1 2 3 4 5; do
+            if curl --silent --fail --max-time 10 "$CONTRACT_URI" > /dev/null; then
+              echo "✓ $CONTRACT_URI is reachable."
+              exit 0
+            fi
+            echo "Attempt $i failed. Waiting 15 seconds before retry..."
+            sleep 15
+          done
+
+          echo "::error::Metadata URL is not reachable after 5 attempts: $CONTRACT_URI"
+          echo "::error::Deploy the nft-assets/ content and ensure the custom domain is active before deploying contracts."
+          exit 1
+
+  # ---------------------------------------------------------------------------
+  # 4. Deploy contracts (environment-scoped; chain secrets injected here)
   # ---------------------------------------------------------------------------
   deploy-contracts:
     name: Deploy contracts (${{ needs.resolve-environment.outputs.deploy_env }})
     runs-on: ubuntu-latest
-    needs: [resolve-environment, test]
+    needs: [resolve-environment, test, deploy-metadata]
     environment: ${{ needs.resolve-environment.outputs.deploy_env }}
     env:
       DEPLOY_ENV: ${{ needs.resolve-environment.outputs.deploy_env }}
@@ -202,6 +321,8 @@ jobs:
           Deployment__PrivateKey: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
           Deployment__ChainId: ${{ vars.CHAIN_ID }}
           Deployment__Network: ${{ env.DEPLOY_ENV }}
+          Deployment__Nft__BaseUri: ${{ needs.deploy-metadata.outputs.base_token_uri }}
+          Deployment__Nft__ContractMetadataUri: ${{ needs.deploy-metadata.outputs.contract_uri }}
         run: |
           dotnet runner-output/Tricksfor.Blockchain.Booster.Deploy.dll
 
@@ -235,7 +356,7 @@ jobs:
           if-no-files-found: warn
 
   # ---------------------------------------------------------------------------
-  # 4. Verify contracts on block explorer (non-blocking)
+  # 5. Verify contracts on block explorer (non-blocking)
   # ---------------------------------------------------------------------------
   verify-contracts:
     name: Verify contracts (${{ needs.resolve-environment.outputs.deploy_env }})
@@ -409,7 +530,7 @@ jobs:
           if-no-files-found: warn
 
   # ---------------------------------------------------------------------------
-  # 5. Publish NuGet package (non-blocking)
+  # 6. Publish NuGet package (non-blocking)
   # ---------------------------------------------------------------------------
   publish-nuget:
     name: Publish NuGet package
