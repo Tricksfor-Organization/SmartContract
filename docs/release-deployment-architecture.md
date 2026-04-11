@@ -441,7 +441,13 @@ dotnet pack src/Tricksfor.Blockchain.Booster/Tricksfor.Blockchain.Booster.csproj
 **Primary target: nuget.org**
 
 ```bash
+# Main package
 dotnet nuget push ./nupkg/*.nupkg \
+  --api-key ${{ secrets.NUGET_API_KEY }} \
+  --source https://api.nuget.org/v3/index.json
+
+# Symbol package (.snupkg) — pushed separately to the nuget.org symbol server
+dotnet nuget push ./nupkg/*.snupkg \
   --api-key ${{ secrets.NUGET_API_KEY }} \
   --source https://api.nuget.org/v3/index.json
 ```
@@ -450,21 +456,30 @@ dotnet nuget push ./nupkg/*.nupkg \
 
 **Secondary target: GitHub Packages (optional)**
 
-GitHub Packages may be used as a fallback or for pre-release packages. The `GITHUB_TOKEN` provided automatically by Actions is sufficient for publishing to GitHub Packages.
+GitHub Packages may be used as a fallback or for pre-release packages. The `GITHUB_TOKEN` provided automatically by Actions is sufficient for publishing to GitHub Packages. Only the main `.nupkg` is pushed to GitHub Packages; the `.snupkg` format is not supported there.
 
 ### Trusted Publishing
 
-When nuget.org supports OIDC Trusted Publishing for GitHub Actions, this workflow should migrate to Trusted Publishing to eliminate the long-lived `NUGET_API_KEY` secret. The migration is a forward-compatible change and does not affect consumers.
+nuget.org supports OIDC Trusted Publishing (Federated Credentials) for GitHub Actions. To migrate from the API key approach:
+
+1. Register the package on nuget.org and configure a Trusted Publisher under the package's settings, pointing to this repository and the `release-deploy.yml` workflow.
+2. Add `id-token: write` to the workflow's top-level permissions.
+3. Replace the `--api-key` flag with the OIDC token exchange step from the `NuGet/setup-nuget` action.
+
+This migration is forward-compatible and does not affect consumers. Until Trusted Publishing is configured on nuget.org, the `NUGET_API_KEY` secret approach remains in use.
 
 ### Publish gate
 
-NuGet publishing is controlled by the `NUGET_PUBLISH_ENABLED` environment variable stored per-environment in GitHub Environment variables. This allows test environments to run the full pipeline without publishing a package.
+NuGet publishing is controlled by the `NUGET_PUBLISH_ENABLED` variable stored per-environment in GitHub Environment variables. This allows test environments to run the full pipeline without publishing a package.
+
+The value is read from the `deploy-contracts` job (which is environment-scoped) and forwarded as a job output to the `publish-nuget` job. This ensures per-environment control without requiring the `publish-nuget` job to hold an environment scope of its own (which would otherwise trigger a second approval gate on mainnet environments).
 
 The `publish-nuget` job additionally checks:
 
 1. The `NUGET_PUBLISH_ENABLED` variable is `true`.
 2. The triggering release is not a GitHub draft release.
-3. The triggering release tag matches the stable pattern (`^v\d+\.\d+\.\d+$`) when publishing to nuget.org.
+3. The release tag produces a valid semver version after stripping the leading `v`; the job fails fast if not.
+4. The triggering release tag matches the stable pattern (`^v\d+\.\d+\.\d+$`) when publishing to nuget.org.
    - Pre-release packages may be published to GitHub Packages but not to nuget.org unless explicitly enabled.
 
 ---
@@ -512,7 +527,7 @@ Regardless of job outcome, the following artifacts are always uploaded:
 | Artifact | Job | Retention |
 |---|---|---|
 | Deployment manifests (`deployments/{network}/*.json`) | `deploy-contracts` | 90 days |
-| NuGet package (`.nupkg`) | `publish-nuget` | 90 days |
+| NuGet package (`.nupkg` + `.snupkg`) | `publish-nuget` | 90 days |
 | Verification transcript (stdout/stderr of verify commands) | `verify-contracts` | 30 days |
 
 ### Manual retry guidance
@@ -538,7 +553,7 @@ Regardless of job outcome, the following artifacts are always uploaded:
 | Chain selection | One GitHub Environment per chain/stage |
 | Mainnet approval | Required reviewers on all `*-mainnet` environments |
 | Contract verification | Hardhat Verify, separate job, skippable per environment |
-| NuGet package ID | `Tricksfor.Blockchain.Nethereum` |
+| NuGet package ID | `Tricksfor.SmartContracts` |
 | NuGet version source | Git tag (strip leading `v`) |
 | NuGet publish target | nuget.org (primary), GitHub Packages (optional) |
 | Verification failure | Non-blocking, artifact retained, job retryable |

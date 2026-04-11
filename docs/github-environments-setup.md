@@ -94,7 +94,7 @@ Set the following **Repository Secrets** under **Settings → Secrets and variab
 
 | Secret name    | Description                                                         |
 |----------------|---------------------------------------------------------------------|
-| `NUGET_API_KEY` | nuget.org API key for publishing `Tricksfor.Blockchain.Nethereum` |
+| `NUGET_API_KEY` | nuget.org API key for publishing `Tricksfor.SmartContracts` |
 
 ---
 
