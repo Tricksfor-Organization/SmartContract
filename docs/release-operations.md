@@ -119,7 +119,6 @@ Set the following under **Settings → Environments → {env-name} → Variables
 | Variable name          | Required | Description                                                        | Example value          |
 |------------------------|----------|--------------------------------------------------------------------|------------------------|
 | `CHAIN_ID`             | Yes      | EVM chain ID for the target network                                | `11155111`             |
-| `DEPLOY_ENV`           | Yes      | GitHub Environment name — must match the environment name exactly  | `ethereum-sepolia`     |
 | `NETWORK_KEY`          | Yes      | Hardhat network name for the `--network` flag during verification  | `sepolia`              |
 | `VERIFY_ENABLED`       | No       | Set to `true` to enable block-explorer verification                | `true`                 |
 | `NUGET_PUBLISH_ENABLED`| No       | Set to `true` to publish the NuGet package on deploy               | `false`                |
@@ -205,19 +204,19 @@ deployments/config/
 | `Deployment.Network` | Deployment target name — should match `DEPLOY_ENV` | No | deployment-params.json |
 | `Deployment.ChainId` | EVM chain ID — can also be set via `CHAIN_ID` env variable | No | deployment-params.json or `CHAIN_ID` variable |
 | `Deployment.DeploymentsOutputPath` | Root folder where manifests are written | No | deployment-params.json |
-| `Nft.Name` | ERC-721 token name (`NFT_NAME` in the issue) | No | deployment-params.json |
-| `Nft.Symbol` | ERC-721 token symbol (`NFT_SYMBOL`) | No | deployment-params.json |
-| `Nft.BaseUri` | Base URI prepended to every token ID (`BASE_TOKEN_URI`) | No | deployment-params.json |
-| `Nft.ContractMetadataUri` | OpenSea `contractURI()` value (`CONTRACT_URI`) | No | deployment-params.json |
-| `Nft.RoyaltyReceiver` | ERC-2981 royalty receiver address; leave `""` to use deployer address | No | deployment-params.json |
-| `Nft.RoyaltyFeeBasisPoints` | ERC-2981 royalty fee in basis points (500 = 5%) | No | deployment-params.json |
+| `Deployment.Nft.Name` | ERC-721 token name (`NFT_NAME` in the issue) | No | deployment-params.json |
+| `Deployment.Nft.Symbol` | ERC-721 token symbol (`NFT_SYMBOL`) | No | deployment-params.json |
+| `Deployment.Nft.BaseUri` | Base URI prepended to every token ID (`BASE_TOKEN_URI`) | No | deployment-params.json |
+| `Deployment.Nft.ContractMetadataUri` | OpenSea `contractURI()` value (`CONTRACT_URI`) | No | deployment-params.json |
+| `Deployment.Nft.RoyaltyReceiver` | ERC-2981 royalty receiver address; leave `""` to use deployer address | No | deployment-params.json |
+| `Deployment.Nft.RoyaltyFeeBasisPoints` | ERC-2981 royalty fee in basis points (500 = 5%) | No | deployment-params.json |
 | RPC endpoint URL | JSON-RPC provider URL | **Secret** | `RPC_URL` environment secret |
 | Deployer private key | Deployer wallet key | **Secret** | `DEPLOYER_PRIVATE_KEY` environment secret |
 | Explorer API key | Block explorer API key | **Secret** | `EXPLORER_API_KEY` environment secret |
 
 > **Admin and minter addresses:** The current deployment runner uses the deployer wallet as the
 > default admin. If your contract supports explicit admin or minter parameters, add them to the
-> `Nft` section of the params file. These addresses are not secrets and can be committed.
+> `Deployment.Nft` section of the params file. These addresses are not secrets and can be committed.
 
 ### Priority order
 
