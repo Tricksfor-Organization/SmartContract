@@ -155,11 +155,12 @@ rps-scissors-5x.png
 
 ### 4.1 Chain Separation
 
-Each supported blockchain has its own smart contract deployment and its own collection.
-Because token IDs are independent per contract, and because the same `nft-assets/` directory
-is served by a single Cloudflare Pages deployment, the per-chain distinction is recorded
-in the supply manifest and reflected in token metadata (via the optional `Chain` attribute)
-rather than in the directory layout of the static files.
+Each supported blockchain has its own smart contract deployment and its own collection contract,
+but **all chains share the same set of metadata and image files**. Token ID `1` on Ethereum and
+token ID `1` on Polygon both resolve to the same `metadata/1.json` and `images/1.png`. The
+per-chain distinction is recorded in the supply manifest (see § 6) and may optionally be
+reflected in the token metadata via the `Chain` attribute (see `docs/nft-metadata-schema.md`),
+but it does not affect the static file layout.
 
 There is **one set of static files per Cloudflare Pages project**. The current mapping is:
 
@@ -168,13 +169,9 @@ There is **one set of static files per Cloudflare Pages project**. The current m
 | All mainnet     | `tricksfor-nft`           | `nft.tricksfor.com`          |
 | All testnet     | `tricksfor-nft-preview`   | `nft-preview.tricksfor.com`  |
 
-Token metadata files for all chains that share a Cloudflare Pages project coexist in the same
-`metadata/` and `images/` directories because each chain's contract has non-overlapping token
-IDs (see § 5 on supply sizing).
-
-> **Note:** If two chains require overlapping token ID ranges in the same Pages project, introduce
-> a subdirectory per chain (e.g. `metadata/ethereum/` or `images/polygon/`) and update
-> `BASE_TOKEN_URI` accordingly. This is not the current default.
+Because assets are shared, the `BASE_TOKEN_URI` for every chain deployment within the same
+environment tier points to the same Cloudflare Pages domain. There are no per-chain
+subdirectories.
 
 ### 4.2 Directory Structure
 
@@ -215,8 +212,12 @@ copies or links the appropriate source image for each token ID based on the mani
 ### 5.1 Scope
 
 Token IDs are scoped to a single contract deployment (one chain, one contract address).
-IDs start at `1` and are assigned sequentially in mint order. Two separate contract deployments
-on different chains may each have a token with ID `1` — they are distinct tokens.
+Under the current minting process, IDs start at `1` and are assigned sequentially in mint
+order. This is an off-chain minting policy — the contract accepts arbitrary explicit IDs via
+`safeMint(address, uint256)`; sequential assignment is enforced by the minting process and the
+supply manifest, not by the contract itself. Two separate contract deployments on different
+chains may each have a token with ID `1` — they resolve to the same shared metadata and image
+(see § 4.1).
 
 ### 5.2 Grouping by Theme
 
@@ -348,15 +349,18 @@ manifests — not the template — are committed to the repository.
 ## 7. Canonical Chain Names
 
 The following canonical chain names and identifiers are used in manifests, optional metadata
-attributes, and deployment configuration. The `env` prefix matches the directory name under
-`deployments/config/`.
+attributes, and deployment configuration. To avoid ambiguity, this table distinguishes between
+the chain display name used in deployment documentation, the environment prefix used for
+directories under `deployments/config/`, and the optional `Chain` metadata value used in
+generated token metadata.
 
-| `Chain` metadata value | Environment prefix  | Notes                     |
-|------------------------|---------------------|---------------------------|
-| `"Ethereum"`           | `ethereum-`         |                           |
-| `"Polygon"`            | `polygon-`          |                           |
-| `"BNB Chain"`          | `bsc-`              |                           |
-| `"Avalanche"`          | `avalanche-`        |                           |
+| Chain display name | Environment prefix | Optional `Chain` metadata value | Notes |
+|--------------------|--------------------|---------------------------------|-------|
+| Ethereum           | `ethereum-`        | `"Ethereum"`                    |       |
+| Polygon            | `polygon-`         | `"Polygon"`                     |       |
+| BNB Smart Chain    | `bsc-`             | `"BNB Chain"`                   | Use "BNB Smart Chain" in deployment documentation; use `"BNB Chain"` only for the optional metadata attribute value. |
+| Avalanche          | `avalanche-`       | `"Avalanche"`                   |       |
+| Optimism           | `optimism-`        | `"Optimism"`                    |       |
 
 ---
 
@@ -425,6 +429,7 @@ The `_redirects` rewrite rule transparently serves `metadata/255.json` for this 
 5. **The manifest is the authoritative record.** Metadata files and image files must match the manifest. Regenerate them from the manifest rather than editing them manually.
 6. **Theme grouping order (coin → dice → rps) must not change** within an active deployment.
 7. **Chain separation is per-contract.** Do not mix tokens from different chain deployments in the same contract.
+8. **Metadata and image assets are shared across all chains.** The same `nft-assets/` files are served to all chain deployments in the same environment tier. Do not create chain-specific copies of metadata or image files.
 
 ---
 
