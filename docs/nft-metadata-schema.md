@@ -17,6 +17,19 @@ Every token metadata file must include the following top-level fields:
 | `external_url` | optional | string | Link to the token detail page on tricksfor.com       |
 | `attributes`   | ✅       | array  | Array of trait objects (see below)                   |
 
+### Token URI format
+
+The NFT contract uses the OpenZeppelin default `tokenURI` pattern:
+`tokenURI(id) = {baseURI}{id}` — **no `.json` suffix**.
+
+With `baseURI = https://nft.tricksfor.com/metadata/`, `tokenURI(1)` returns
+`https://nft.tricksfor.com/metadata/1`.
+
+Static metadata files are named `{tokenId}.json` (e.g. `metadata/1.json`). A
+Cloudflare Pages rewrite rule in `nft-assets/_redirects` transparently maps
+extensionless requests (`/metadata/1`) to the corresponding file (`/metadata/1.json`),
+so the on-chain URI resolves correctly without renaming the files.
+
 ---
 
 ## Required Attributes

@@ -19,19 +19,29 @@ nft-assets/
 │   └── ...
 ├── contract/          Collection-level metadata
 │   └── collection.json
-└── _headers           Cloudflare Pages response headers (CORS, content-type, cache)
+├── _headers           Cloudflare Pages response headers (CORS, content-type, cache)
+└── _redirects         Cloudflare Pages rewrite rules (extensionless → .json for tokenURI compatibility)
 ```
 
 ---
 
 ## URL Paths After Deployment
 
-| Asset                        | URL                                                  |
-|------------------------------|------------------------------------------------------|
-| Token metadata (token 1)     | `https://nft.tricksfor.com/metadata/1.json`          |
-| Token metadata (token 2)     | `https://nft.tricksfor.com/metadata/2.json`          |
-| Collection metadata          | `https://nft.tricksfor.com/contract/collection.json` |
-| Token image (token 1)        | `https://nft.tricksfor.com/images/1.png`             |
+The NFT contract uses the OpenZeppelin default `tokenURI` pattern: `tokenURI(id) = {baseURI}{id}`.
+With `baseURI = https://nft.tricksfor.com/metadata/`, the contract returns extensionless URIs.
+Static metadata files are named `{tokenId}.json`. The `_redirects` file rewrites extensionless
+requests to the corresponding `.json` file, so both forms resolve correctly:
+
+| Asset                              | URL                                                    |
+|------------------------------------|--------------------------------------------------------|
+| Token metadata — on-chain URI      | `https://nft.tricksfor.com/metadata/1` *(from tokenURI)* |
+| Token metadata — direct file       | `https://nft.tricksfor.com/metadata/1.json`            |
+| Collection metadata                | `https://nft.tricksfor.com/contract/collection.json`   |
+| Token image (token 1)              | `https://nft.tricksfor.com/images/1.png`               |
+
+The `_redirects` rewrite rule (`/metadata/:id → /metadata/:id.json 200`) means requests
+to the extensionless on-chain URI transparently serve the `.json` file without redirecting
+the caller's browser.
 
 ---
 
