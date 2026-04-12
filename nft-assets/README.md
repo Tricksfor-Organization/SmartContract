@@ -82,6 +82,8 @@ four required attributes defined in the [NFT Metadata Attribute Schema](../docs/
 See [`docs/nft-metadata-schema.md`](../docs/nft-metadata-schema.md) for the full attribute schema,
 all valid values, and examples covering every game theme and booster tier.
 See [`docs/metadata/token-example.json`](../docs/metadata/token-example.json) for a standalone reference file.
+See [`docs/nft-assets-spec.md`](../docs/nft-assets-spec.md) for the asset taxonomy, token ID mapping rules,
+image naming convention, and static file layout specification.
 
 ---
 
