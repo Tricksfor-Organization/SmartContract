@@ -51,23 +51,27 @@ overrides (`Deployment__Nft__BaseUri` and `Deployment__Nft__ContractMetadataUri`
 
 ## Token Metadata Format
 
-Each `metadata/{tokenId}.json` file must follow the OpenSea metadata standard:
+Each `metadata/{tokenId}.json` file must follow the OpenSea metadata standard and include the
+four required attributes defined in the [NFT Metadata Attribute Schema](../docs/nft-metadata-schema.md):
 
 ```json
 {
   "name": "Tricksfor Booster #1",
-  "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay.",
+  "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
   "image": "https://nft.tricksfor.com/images/1.png",
   "external_url": "https://tricksfor.com/boosters/1",
   "attributes": [
-    { "trait_type": "Booster Type", "value": "Gold" },
-    { "trait_type": "Multiplier",   "value": "2x"   },
-    { "trait_type": "Rarity",       "value": "Rare"  }
+    { "trait_type": "Game",       "value": "Coin"       },
+    { "trait_type": "Option",     "value": "Heads"      },
+    { "trait_type": "Booster",    "value": "2x Booster" },
+    { "trait_type": "Multiplier", "value": "2x"         }
   ]
 }
 ```
 
-See `docs/metadata/token-example.json` for a full reference example.
+See [`docs/nft-metadata-schema.md`](../docs/nft-metadata-schema.md) for the full attribute schema,
+all valid values, and examples covering every game theme and booster tier.
+See [`docs/metadata/token-example.json`](../docs/metadata/token-example.json) for a standalone reference file.
 
 ---
 

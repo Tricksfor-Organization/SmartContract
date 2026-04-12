@@ -18,6 +18,12 @@ See [`contract-example.json`](contract-example.json) for a reference collection 
 
 > **Warning:** `collection-example.json` is a legacy alias for the same format and is kept only for historical reference. It may still contain an unsafe zero `fee_recipient`, so do **not** copy it as-is for production use. Prefer `contract-example.json` and replace the royalty recipient placeholder before publishing.
 
+## Attribute Schema
+
+The finalized token attribute schema — including all required attributes (`Game`, `Option`,
+`Booster`, `Multiplier`), valid values, optional attributes, and example JSON for all game
+themes — is documented in [`docs/nft-metadata-schema.md`](../nft-metadata-schema.md).
+
 ## OpenSea Metadata Standard
 
 Token metadata must include the following fields:
