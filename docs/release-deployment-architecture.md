@@ -397,6 +397,32 @@ the contract is always deployed with the exact URLs that were verified live.
 
 See [`docs/cloudflare-pages-setup.md`](cloudflare-pages-setup.md) for the full setup guide.
 
+### Chain-aware deployment strategy
+
+Each supported chain has its own NFT contract deployment, but they all reference the same
+static metadata. The workflow is parameterised per GitHub Environment:
+
+- **All mainnet environments** share a single production Cloudflare Pages project
+  (`tricksfor-nft`) and custom domain (`nft.tricksfor.com`), so every mainnet contract
+  on every chain resolves to the same authoritative metadata URLs.
+- **All testnet environments** share a separate preview project
+  (`tricksfor-nft-preview` / `nft-preview.tricksfor.com`) so that pre-release
+  deployments never overwrite production metadata.
+
+| Environments     | Recommended `CF_PAGES_PROJECT` | Recommended `NFT_BASE_DOMAIN`   |
+|------------------|--------------------------------|---------------------------------|
+| `*-mainnet`      | `tricksfor-nft`                | `nft.tricksfor.com`             |
+| `*-sepolia`, `*-amoy`, `*-testnet`, `*-fuji` | `tricksfor-nft-preview` | `nft-preview.tricksfor.com` |
+
+The `BASE_TOKEN_URI` and `CONTRACT_URI` resolved by each run are therefore deterministic:
+a mainnet release always produces `https://nft.tricksfor.com/metadata/` and
+`https://nft.tricksfor.com/contract/collection.json`, and a testnet release always
+produces the equivalent preview URLs.
+
+See [`docs/cloudflare-pages-setup.md` § Multi-Chain Deployment Strategy](cloudflare-pages-setup.md#8-multi-chain-deployment-strategy)
+and [`docs/release-operations.md` § Required Variables](release-operations.md#4-required-variables)
+for the complete per-environment configuration reference.
+
 ### Stability guarantee
 
 Once the custom domain is bound and the contract is deployed with those URLs:
@@ -643,6 +669,7 @@ Regardless of job outcome, the following artifacts are always uploaded:
 | Mainnet approval | Required reviewers on all `*-mainnet` environments |
 | NFT asset hosting | Cloudflare Pages, deployed from `nft-assets/` directory |
 | Metadata base URI source | Resolved by `deploy-metadata` job from `NFT_BASE_DOMAIN` or `CF_PAGES_PROJECT` |
+| Per-chain metadata isolation | Separate CF Pages projects per stage: `tricksfor-nft` (mainnet), `tricksfor-nft-preview` (testnet) |
 | Contract deployment blocked by metadata | Yes — `deploy-contracts` requires `deploy-metadata` to succeed |
 | Contract verification | Hardhat Verify, separate job, skippable per environment |
 | NuGet package ID | `Tricksfor.SmartContracts` |

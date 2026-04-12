@@ -18,6 +18,7 @@ before the smart contracts are deployed.
 5. [Variable and Secret Reference](#5-variable-and-secret-reference)
 6. [How the Workflow Uses These Values](#6-how-the-workflow-uses-these-values)
 7. [Manual Deployment (Optional)](#7-manual-deployment-optional)
+8. [Multi-Chain Deployment Strategy](#8-multi-chain-deployment-strategy)
 
 ---
 
@@ -193,3 +194,69 @@ Or use the Cloudflare dashboard: **Workers & Pages → {project} → Deployments
 > Manual deployments are useful for verifying metadata before a release. The release
 > workflow will overwrite manual uploads with the committed `nft-assets/` contents when
 > a GitHub Release is published.
+
+---
+
+## 8. Multi-Chain Deployment Strategy
+
+The Tricksfor Booster collection is deployed as a separate NFT contract on each supported
+chain (Ethereum, Polygon, Optimism, BNB Smart Chain, Avalanche). Each chain's contract
+references the same static metadata hosted on Cloudflare Pages. The release workflow
+targets one GitHub Environment per chain/stage, and each environment can be configured
+with its own Cloudflare Pages project and custom domain.
+
+### Testnet/mainnet isolation
+
+> **Every release deploys `nft-assets/` to Cloudflare Pages before deploying contracts.**
+> If all environments share the same project (`tricksfor-nft`) and domain
+> (`nft.tricksfor.com`), a testnet release will overwrite the metadata that production
+> contracts are pointing to. Use a dedicated project and domain for non-production
+> environments.
+
+| Category         | `CF_PAGES_PROJECT`       | `NFT_BASE_DOMAIN`             |
+|------------------|--------------------------|-------------------------------|
+| All mainnet envs | `tricksfor-nft`          | `nft.tricksfor.com`           |
+| All testnet envs | `tricksfor-nft-preview`  | `nft-preview.tricksfor.com`   |
+
+This isolation guarantees that:
+- testnet releases never overwrite production metadata
+- each mainnet chain's contract resolves to the same, authoritative `nft.tricksfor.com` URLs
+- pre-release metadata can be verified on the preview domain before the contract is deployed
+
+### How per-chain URLs are resolved
+
+Because all mainnet environments share the same Cloudflare Pages project
+(`tricksfor-nft`) and custom domain (`nft.tricksfor.com`), all mainnet contracts
+produce identical metadata URLs regardless of which chain they are deployed to:
+
+| Contract parameter | Resolved value (mainnet)                                  |
+|--------------------|-----------------------------------------------------------|
+| `BASE_TOKEN_URI`   | `https://nft.tricksfor.com/metadata/`                     |
+| `CONTRACT_URI`     | `https://nft.tricksfor.com/contract/collection.json`      |
+
+For testnet environments the same pattern applies using the preview domain:
+
+| Contract parameter | Resolved value (testnet)                                         |
+|--------------------|------------------------------------------------------------------|
+| `BASE_TOKEN_URI`   | `https://nft-preview.tricksfor.com/metadata/`                    |
+| `CONTRACT_URI`     | `https://nft-preview.tricksfor.com/contract/collection.json`     |
+
+### Creating a second Pages project for testnet
+
+Repeat the steps in [Section 2](#2-create-the-cloudflare-pages-project) and
+[Section 3](#3-bind-a-custom-domain) for the testnet project:
+
+1. Create a new Pages project named `tricksfor-nft-preview`.
+2. Bind the custom domain `nft-preview.tricksfor.com`.
+3. Set `CF_PAGES_PROJECT=tricksfor-nft-preview` and
+   `NFT_BASE_DOMAIN=nft-preview.tricksfor.com` in every testnet GitHub Environment
+   (`ethereum-sepolia`, `polygon-amoy`, `optimism-sepolia`, `bsc-testnet`, `avalanche-fuji`).
+
+The `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` values can be reused across all
+environments — a single API token with **Cloudflare Pages: Edit** scope covers both projects.
+
+### Recommended per-environment configuration
+
+See [`docs/release-operations.md`](release-operations.md#4-required-variables) — the
+"Recommended variable values per environment" table — for the complete list of `CF_PAGES_PROJECT`,
+`NFT_BASE_DOMAIN`, and other variable values for all ten supported environments.
