@@ -118,3 +118,17 @@ See `docs/metadata/contract-example.json` for the field reference.
 See [`docs/cloudflare-pages-setup.md`](../docs/cloudflare-pages-setup.md) for instructions
 on creating the Cloudflare Pages project, binding the custom domain, and configuring the
 required GitHub Environment secrets and variables.
+
+The same `nft-assets/` directory is deployed to Cloudflare Pages on every release,
+regardless of which chain is being targeted. Each GitHub Environment can point to a
+different Cloudflare Pages project and custom domain so that testnet deployments never
+overwrite production metadata:
+
+| Environments        | `CF_PAGES_PROJECT`      | `NFT_BASE_DOMAIN`             |
+|---------------------|-------------------------|-------------------------------|
+| All mainnet envs    | `tricksfor-nft`         | `nft.tricksfor.com`           |
+| All testnet envs    | `tricksfor-nft-preview` | `nft-preview.tricksfor.com`   |
+
+See [`docs/cloudflare-pages-setup.md` § Multi-Chain Deployment Strategy](../docs/cloudflare-pages-setup.md#8-multi-chain-deployment-strategy)
+and [`docs/release-operations.md` § Required Variables](../docs/release-operations.md#4-required-variables)
+for the recommended per-environment configuration.
