@@ -1,0 +1,11 @@
+# Rewrite extensionless metadata requests to the corresponding .json file.
+#
+# The NFT contract uses the OpenZeppelin default tokenURI pattern:
+#   tokenURI(id) = {baseURI}{id}    (no .json suffix)
+#
+# Static metadata files are named {tokenId}.json for clarity. This rewrite
+# transparently serves the .json file for requests made without a suffix,
+# so that tokenURI(1) → https://nft.tricksfor.com/metadata/1 resolves correctly.
+#
+# The 200 status code is a proxy rewrite (the browser URL is unchanged).
+/metadata/:id  /metadata/:id.json  200

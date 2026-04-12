@@ -19,19 +19,29 @@ nft-assets/
 │   └── ...
 ├── contract/          Collection-level metadata
 │   └── collection.json
-└── _headers           Cloudflare Pages response headers (CORS, content-type, cache)
+├── _headers           Cloudflare Pages response headers (CORS, content-type, cache)
+└── _redirects         Cloudflare Pages rewrite rules (extensionless → .json for tokenURI compatibility)
 ```
 
 ---
 
 ## URL Paths After Deployment
 
-| Asset                        | URL                                                  |
-|------------------------------|------------------------------------------------------|
-| Token metadata (token 1)     | `https://nft.tricksfor.com/metadata/1.json`          |
-| Token metadata (token 2)     | `https://nft.tricksfor.com/metadata/2.json`          |
-| Collection metadata          | `https://nft.tricksfor.com/contract/collection.json` |
-| Token image (token 1)        | `https://nft.tricksfor.com/images/1.png`             |
+The NFT contract uses the OpenZeppelin default `tokenURI` pattern: `tokenURI(id) = {baseURI}{id}`.
+With `baseURI = https://nft.tricksfor.com/metadata/`, the contract returns extensionless URIs.
+Static metadata files are named `{tokenId}.json`. The `_redirects` file rewrites extensionless
+requests to the corresponding `.json` file, so both forms resolve correctly:
+
+| Asset                              | URL                                                    |
+|------------------------------------|--------------------------------------------------------|
+| Token metadata — on-chain URI      | `https://nft.tricksfor.com/metadata/1` *(from tokenURI)* |
+| Token metadata — direct file       | `https://nft.tricksfor.com/metadata/1.json`            |
+| Collection metadata                | `https://nft.tricksfor.com/contract/collection.json`   |
+| Token image (token 1)              | `https://nft.tricksfor.com/images/1.png`               |
+
+The `_redirects` rewrite rule (`/metadata/:id → /metadata/:id.json 200`) means requests
+to the extensionless on-chain URI transparently serve the `.json` file without redirecting
+the caller's browser.
 
 ---
 
@@ -51,23 +61,27 @@ overrides (`Deployment__Nft__BaseUri` and `Deployment__Nft__ContractMetadataUri`
 
 ## Token Metadata Format
 
-Each `metadata/{tokenId}.json` file must follow the OpenSea metadata standard:
+Each `metadata/{tokenId}.json` file must follow the OpenSea metadata standard and include the
+four required attributes defined in the [NFT Metadata Attribute Schema](../docs/nft-metadata-schema.md):
 
 ```json
 {
   "name": "Tricksfor Booster #1",
-  "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay.",
+  "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
   "image": "https://nft.tricksfor.com/images/1.png",
   "external_url": "https://tricksfor.com/boosters/1",
   "attributes": [
-    { "trait_type": "Booster Type", "value": "Gold" },
-    { "trait_type": "Multiplier",   "value": "2x"   },
-    { "trait_type": "Rarity",       "value": "Rare"  }
+    { "trait_type": "Game",       "value": "Coin"       },
+    { "trait_type": "Option",     "value": "Heads"      },
+    { "trait_type": "Booster",    "value": "2x Booster" },
+    { "trait_type": "Multiplier", "value": "2x"         }
   ]
 }
 ```
 
-See `docs/metadata/token-example.json` for a full reference example.
+See [`docs/nft-metadata-schema.md`](../docs/nft-metadata-schema.md) for the full attribute schema,
+all valid values, and examples covering every game theme and booster tier.
+See [`docs/metadata/token-example.json`](../docs/metadata/token-example.json) for a standalone reference file.
 
 ---
 

@@ -118,7 +118,8 @@ When a GitHub Release is published, the `release-deploy.yml` workflow:
 2. **Deploys NFT assets** (`deploy-metadata` job):
    - Checks out the repository.
    - Validates that `CF_PAGES_PROJECT` is set.
-   - Runs `cloudflare/pages-action@v1` to deploy the `nft-assets/` directory.
+   - Runs `cloudflare/pages-action@v1` to deploy the `nft-assets/` directory, including
+     `_headers`, `_redirects`, `metadata/`, `images/`, and `contract/`.
    - Resolves the final base URI and contract URI:
      - If `NFT_BASE_DOMAIN` is set: `https://{NFT_BASE_DOMAIN}/metadata/`
      - Otherwise: `https://{CF_PAGES_PROJECT}.pages.dev/metadata/`
@@ -132,6 +133,19 @@ When a GitHub Release is published, the `release-deploy.yml` workflow:
 The `deploy-contracts` job only runs if `deploy-metadata` succeeds. This ensures contracts
 are never deployed with unresolved or incorrect metadata URLs.
 
+### tokenURI and the `_redirects` rewrite
+
+The NFT contract uses the OpenZeppelin default `tokenURI(id) = {baseURI}{id}` — no `.json`
+suffix. Static metadata files are named `{tokenId}.json`. The `nft-assets/_redirects` file
+includes a Cloudflare Pages proxy rewrite:
+
+```
+/metadata/:id  /metadata/:id.json  200
+```
+
+This serves the `.json` file transparently at the extensionless URL the contract produces,
+so `tokenURI(1) → https://{domain}/metadata/1` resolves to the content of `metadata/1.json`.
+
 ### URL flow diagram
 
 ```
@@ -139,7 +153,7 @@ NFT_BASE_DOMAIN (env var)
         │
         ▼
 deploy-metadata job
-        ├── cloudflare/pages-action  (deploys nft-assets/)
+        ├── cloudflare/pages-action  (deploys nft-assets/ including _redirects)
         └── resolve-urls step
               ├── base_token_uri = https://{domain}/metadata/
               └── contract_uri   = https://{domain}/contract/collection.json
@@ -152,6 +166,7 @@ deploy-metadata job
                           ▼
                     TricksforBoosterNFT constructor
                           ├── tokenURI(id)  → https://{domain}/metadata/{id}
+                          │                   (rewritten to /metadata/{id}.json via _redirects)
                           └── contractURI() → https://{domain}/contract/collection.json
 ```
 
