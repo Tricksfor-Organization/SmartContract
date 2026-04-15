@@ -66,7 +66,7 @@ four required attributes defined in the [NFT Metadata Attribute Schema](../docs/
 
 ```json
 {
-  "name": "Tricksfor Booster #1",
+  "name": "Tricksfor Coin Heads 2x Booster #1",
   "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
   "image": "https://nft.tricksfor.com/images/1.png",
   "external_url": "https://tricksfor.com/boosters/1",

@@ -384,7 +384,7 @@ nft-assets/images/255.png     ← copy of dice-4-3x.png
 
 ```json
 {
-  "name": "Tricksfor Booster #255",
+  "name": "Tricksfor Dice 4 3x Booster #255",
   "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
   "image": "https://nft.tricksfor.com/images/255.png",
   "external_url": "https://tricksfor.com/boosters/255",
