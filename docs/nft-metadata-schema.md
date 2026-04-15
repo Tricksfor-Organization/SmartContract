@@ -59,6 +59,10 @@ environment tier share the same static files.
 | Token metadata (direct file) | `https://nft.tricksfor.com/metadata/{tokenId}.json`         |
 | Token image                  | `https://nft.tricksfor.com/images/{tokenId}.png`            |
 | Collection metadata          | `https://nft.tricksfor.com/contract/collection.json`        |
+| Collection image             | `https://nft.tricksfor.com/images/collection.png`           |
+
+The `image` field in `contractURI` metadata must use the collection image URL above so published
+collection metadata and static assets stay consistent across consumers and environments.
 
 The `_redirects` rule in `nft-assets/_redirects` rewrites extensionless requests to the
 corresponding `.json` file, so the on-chain `tokenURI` (which omits the `.json` suffix) resolves
