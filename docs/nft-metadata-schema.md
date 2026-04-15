@@ -9,13 +9,67 @@ Booster NFT collections. All token metadata JSON files must conform to this sche
 
 Every token metadata file must include the following top-level fields:
 
-| Field          | Required | Type   | Description                                          |
-|----------------|----------|--------|------------------------------------------------------|
-| `name`         | ✅       | string | Display name of the token (e.g. `"Tricksfor Booster #1"`) |
-| `description`  | ✅       | string | Human-readable description of the token              |
-| `image`        | ✅       | string | URI to the token image (IPFS `ipfs://` or HTTPS)     |
-| `external_url` | optional | string | Link to the token detail page on tricksfor.com       |
-| `attributes`   | ✅       | array  | Array of trait objects (see below)                   |
+| Field          | Required | Type   | Description                                                              |
+|----------------|----------|--------|--------------------------------------------------------------------------|
+| `name`         | ✅       | string | Display name of the token — see [Token Name Convention](#token-name-convention) |
+| `description`  | ✅       | string | Human-readable description of the token                                  |
+| `image`        | ✅       | string | HTTPS URL to the token image on Cloudflare Pages                         |
+| `external_url` | optional | string | Link to the token detail page on tricksfor.com                           |
+| `attributes`   | ✅       | array  | Array of trait objects (see below)                                       |
+
+---
+
+## Token Name Convention
+
+Every token's `name` field must follow this pattern:
+
+```
+Tricksfor {Game} {Option} {multiplier} Booster #{tokenId}
+```
+
+Where:
+- `{Game}` is the `Game` attribute value (`Coin`, `Dice`, or `Rock Paper Scissors`). When the game name is multi-word (as in `Rock Paper Scissors`), the full multi-word name is used verbatim — no abbreviation.
+- `{Option}` is the `Option` attribute value (e.g. `Heads`, `Tails`, `1`–`6`, `Rock`, `Paper`, `Scissors`)
+- `{multiplier}` is the `Multiplier` attribute value (`2x`, `3x`, or `5x`)
+- `{tokenId}` is the on-chain token ID
+
+### Examples
+
+| Token ID | `Game` attribute       | `Option` attribute | `Multiplier` attribute | `name`                                                   |
+|----------|------------------------|--------------------|------------------------|----------------------------------------------------------|
+| 1        | Coin                   | Heads              | 2x                     | `Tricksfor Coin Heads 2x Booster #1`                     |
+| 87       | Dice                   | 6                  | 3x                     | `Tricksfor Dice 6 3x Booster #87`                        |
+| 401      | Rock Paper Scissors    | Rock               | 2x                     | `Tricksfor Rock Paper Scissors Rock 2x Booster #401`     |
+| 450      | Rock Paper Scissors    | Scissors           | 5x                     | `Tricksfor Rock Paper Scissors Scissors 5x Booster #450` |
+
+> **Note:** Use the canonical multiplier values (`2x`, `3x`, `5x`) in the name — do not use
+> ordinal labels such as "Tier 1" or "Tier 2". The multiplier is the stable, unambiguous identifier.
+
+---
+
+## Cloudflare Pages URL Model
+
+Token metadata, images, and collection metadata are served from a single Cloudflare Pages project
+per environment tier. There are no per-chain subdirectories — all chain deployments within the same
+environment tier share the same static files.
+
+| Asset                        | URL pattern                                                 |
+|------------------------------|-------------------------------------------------------------|
+| Token metadata (on-chain URI)| `https://nft.tricksfor.com/metadata/{tokenId}`              |
+| Token metadata (direct file) | `https://nft.tricksfor.com/metadata/{tokenId}.json`         |
+| Token image                  | `https://nft.tricksfor.com/images/{tokenId}.png`            |
+| Collection metadata          | `https://nft.tricksfor.com/contract/collection.json`        |
+| Collection image             | `https://nft.tricksfor.com/images/collection.png`           |
+
+The `image` field in `contractURI` metadata must use the collection image URL above so published
+collection metadata and static assets stay consistent across consumers and environments.
+
+The `_redirects` rule in `nft-assets/_redirects` rewrites extensionless requests to the
+corresponding `.json` file, so the on-chain `tokenURI` (which omits the `.json` suffix) resolves
+correctly without renaming files on disk.
+
+For testnet deployments the domain is `nft-preview.tricksfor.com`. See
+[`nft-assets/README.md`](../nft-assets/README.md) for the full Cloudflare Pages configuration.
 
 ### Token URI format
 
@@ -151,7 +205,7 @@ Do not mix a `Booster` tier with an inconsistent `Multiplier` value.
 
 ```json
 {
-  "name": "Tricksfor Booster #1",
+  "name": "Tricksfor Coin Heads 2x Booster #1",
   "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
   "image": "https://nft.tricksfor.com/images/1.png",
   "external_url": "https://tricksfor.com/boosters/1",
@@ -170,7 +224,7 @@ Do not mix a `Booster` tier with an inconsistent `Multiplier` value.
 
 ```json
 {
-  "name": "Tricksfor Booster #2",
+  "name": "Tricksfor Coin Tails 5x Booster #2",
   "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
   "image": "https://nft.tricksfor.com/images/2.png",
   "external_url": "https://tricksfor.com/boosters/2",
@@ -189,7 +243,7 @@ Do not mix a `Booster` tier with an inconsistent `Multiplier` value.
 
 ```json
 {
-  "name": "Tricksfor Booster #3",
+  "name": "Tricksfor Dice 4 3x Booster #3",
   "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
   "image": "https://nft.tricksfor.com/images/3.png",
   "external_url": "https://tricksfor.com/boosters/3",
@@ -208,7 +262,7 @@ Do not mix a `Booster` tier with an inconsistent `Multiplier` value.
 
 ```json
 {
-  "name": "Tricksfor Booster #4",
+  "name": "Tricksfor Rock Paper Scissors Rock 2x Booster #4",
   "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
   "image": "https://nft.tricksfor.com/images/4.png",
   "external_url": "https://tricksfor.com/boosters/4",
@@ -227,7 +281,7 @@ Do not mix a `Booster` tier with an inconsistent `Multiplier` value.
 
 ```json
 {
-  "name": "Tricksfor Booster #5",
+  "name": "Tricksfor Rock Paper Scissors Scissors 5x Booster #5",
   "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
   "image": "https://nft.tricksfor.com/images/5.png",
   "external_url": "https://tricksfor.com/boosters/5",

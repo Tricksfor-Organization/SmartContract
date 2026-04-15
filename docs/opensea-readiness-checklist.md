@@ -25,9 +25,9 @@ This checklist must be completed before deploying the `TricksforBoosterNFT` coll
 - [ ] Token metadata is served at `{baseURI}{tokenId}` — this is the standard OpenZeppelin `ERC721` URI pattern
 - [ ] The metadata host (IPFS gateway, CDN, or server) is live and reachable from the public internet
 - [ ] Each token's metadata JSON conforms to the OpenSea metadata standard (see [token-example.json](metadata/token-example.json)):
-  - `name` — display name of the token (e.g., `"Tricksfor Booster #1"`)
+  - `name` — display name of the token (e.g., `"Tricksfor Coin Heads 2x Booster #1"`) — see [Token Name Convention](nft-metadata-schema.md#token-name-convention)
   - `description` — human-readable description of the token
-  - `image` — URI to the token image (IPFS `ipfs://` or HTTPS)
+  - `image` — HTTPS URL to the token image on Cloudflare Pages
   - `attributes` — array of trait objects, each with `trait_type` and `value`
   - `external_url` — optional link to the token's page on the Tricksfor website
 - [ ] Metadata for every token ID that will be minted at launch is already published and accessible
