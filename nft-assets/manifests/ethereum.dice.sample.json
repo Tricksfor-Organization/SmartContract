@@ -1,5 +1,5 @@
 {
-  "_note": "Sample manifest -- representative subset only. A full deployment manifest contains all 200 dice tokens (IDs 201--400). Token IDs for dice begin at 201 because coin occupies IDs 1--200 in a full 3-theme deployment. See docs/nft-asset-manifest-spec.md for the complete field reference.",
+  "_note": "FORMAT EXAMPLE ONLY -- intentionally non-conforming. This file illustrates the chain-specific manifest structure using a representative dice-theme subset. It will NOT pass the § 9 validation rules because: (a) the tokens array covers only 19 of the 600 declared supply entries, (b) token IDs are not sequential, and (c) coin and rps themes are missing entirely. To produce an authoritative manifest, expand the tokens array to include all 600 token entries (IDs 1--600) for all three themes, then store it at deployments/config/ethereum-mainnet/nft-manifest.json. See docs/nft-asset-manifest-spec.md for the complete field reference and validation rules.",
   "manifestVersion": "1.0",
   "chain": "Ethereum",
   "chainKey": "ethereum",

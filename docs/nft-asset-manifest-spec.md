@@ -41,10 +41,17 @@ A Tricksfor Booster NFT asset manifest serves the following consumers:
 
 A chain-specific manifest describes a single contract deployment (one chain, one contract
 address) and all tokens within it. It is the primary format used by generation tooling.
+An authoritative manifest must contain the complete token set for the deployment — every
+token ID from `1` to `supply.total`.
 
 **Stored at:** `deployments/config/{env}/nft-manifest.json`
 
-**Samples:** `nft-assets/manifests/polygon.coin.sample.json`, `nft-assets/manifests/ethereum.dice.sample.json`
+**Sample excerpts** (partial — field/format illustration only, not conforming):
+`nft-assets/manifests/polygon.coin.sample.json` (coin tokens only),
+`nft-assets/manifests/ethereum.dice.sample.json` (dice tokens only).
+These files demonstrate the field structure but omit the full token set and will not pass
+the validation rules in [§ 9](#9-validation-rules). They must not be used as authoritative
+manifests without expanding the `tokens` array to include all themes and all token IDs.
 
 ### 3.2 Global (cross-chain) template
 
@@ -334,8 +341,15 @@ based on the `tokens` array sequence.
 
 ## 9. Validation Rules
 
-A conforming manifest must satisfy all of the following rules. Validation scripts should
-check each rule and report failures before any generation or minting run begins.
+The rules below apply to **authoritative per-deployment manifests** stored at
+`deployments/config/{env}/nft-manifest.json`. Sample and excerpt manifests (files with
+`.sample.json` in their name, or any manifest whose `tokens` array covers only a theme
+subset) are intentionally non-conforming and are exempt from rules 4–6 and 11–14.
+Validation scripts should skip these checks when a `"_note"` field is present in the
+manifest or when the manifest's token count is less than `supply.total`.
+
+Validation scripts should check every applicable rule and report failures before any
+generation or minting run begins.
 
 1. **`manifestVersion` is present and equals `"1.0"`.**
 2. **`chain`, `chainKey`, and `network` are present** and `chainKey` matches the environment

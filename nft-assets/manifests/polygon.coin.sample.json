@@ -1,5 +1,5 @@
 {
-  "_note": "Sample manifest -- representative subset only. A full deployment manifest contains all 200 coin tokens (IDs 1--200). See docs/nft-asset-manifest-spec.md for the complete field reference.",
+  "_note": "FORMAT EXAMPLE ONLY -- intentionally non-conforming. This file illustrates the chain-specific manifest structure using a representative coin-theme subset. It will NOT pass the § 9 validation rules because: (a) the tokens array covers only 12 of the 600 declared supply entries, (b) token IDs are not sequential, and (c) dice and rps themes are missing. To produce an authoritative manifest, expand the tokens array to include all 600 token entries (IDs 1--600) for all three themes, then store it at deployments/config/polygon-mainnet/nft-manifest.json. See docs/nft-asset-manifest-spec.md for the complete field reference and validation rules.",
   "manifestVersion": "1.0",
   "chain": "Polygon",
   "chainKey": "polygon",
