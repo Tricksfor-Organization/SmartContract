@@ -311,6 +311,7 @@ Do not mix a `Booster` tier with an inconsistent `Multiplier` value.
 
 | Document | Description |
 |---|---|
+| [`docs/nft-asset-manifest-spec.md`](nft-asset-manifest-spec.md) | NFT asset manifest specification — single source of truth for metadata generation, image pipeline, and mint definitions |
 | [`docs/nft-assets-spec.md`](nft-assets-spec.md) | NFT asset taxonomy, token ID mapping, and static file layout specification |
 | [`docs/metadata/token-example.json`](metadata/token-example.json) | Reference token metadata JSON using the finalised schema |
 | [`docs/metadata/contract-example.json`](metadata/contract-example.json) | Reference collection metadata JSON returned by `contractURI()` |

@@ -437,8 +437,12 @@ The `_redirects` rewrite rule transparently serves `metadata/255.json` for this 
 
 | Document | Description |
 |---|---|
+| [`docs/nft-asset-manifest-spec.md`](nft-asset-manifest-spec.md) | Full NFT asset manifest specification — extends the § 6 supply manifest with generation-tooling fields, global cross-chain format, and validation rules |
 | [`docs/nft-metadata-schema.md`](nft-metadata-schema.md) | Authoritative token metadata attribute schema (required fields, valid values, examples) |
 | [`nft-assets/README.md`](../nft-assets/README.md) | Static asset hosting structure and Cloudflare Pages URL conventions |
+| [`nft-assets/manifests/polygon.coin.sample.json`](../nft-assets/manifests/polygon.coin.sample.json) | Sample manifest: Polygon chain, coin theme |
+| [`nft-assets/manifests/ethereum.dice.sample.json`](../nft-assets/manifests/ethereum.dice.sample.json) | Sample manifest: Ethereum chain, dice theme |
+| [`nft-assets/manifests/global.sample.json`](../nft-assets/manifests/global.sample.json) | Sample manifest: global cross-chain template |
 | [`docs/metadata/token-example.json`](metadata/token-example.json) | Reference token metadata JSON |
 | [`docs/metadata/contract-example.json`](metadata/contract-example.json) | Reference collection metadata JSON |
 | [`docs/opensea-readiness-checklist.md`](opensea-readiness-checklist.md) | Pre-launch OpenSea compatibility checklist |
