@@ -189,6 +189,8 @@ function validateOneTokenMetadata(filePath, report) {
   const stem     = fileName.replace(/\.json$/, '');
   const tokenId  = Number(stem);
 
+  // Reject non-integer values and leading-zero forms like "007"
+  // (Number('007') === 7, but String(7) !== '007')
   if (!Number.isInteger(tokenId) || tokenId <= 0 || String(tokenId) !== stem) {
     report.error(`metadata/${fileName}: file name is not a valid positive integer token ID`);
     return null;
@@ -302,7 +304,7 @@ function validateTokenMetadata(nftAssetsDir, report) {
   }
 
   const jsonFiles = fs.readdirSync(metadataDir)
-    .filter(f => f.endsWith('.json') && f !== '.gitkeep')
+    .filter(f => f.endsWith('.json'))
     .sort();
 
   if (jsonFiles.length === 0) {
@@ -379,7 +381,7 @@ function findManifestPath(args) {
 
 function isAuthoritativeManifest(manifest) {
   // Sample manifests carry a "_note" field (see nft-asset-manifest-spec.md §9)
-  return !Object.prototype.hasOwnProperty.call(manifest, '_note');
+  return !('_note' in manifest);
 }
 
 function validateManifestStructure(manifest, base, report) {
