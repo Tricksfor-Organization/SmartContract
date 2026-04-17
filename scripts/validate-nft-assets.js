@@ -221,7 +221,9 @@ function validateOneTokenMetadata(filePath, report) {
 
   let fieldErrors = 0;
 
-  // Required top-level fields — must be non-empty strings (or array for attributes)
+  // Required top-level fields — must be non-empty strings (or array for attributes).
+  // The image HTTPS URL check is nested inside the string validation so it only runs
+  // when image is already confirmed to be a non-empty string.
   for (const field of ['name', 'description', 'image']) {
     if (meta[field] === undefined || meta[field] === null) {
       report.error(`metadata/${fileName}: missing required field "${field}"`);
@@ -229,27 +231,22 @@ function validateOneTokenMetadata(filePath, report) {
     } else if (typeof meta[field] !== 'string' || meta[field].trim() === '') {
       report.error(`metadata/${fileName}: "${field}" must be a non-empty string`);
       fieldErrors++;
+    } else if (field === 'image' && !isHttpsUrl(meta[field])) {
+      report.error(`metadata/${fileName}: "image" must be an HTTPS URL (got: ${meta.image})`);
+      fieldErrors++;
     }
   }
 
-  if (meta.attributes === undefined || meta.attributes === null) {
-    report.error(`metadata/${fileName}: missing required field "attributes"`);
-    fieldErrors++;
-  }
-
-  if (meta.image !== undefined && typeof meta.image === 'string' && !isHttpsUrl(meta.image)) {
-    report.error(`metadata/${fileName}: "image" must be an HTTPS URL (got: ${meta.image})`);
-    fieldErrors++;
-  }
-
-  if (meta.attributes !== undefined && !Array.isArray(meta.attributes)) {
-    report.error(`metadata/${fileName}: "attributes" must be an array`);
+  // attributes must be an array; report the appropriate error (missing vs. wrong type)
+  // and return immediately — attribute-level checks below cannot run without an array.
+  if (!Array.isArray(meta.attributes)) {
+    if (meta.attributes === undefined || meta.attributes === null) {
+      report.error(`metadata/${fileName}: missing required field "attributes"`);
+    } else {
+      report.error(`metadata/${fileName}: "attributes" must be an array`);
+    }
     fieldErrors++;
     return null;
-  }
-
-  if (!Array.isArray(meta.attributes)) {
-    return fieldErrors === 0 ? tokenId : null;
   }
 
   // Required attributes
