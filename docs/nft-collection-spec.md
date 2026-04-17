@@ -111,18 +111,23 @@ stable, unambiguous identifiers.
 
 ### 6.1 Per-theme supply
 
-Each theme has a total supply of **200 NFTs per chain contract**.
+The **default planned supply** is 200 NFTs per theme per chain contract.
+Actual deployment-specific supply values are configurable and must be recorded in
+`deployments/config/{env}/nft-manifest.json`, which is the source of truth for the final
+per-theme counts for a given deployment.
 
-| Theme | Supply per chain |
-|-------|-----------------|
-| Coin  | 200             |
-| Dice  | 200             |
-| RPS   | 200             |
-| **Total per chain** | **600** |
+| Theme | Default planned supply per chain |
+|-------|----------------------------------|
+| Coin  | 200                              |
+| Dice  | 200                              |
+| RPS   | 200                              |
+| **Default total per chain** | **600**         |
 
 ### 6.2 Tier split per theme
 
-The 200 tokens within each theme are split across tiers as follows:
+The tier split below is defined for the default supply of 200 tokens per theme and must be
+recalculated proportionally if a deployment uses a different per-theme count.
+With the default supply the split across tiers is:
 
 | Tier          | Count per theme |
 |---------------|-----------------|
@@ -193,9 +198,10 @@ Verification: `34 + 33 + 33 = 100` ✓  `24 + 23 + 23 = 70` ✓  `3×10 = 30` �
 
 ### 8.1 Scope
 
-Token IDs are scoped to a single contract deployment. Each chain contract issues token IDs
-from `1` to `600` with no gaps. IDs are not shared or coordinated across chains. Two different
-chain contracts may each have a token with ID `1`.
+Token IDs are scoped to a single contract deployment. For each chain deployment, the
+collection manifest and minting process define token IDs `1` through `600` sequentially
+with no gaps. IDs are not shared or coordinated across chains, so two different chain
+contracts may each have a token with ID `1`.
 
 ### 8.2 Theme grouping
 
