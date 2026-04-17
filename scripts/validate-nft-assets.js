@@ -72,6 +72,21 @@ const VALID_MANIFEST_VARIANTS_BY_THEME = {
 /** Theme ordering for grouping rule: coin → dice → rps */
 const THEME_ORDER = { coin: 0, dice: 1, rps: 2 };
 
+/**
+ * Display-name maps used for rule 13 (displayName convention check).
+ * Derived from docs/nft-metadata-schema.md § Token Name Convention.
+ */
+const THEME_TO_GAME_DISPLAY = {
+  coin: 'Coin',
+  dice: 'Dice',
+  rps:  'Rock Paper Scissors',
+};
+const VARIANT_TO_OPTION_DISPLAY = {
+  heads: 'Heads', tails: 'Tails',
+  '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6',
+  rock: 'Rock', paper: 'Paper', scissors: 'Scissors',
+};
+
 // ---------------------------------------------------------------------------
 // Argument parsing
 // ---------------------------------------------------------------------------
@@ -206,23 +221,34 @@ function validateOneTokenMetadata(filePath, report) {
 
   let fieldErrors = 0;
 
-  // Required top-level fields
-  for (const field of ['name', 'description', 'image', 'attributes']) {
+  // Required top-level fields — must be non-empty strings (or array for attributes)
+  for (const field of ['name', 'description', 'image']) {
     if (meta[field] === undefined || meta[field] === null) {
       report.error(`metadata/${fileName}: missing required field "${field}"`);
+      fieldErrors++;
+    } else if (typeof meta[field] !== 'string' || meta[field].trim() === '') {
+      report.error(`metadata/${fileName}: "${field}" must be a non-empty string`);
       fieldErrors++;
     }
   }
 
-  if (meta.image !== undefined && !isHttpsUrl(meta.image)) {
+  if (meta.attributes === undefined || meta.attributes === null) {
+    report.error(`metadata/${fileName}: missing required field "attributes"`);
+    fieldErrors++;
+  }
+
+  if (meta.image !== undefined && typeof meta.image === 'string' && !isHttpsUrl(meta.image)) {
     report.error(`metadata/${fileName}: "image" must be an HTTPS URL (got: ${meta.image})`);
     fieldErrors++;
   }
 
+  if (meta.attributes !== undefined && !Array.isArray(meta.attributes)) {
+    report.error(`metadata/${fileName}: "attributes" must be an array`);
+    fieldErrors++;
+    return null;
+  }
+
   if (!Array.isArray(meta.attributes)) {
-    if (meta.attributes !== undefined) {
-      report.error(`metadata/${fileName}: "attributes" must be an array`);
-    }
     return fieldErrors === 0 ? tokenId : null;
   }
 
@@ -384,7 +410,7 @@ function isAuthoritativeManifest(manifest) {
   return !('_note' in manifest);
 }
 
-function validateManifestStructure(manifest, base, report) {
+function validateManifestStructure(manifest, base, report, isExcerpt) {
   // Rule 1: manifestVersion
   if (manifest.manifestVersion !== '1.0') {
     report.error(
@@ -393,10 +419,18 @@ function validateManifestStructure(manifest, base, report) {
     );
   }
 
-  // Rule 2: chain, chainKey, network
-  for (const field of ['chain', 'chainKey', 'network']) {
+  // Rule 2: contract, chain, chainKey, network
+  for (const field of ['contract', 'chain', 'chainKey', 'network']) {
     if (!manifest[field] || typeof manifest[field] !== 'string') {
       report.error(`${base}: missing or empty required field "${field}"`);
+    }
+  }
+  if (typeof manifest.contract === 'string' && manifest.contract) {
+    if (!/^0x[a-fA-F0-9]{40}$/.test(manifest.contract)) {
+      report.error(
+        `${base}: "contract" must be a 0x-prefixed 40-hex-character address ` +
+        `(got: ${JSON.stringify(manifest.contract)})`
+      );
     }
   }
   if (manifest.chainKey && manifest.network) {
@@ -436,53 +470,55 @@ function validateManifestStructure(manifest, base, report) {
 
   const supply = manifest.supply || {};
 
-  // Rule 4: token IDs are sequential starting from 1
-  const tokenIds    = manifest.tokens.map(t => t.tokenId);
-  const tokenIdSet  = new Set(tokenIds);
-  if (tokenIdSet.size !== tokenIds.length) {
-    report.error(`${base}: duplicate token IDs found in tokens array`);
-  } else {
-    const sorted = [...tokenIds].sort((a, b) => a - b);
-    for (let i = 0; i < sorted.length; i++) {
-      if (sorted[i] !== i + 1) {
-        report.error(
-          `${base}: token IDs are not sequential starting from 1 ` +
-          `(expected ${i + 1}, found ${sorted[i]})`
-        );
-        break;
+  if (!isExcerpt) {
+    // Rule 4: token IDs are sequential starting from 1
+    const tokenIds    = manifest.tokens.map(t => t.tokenId);
+    const tokenIdSet  = new Set(tokenIds);
+    if (tokenIdSet.size !== tokenIds.length) {
+      report.error(`${base}: duplicate token IDs found in tokens array`);
+    } else {
+      const sorted = [...tokenIds].sort((a, b) => a - b);
+      for (let i = 0; i < sorted.length; i++) {
+        if (sorted[i] !== i + 1) {
+          report.error(
+            `${base}: token IDs are not sequential starting from 1 ` +
+            `(expected ${i + 1}, found ${sorted[i]})`
+          );
+          break;
+        }
       }
     }
-  }
 
-  // Rule 5: theme grouping order — coin → dice → rps
-  let lastThemeOrder = -1;
-  for (let i = 0; i < manifest.tokens.length; i++) {
-    const t     = manifest.tokens[i];
-    const order = THEME_ORDER[t.theme];
-    if (order !== undefined) {
-      if (order < lastThemeOrder) {
-        report.error(
-          `${base}: token theme grouping order violation at index ${i} ` +
-          `(token ID ${t.tokenId}): themes must appear in coin → dice → rps order`
-        );
-        break;
+    // Rule 5: theme grouping order — coin → dice → rps
+    let lastThemeOrder = -1;
+    for (let i = 0; i < manifest.tokens.length; i++) {
+      const t     = manifest.tokens[i];
+      const order = THEME_ORDER[t.theme];
+      if (order !== undefined) {
+        if (order < lastThemeOrder) {
+          report.error(
+            `${base}: token theme grouping order violation at index ${i} ` +
+            `(token ID ${t.tokenId}): themes must appear in coin → dice → rps order`
+          );
+          break;
+        }
+        lastThemeOrder = order;
       }
-      lastThemeOrder = order;
     }
-  }
 
-  // Rule 6: token count per theme matches declared supply
-  if (manifest.supply) {
-    const counts = { coin: 0, dice: 0, rps: 0 };
-    for (const t of manifest.tokens) {
-      if (counts[t.theme] !== undefined) counts[t.theme]++;
-    }
-    for (const theme of ['coin', 'dice', 'rps']) {
-      if (counts[theme] !== supply[theme]) {
-        report.error(
-          `${base}: ${theme} theme token count (${counts[theme]}) ` +
-          `does not match supply.${theme} (${supply[theme]})`
-        );
+    // Rule 6: token count per theme matches declared supply
+    if (manifest.supply) {
+      const counts = { coin: 0, dice: 0, rps: 0 };
+      for (const t of manifest.tokens) {
+        if (counts[t.theme] !== undefined) counts[t.theme]++;
+      }
+      for (const theme of ['coin', 'dice', 'rps']) {
+        if (counts[theme] !== supply[theme]) {
+          report.error(
+            `${base}: ${theme} theme token count (${counts[theme]}) ` +
+            `does not match supply.${theme} (${supply[theme]})`
+          );
+        }
       }
     }
   }
@@ -527,20 +563,36 @@ function validateManifestStructure(manifest, base, report) {
       );
     }
 
-    // Rule 11: imagePath = images/{tokenId}.png
-    if (token.imagePath !== `images/${tid}.png`) {
-      report.error(
-        `${base}: token ${tid}: "imagePath" must be "images/${tid}.png" ` +
-        `(got: "${token.imagePath}")`
-      );
-    }
+    if (!isExcerpt) {
+      // Rule 11: imagePath = images/{tokenId}.png
+      if (token.imagePath !== `images/${tid}.png`) {
+        report.error(
+          `${base}: token ${tid}: "imagePath" must be "images/${tid}.png" ` +
+          `(got: "${token.imagePath}")`
+        );
+      }
 
-    // Rule 12: metadataPath = metadata/{tokenId}.json
-    if (token.metadataPath !== `metadata/${tid}.json`) {
-      report.error(
-        `${base}: token ${tid}: "metadataPath" must be "metadata/${tid}.json" ` +
-        `(got: "${token.metadataPath}")`
-      );
+      // Rule 12: metadataPath = metadata/{tokenId}.json
+      if (token.metadataPath !== `metadata/${tid}.json`) {
+        report.error(
+          `${base}: token ${tid}: "metadataPath" must be "metadata/${tid}.json" ` +
+          `(got: "${token.metadataPath}")`
+        );
+      }
+
+      // Rule 13: displayName matches token name convention
+      // Pattern: Tricksfor {Game} {Option} {tier} Booster #{tokenId}
+      const gameDisplay   = THEME_TO_GAME_DISPLAY[token.theme];
+      const optionDisplay = VARIANT_TO_OPTION_DISPLAY[token.variant];
+      if (gameDisplay && optionDisplay && token.tier) {
+        const expectedName = `Tricksfor ${gameDisplay} ${optionDisplay} ${token.tier} Booster #${tid}`;
+        if (token.displayName !== expectedName) {
+          report.error(
+            `${base}: token ${tid}: "displayName" "${token.displayName}" ` +
+            `does not match expected "${expectedName}"`
+          );
+        }
+      }
     }
   }
 }
@@ -653,25 +705,27 @@ function validateManifest(nftAssetsDir, args, report) {
 
   const totalSupply  = manifest.supply && manifest.supply.total;
   const tokenCount   = Array.isArray(manifest.tokens) ? manifest.tokens.length : 0;
+  const isExcerpt    = Boolean(totalSupply && tokenCount < totalSupply);
 
-  if (totalSupply && tokenCount < totalSupply) {
+  if (isExcerpt) {
     report.warn(
       `Manifest token count (${tokenCount}) is less than supply.total (${totalSupply}); ` +
-      `this may be an incomplete manifest`
+      `treating as an excerpt manifest — rules 4–6 and 11–14 are skipped`
     );
-    // Still validate what we have
   }
 
   const base = path.basename(manifestPath);
 
   // Validate manifest structure (spec §9 rules)
-  validateManifestStructure(manifest, base, report);
+  validateManifestStructure(manifest, base, report, isExcerpt);
 
-  // Validate manifest-to-output consistency (all referenced files exist)
-  validateManifestToOutput(manifest, base, nftAssetsDir, report);
+  if (!isExcerpt) {
+    // Validate manifest-to-output consistency (all referenced files exist)
+    validateManifestToOutput(manifest, base, nftAssetsDir, report);
 
-  // Validate source images exist (spec §9 rule 14)
-  validateSourceImages(manifest, base, nftAssetsDir, report);
+    // Validate source images exist (spec §9 rule 14)
+    validateSourceImages(manifest, base, nftAssetsDir, report);
+  }
 }
 
 // ---------------------------------------------------------------------------

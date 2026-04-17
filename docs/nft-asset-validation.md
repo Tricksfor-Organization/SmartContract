@@ -38,9 +38,12 @@ It checks:
 | Source images | All `sourceImage` files referenced by the manifest exist in `images/source/` |
 
 The validator distinguishes between **authoritative manifests** (stored in
-`deployments/config/{env}/nft-manifest.json`) and **sample manifests** (files that contain
-a `_note` field, such as those in `nft-assets/manifests/`). Full structural validation and
-manifest-to-output consistency checks run only on authoritative manifests.
+`deployments/config/{env}/nft-manifest.json`) and **sample/excerpt manifests**. A manifest is
+treated as a sample/excerpt if it contains a `_note` field (such as those in
+`nft-assets/manifests/`) or if its number of token entries is less than `supply.total`
+(`tokenCount < supply.total`). Full structural validation and manifest-to-output consistency
+checks (spec §9 rules 4–6 and 11–14) run only on authoritative manifests; those checks are
+skipped for sample/excerpt manifests in either case.
 
 ---
 
@@ -123,21 +126,19 @@ When an authoritative manifest is found (no `_note` field), the following rules 
 | Rule | Check |
 |---|---|
 | 1 | `manifestVersion` is `"1.0"` |
-| 2 | `chain`, `chainKey`, `network` are present; `network` starts with `{chainKey}-` |
+| 2 | `contract` is present and a `0x`-prefixed 40-hex-character address; `chain`, `chainKey`, `network` are present; `network` starts with `{chainKey}-` |
 | 3 | `supply.total` equals `supply.coin + supply.dice + supply.rps` |
-| 4 | Token IDs are sequential starting from `1` with no gaps or duplicates |
-| 5 | Theme grouping order is coin → dice → rps |
-| 6 | Token count per theme matches declared `supply.{theme}` |
+| 4 | Token IDs are sequential starting from `1` with no gaps or duplicates (**skipped for excerpt manifests**) |
+| 5 | Theme grouping order is coin → dice → rps (**skipped for excerpt manifests**) |
+| 6 | Token count per theme matches declared `supply.{theme}` (**skipped for excerpt manifests**) |
 | 7 | `theme` is one of `coin`, `dice`, `rps` |
 | 8 | `variant` is valid for its `theme` |
 | 9 | `tier` is one of `2x`, `3x`, `5x` |
 | 10 | `sourceImage` matches `{theme}-{variant}-{tier}.png` |
-| 11 | `imagePath` equals `images/{tokenId}.png` |
-| 12 | `metadataPath` equals `metadata/{tokenId}.json` |
-| 14 | All `sourceImage` files exist in `nft-assets/images/source/` |
-
-> **Note:** Rule 13 (`displayName` matches the token name convention) is not checked by the
-> validator — it is validated at generation time by the metadata generation tooling.
+| 11 | `imagePath` equals `images/{tokenId}.png` (**skipped for excerpt manifests**) |
+| 12 | `metadataPath` equals `metadata/{tokenId}.json` (**skipped for excerpt manifests**) |
+| 13 | `displayName` matches the token name convention: `Tricksfor {Game} {Option} {tier} Booster #{tokenId}` (**skipped for excerpt manifests**) |
+| 14 | All `sourceImage` files exist in `nft-assets/images/source/` (**skipped for excerpt manifests**) |
 
 ### 3.5 Manifest-to-output consistency (authoritative manifests only)
 
