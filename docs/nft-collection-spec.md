@@ -315,6 +315,7 @@ no intermediate ID space. The manifest generator produces final IDs directly, st
 
 | Document | Description |
 |---|---|
+| [`docs/nft-token-allocation-spec.md`](nft-token-allocation-spec.md) | Focused token ID allocation reference: ranges, tier splits, per-option distribution, remainder rule, ordering strategy, and pseudocode |
 | [`docs/nft-assets-spec.md`](nft-assets-spec.md) | Asset taxonomy, image file naming, static file layout, token ID mapping, and supply manifest format |
 | [`docs/nft-asset-manifest-spec.md`](nft-asset-manifest-spec.md) | Full asset manifest specification with generation-tooling fields, global cross-chain format, and validation rules |
 | [`docs/nft-metadata-schema.md`](nft-metadata-schema.md) | Authoritative token metadata attribute schema (required fields, valid values, token name convention) |
