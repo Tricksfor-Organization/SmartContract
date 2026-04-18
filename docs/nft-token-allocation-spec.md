@@ -7,8 +7,12 @@ and worked per-token examples.
 
 This specification is derived from and consistent with
 [`docs/nft-collection-spec.md`](nft-collection-spec.md), which is the authoritative source of
-truth for the overall collection structure. In the event of any conflict between this document
-and `nft-collection-spec.md`, `nft-collection-spec.md` takes precedence.
+truth for the overall collection structure. The allocation rules in this document mirror the
+token allocation and per-ID range content defined there (notably the allocation sections that
+describe theme ranges, tier distribution, option splitting, and ordering) and must be updated
+together with `nft-collection-spec.md` whenever those rules change. In the event of any
+conflict between this document and `nft-collection-spec.md`, `nft-collection-spec.md` takes
+precedence.
 
 ---
 
