@@ -180,9 +180,12 @@ placeholder variables may be embedded in the template string and will be resolve
 | `{tier}` | The token's `tier` value (e.g. `2x`) |
 | `{chain}` | The collection's `chain` display name (e.g. `Polygon`) |
 
-The current standard description does not use template variables. Using the plain string
+The current standard description does not use template variables. The per-token description
+template defined in [`docs/nft-copy-spec.md` § 5](nft-copy-spec.md#5-token-description-template)
+substitutes `{Game}`, `{Option}`, and `{multiplier}` to produce per-token descriptions.
+Using the plain generic string
 `"A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage."`
-is the recommended value unless a per-token or per-theme variation is needed.
+is acceptable as a fallback when per-token generation is not available.
 
 ---
 
