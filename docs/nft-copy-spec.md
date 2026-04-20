@@ -109,7 +109,7 @@ Where:
 | 278      | Dice                | 6        | 3x   | `Tricksfor Dice 6 3x Booster #278`                       |
 | 395      | Dice                | 3        | 5x   | `Tricksfor Dice 3 5x Booster #395`                       |
 | 401      | Rock Paper Scissors | Rock     | 2x   | `Tricksfor Rock Paper Scissors Rock 2x Booster #401`     |
-| 423      | Rock Paper Scissors | Rock     | 5x   | `Tricksfor Rock Paper Scissors Rock 5x Booster #423`     |
+| 424      | Rock Paper Scissors | Rock     | 5x   | `Tricksfor Rock Paper Scissors Rock 5x Booster #424`     |
 | 530      | Rock Paper Scissors | Scissors | 3x   | `Tricksfor Rock Paper Scissors Scissors 3x Booster #530` |
 
 ### 4.3 Formatting rules
