@@ -180,9 +180,15 @@ placeholder variables may be embedded in the template string and will be resolve
 | `{tier}` | The token's `tier` value (e.g. `2x`) |
 | `{chain}` | The collection's `chain` display name (e.g. `Polygon`) |
 
-The current standard description does not use template variables. Using the plain string
+The current standard description does not use manifest `descriptionTemplate` variables beyond
+those listed above. The per-token description template defined in
+[`docs/nft-copy-spec.md` § 5](nft-copy-spec.md#5-token-description-template) refers to
+conceptual copy placeholders `{Game}`, `{Option}`, and `{multiplier}` for per-token
+description generation; in manifest terms these correspond to the token's `theme`,
+`variant`, and `tier` values, respectively, and are not additional supported
+`descriptionTemplate` variables. Using the plain generic string
 `"A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage."`
-is the recommended value unless a per-token or per-theme variation is needed.
+is acceptable as a fallback when per-token generation is not available.
 
 ---
 

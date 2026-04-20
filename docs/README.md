@@ -28,6 +28,7 @@ This index provides a single entry point to all implementation guidance, referen
 
 | Document | Description |
 |---|---|
+| [NFT Copy Specification](nft-copy-spec.md) | Authoritative display names and description templates for all Booster NFT metadata: collection names, token names, and per-theme/option/tier descriptions |
 | [Metadata Examples README](metadata/README.md) | Overview of token and collection metadata format, field requirements, and links to example JSON documents |
 | [Token Metadata Example](metadata/token-example.json) | Reference token metadata JSON conforming to the OpenSea metadata standard |
 | [Contract Metadata Example](metadata/contract-example.json) | Reference collection metadata JSON returned by `contractURI()` |
