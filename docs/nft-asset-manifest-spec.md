@@ -47,8 +47,12 @@ token ID from `1` to `supply.total`.
 **Stored at:** `deployments/config/{env}/nft-manifest.json`
 
 **Sample excerpts** (partial — field/format illustration only, not conforming):
-`nft-assets/manifests/polygon.coin.sample.json` (coin tokens only),
-`nft-assets/manifests/ethereum.dice.sample.json` (dice tokens only).
+- `nft-assets/manifests/ethereum.sample.json`,
+  `nft-assets/manifests/polygon.sample.json`,
+  `nft-assets/manifests/bsc.sample.json` — chain-wide samples covering all three themes with
+  representative entries from every booster tier. Use these as the primary format reference.
+- `nft-assets/manifests/polygon.coin.sample.json` (coin tokens only),
+  `nft-assets/manifests/ethereum.dice.sample.json` (dice tokens only).
 These files demonstrate the field structure but omit the full token set and will not pass
 the validation rules in [§ 9](#9-validation-rules). They must not be used as authoritative
 manifests without expanding the `tokens` array to include all themes and all token IDs.
@@ -70,6 +74,7 @@ or validate chain-specific manifests.
 ```json
 {
   "manifestVersion": "1.0",
+  "collectionName": "Tricksfor Booster NFT",
   "chain": "Polygon",
   "chainKey": "polygon",
   "network": "polygon-mainnet",
@@ -91,6 +96,7 @@ or validate chain-specific manifests.
 | Field | Required | Type | Description |
 |---|---|---|---|
 | `manifestVersion` | ✅ | string | Manifest schema version. Always `"1.0"` for this format. |
+| `collectionName` | optional | string | Human-readable name of the NFT collection, e.g. `"Tricksfor Booster NFT"`. Useful for generation scripts and display tooling. |
 | `chain` | ✅ | string | Chain display name — see [§ 7 Canonical Chain Names](#7-canonical-chain-names). |
 | `chainKey` | ✅ | string | Lowercase chain key used in directory prefixes — see [§ 7](#7-canonical-chain-names). |
 | `network` | ✅ | string | Environment identifier matching the `deployments/config/{env}` directory name. |
@@ -131,7 +137,9 @@ must be present even when all themes share the same count so that tooling can sk
   "chainKey": "polygon",
   "theme": "coin",
   "variant": "heads",
+  "option": "Heads",
   "tier": "2x",
+  "multiplierDisplay": "2x Booster",
   "displayName": "Tricksfor Coin Heads 2x Booster #1",
   "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
   "sourceImage": "coin-heads-2x.png",
@@ -146,7 +154,9 @@ must be present even when all themes share the same count so that tooling can sk
 | `chainKey` | optional | string | Chain key for the token. Redundant when the manifest is chain-specific, but useful when tokens are embedded in a global manifest. Must match the collection-level `chainKey`. |
 | `theme` | ✅ | string | Canonical theme identifier: `coin`, `dice`, or `rps`. |
 | `variant` | ✅ | string | Canonical variant identifier — see [`docs/nft-assets-spec.md` § 1.2](nft-assets-spec.md#12-image-variants-per-theme). |
+| `option` | optional | string | Pre-computed display form of `variant` for use in metadata generation (e.g. `"Heads"`, `"Rock"`, `"3"`). When present, must equal the `"Option"` metadata attribute value derived from `variant`. |
 | `tier` | ✅ | string | Canonical tier identifier: `2x`, `3x`, or `5x`. |
+| `multiplierDisplay` | optional | string | Pre-computed booster label derived from `tier` (e.g. `"2x Booster"`, `"3x Booster"`, `"5x Booster"`). When present, must equal the `"Booster"` metadata attribute value derived from `tier`. |
 | `displayName` | ✅ | string | The resolved `name` field for the token's metadata JSON. Must follow the pattern defined in [`docs/nft-metadata-schema.md` — Token Name Convention](nft-metadata-schema.md#token-name-convention). |
 | `description` | optional | string | Resolved description for this specific token. If absent, the collection-level `descriptionTemplate` is used. |
 | `sourceImage` | ✅ | string | File name of the source image in `nft-assets/images/source/`, e.g. `"coin-heads-2x.png"`. |
@@ -285,14 +295,24 @@ manifests. They are stored under `nft-assets/manifests/`:
 ```
 nft-assets/
 └── manifests/
+    ├── ethereum.sample.json          # Ethereum chain — all three themes, representative entries
+    ├── polygon.sample.json           # Polygon chain — all three themes, representative entries
+    ├── bsc.sample.json               # BNB Smart Chain — all three themes, representative entries
     ├── polygon.coin.sample.json      # Polygon chain, coin theme — representative token entries
     ├── ethereum.dice.sample.json     # Ethereum chain, dice theme — representative token entries
     └── global.sample.json            # Cross-chain global template
 ```
 
-**Naming convention:** `{chainKey}.{theme}.sample.json` for chain+theme-scoped samples,
-`global.sample.json` for the cross-chain template. Remove the `.sample` segment for
-authoritative manifests stored under `deployments/config/{env}/`.
+**Naming convention:**
+- `{chainKey}.sample.json` — chain-wide samples covering all three themes. Use these as the
+  primary reference for understanding the full manifest format and field vocabulary. These
+  samples contain representative entries from every theme and every booster tier.
+- `{chainKey}.{theme}.sample.json` — chain+theme-scoped samples illustrating a single theme's
+  entry structure.
+- `global.sample.json` — cross-chain template with no `tokens` array.
+
+Remove the `.sample` segment for authoritative manifests stored under
+`deployments/config/{env}/`.
 
 ---
 
@@ -455,6 +475,9 @@ nft-assets/images/255.png   ← copy of nft-assets/images/source/dice-4-3x.png
 |---|---|
 | [`docs/nft-assets-spec.md`](nft-assets-spec.md) | Asset taxonomy, token ID mapping, image naming, and the minimal supply manifest format |
 | [`docs/nft-metadata-schema.md`](nft-metadata-schema.md) | Authoritative token metadata attribute schema (valid values, name convention, examples) |
+| [`nft-assets/manifests/ethereum.sample.json`](../nft-assets/manifests/ethereum.sample.json) | Chain-wide sample manifest: Ethereum chain, all three themes |
+| [`nft-assets/manifests/polygon.sample.json`](../nft-assets/manifests/polygon.sample.json) | Chain-wide sample manifest: Polygon chain, all three themes |
+| [`nft-assets/manifests/bsc.sample.json`](../nft-assets/manifests/bsc.sample.json) | Chain-wide sample manifest: BNB Smart Chain, all three themes |
 | [`nft-assets/manifests/polygon.coin.sample.json`](../nft-assets/manifests/polygon.coin.sample.json) | Sample manifest: Polygon chain, coin theme |
 | [`nft-assets/manifests/ethereum.dice.sample.json`](../nft-assets/manifests/ethereum.dice.sample.json) | Sample manifest: Ethereum chain, dice theme |
 | [`nft-assets/manifests/global.sample.json`](../nft-assets/manifests/global.sample.json) | Sample manifest: global cross-chain template |
