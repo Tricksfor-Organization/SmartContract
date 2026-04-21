@@ -6,11 +6,17 @@ This folder contains example metadata documents for Tricksfor Booster NFTs. Thes
 
 Each token's metadata is served from the URI returned by `tokenURI(tokenId)`. The base URI is set by the contract owner via `setBaseURI`. Token URI format: `{baseURI}{tokenId}`.
 
+With chain-specific paths, `baseURI = https://nft.tricksfor.com/{chainKey}/metadata/` and
+`tokenURI(1) = https://nft.tricksfor.com/ethereum/metadata/1` for Ethereum.
+
 See [`token-example.json`](token-example.json) for a reference token metadata document.
 
 ## Collection Metadata
 
 Collection-level metadata is served from the URI returned by `contractURI()`. This is an OpenSea extension and is not part of the ERC-721 standard.
+
+Each chain has its own `collection.json` at `https://nft.tricksfor.com/{chainKey}/contract/collection.json`.
+The collection name follows the pattern `Tricksfor Boosters - {Chain}` (e.g. `Tricksfor Boosters - Ethereum`).
 
 See [`contract-example.json`](contract-example.json) for a reference collection metadata document returned by `contractURI()`.
 

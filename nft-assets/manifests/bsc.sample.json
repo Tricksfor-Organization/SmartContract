@@ -7,8 +7,8 @@
   "network": "bsc-mainnet",
   "contract": "0x0000000000000000000000000000000000000000",
   "edition": "Genesis",
-  "baseImageUri": "https://nft.tricksfor.com/images/",
-  "baseMetadataUri": "https://nft.tricksfor.com/metadata/",
+  "baseImageUri": "https://nft.tricksfor.com/bsc/images/",
+  "baseMetadataUri": "https://nft.tricksfor.com/bsc/metadata/",
   "descriptionTemplate": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
   "supply": {
     "coin": 200,

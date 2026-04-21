@@ -155,55 +155,77 @@ rps-scissors-5x.png
 
 ### 4.1 Chain Separation
 
-Each supported blockchain has its own smart contract deployment and its own collection contract,
-but **all chains share the same set of metadata and image files**. Token ID `1` on Ethereum and
-token ID `1` on Polygon both resolve to the same `metadata/1.json` and `images/1.png`. The
-per-chain distinction is recorded in the supply manifest (see § 6) and may optionally be
-reflected in the token metadata via the `Chain` attribute (see `docs/nft-metadata-schema.md`),
-but it does not affect the static file layout.
+Each supported blockchain has its own smart contract deployment and its own collection contract.
+Metadata and image files are organised into **per-chain subdirectories** within `nft-assets/`,
+one directory per chain. This allows each chain deployment to have its own collection metadata
+and chain-specific image and metadata URLs, while all chains share a single Cloudflare Pages
+project per environment tier.
 
-There is **one set of static files per Cloudflare Pages project**. The current mapping is:
+Token ID `1` on Ethereum and token ID `1` on Polygon are separate NFTs with separate metadata
+files at different paths. The per-chain distinction is recorded in the supply manifest (see § 6)
+and is reflected in the token metadata via the `Chain` attribute
+(see [`docs/nft-metadata-schema.md`](nft-metadata-schema.md)).
 
 | Deployment type | Cloudflare Pages project  | Domain                       |
 |-----------------|---------------------------|------------------------------|
 | All mainnet     | `tricksfor-nft`           | `nft.tricksfor.com`          |
 | All testnet     | `tricksfor-nft-preview`   | `nft-preview.tricksfor.com`  |
 
-Because assets are shared, the `BASE_TOKEN_URI` for every chain deployment within the same
-environment tier points to the same Cloudflare Pages domain. There are no per-chain
-subdirectories.
+Chain separation is achieved through path prefixes within the shared project. Each chain's
+`BASE_TOKEN_URI` includes the chain key:
+
+| Chain | `BASE_TOKEN_URI` |
+|---|---|
+| Ethereum | `https://nft.tricksfor.com/ethereum/metadata/` |
+| Polygon | `https://nft.tricksfor.com/polygon/metadata/` |
+| Optimism | `https://nft.tricksfor.com/optimism/metadata/` |
+| BNB Smart Chain | `https://nft.tricksfor.com/bsc/metadata/` |
+| Avalanche | `https://nft.tricksfor.com/avalanche/metadata/` |
+
+See [`docs/nft-metadata-generation.md`](nft-metadata-generation.md) for the generation
+script and release workflow integration.
 
 ### 4.2 Directory Structure
 
 ```
 nft-assets/
+├── ethereum/                         # Chain-specific output for Ethereum
+│   ├── metadata/
+│   │   ├── 1.json                    # Per-token metadata JSON (token IDs 1–600)
+│   │   ├── 2.json
+│   │   └── ...
+│   ├── images/
+│   │   ├── 1.png                     # Per-token image (content = source image for that token)
+│   │   ├── 2.png
+│   │   └── ...
+│   └── contract/
+│       └── collection.json           # Collection-level metadata for Ethereum
+├── polygon/                          # Chain-specific output for Polygon
+│   ├── metadata/
+│   ├── images/
+│   └── contract/
+│       └── collection.json
+├── optimism/                         # Chain-specific output for Optimism
+├── bsc/                              # Chain-specific output for BNB Smart Chain
+├── avalanche/                        # Chain-specific output for Avalanche
 ├── images/
-│   ├── source/                   # 33 canonical source images (one per variant+tier combination)
-│   │   ├── coin-heads-2x.png
-│   │   ├── coin-heads-3x.png
-│   │   ├── coin-heads-5x.png
-│   │   ├── coin-tails-2x.png
-│   │   ├── coin-tails-3x.png
-│   │   ├── coin-tails-5x.png
-│   │   ├── dice-1-2x.png
-│   │   ├── ...                   # (all 33 files — see § 3 for full list)
-│   │   └── rps-scissors-5x.png
-│   ├── 1.png                     # Per-token image — content matches the source image for
-│   ├── 2.png                     #   the token's (theme, variant, tier) combination
-│   └── ...
-├── metadata/
-│   ├── 1.json                    # Per-token metadata JSON
-│   ├── 2.json
-│   └── ...
-├── contract/
-│   └── collection.json           # Collection-level metadata returned by contractURI()
-├── _headers                      # Cloudflare Pages response headers (CORS, cache)
-└── _redirects                    # Extensionless → .json rewrite for tokenURI compatibility
+│   └── source/                       # 33 canonical source images (one per variant+tier combination)
+│       ├── coin-heads-2x.png
+│       ├── coin-heads-3x.png
+│       ├── coin-heads-5x.png
+│       ├── coin-tails-2x.png
+│       ├── coin-tails-3x.png
+│       ├── coin-tails-5x.png
+│       ├── dice-1-2x.png
+│       ├── ...                        # (all 33 files — see § 3 for full list)
+│       └── rps-scissors-5x.png
+├── _headers                           # Cloudflare Pages response headers (CORS, cache)
+└── _redirects                         # Extensionless → .json rewrite for tokenURI compatibility
 ```
 
 The source images in `images/source/` are the canonical master assets. Per-token image
-files (`images/{tokenId}.png`) are produced by the metadata generation pipeline, which
-copies or links the appropriate source image for each token ID based on the manifest.
+files (`{chainKey}/images/{tokenId}.png`) are produced by the metadata generation pipeline,
+which copies the appropriate source image for each token ID based on the manifest.
 
 ---
 
@@ -216,8 +238,8 @@ Under the current minting process, IDs start at `1` and are assigned sequentiall
 order. This is an off-chain minting policy — the contract accepts arbitrary explicit IDs via
 `safeMint(address, uint256)`; sequential assignment is enforced by the minting process and the
 supply manifest, not by the contract itself. Two separate contract deployments on different
-chains may each have a token with ID `1` — they resolve to the same shared metadata and image
-(see § 4.1).
+chains may each have a token with ID `1`, but they resolve to different metadata files at
+different chain-specific paths (e.g. `/ethereum/metadata/1.json` vs. `/polygon/metadata/1.json`).
 
 ### 5.2 Grouping by Theme
 
@@ -366,7 +388,7 @@ generated token metadata.
 
 ## 8. Example: End-to-End Token Slot
 
-The following example shows how all layers align for a single token.
+The following example shows how all layers align for a single token (Polygon deployment, token 255).
 
 ### Source image
 
@@ -377,16 +399,16 @@ nft-assets/images/source/dice-4-3x.png
 ### Per-token image
 
 ```
-nft-assets/images/255.png     ← copy of dice-4-3x.png
+nft-assets/polygon/images/255.png     ← copy of dice-4-3x.png
 ```
 
-### Per-token metadata (`nft-assets/metadata/255.json`)
+### Per-token metadata (`nft-assets/polygon/metadata/255.json`)
 
 ```json
 {
   "name": "Tricksfor Dice 4 3x Booster #255",
-  "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-  "image": "https://nft.tricksfor.com/images/255.png",
+  "description": "A Tricksfor Dice Booster NFT for the 4 outcome. Stake this NFT to activate a 3x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/polygon/images/255.png",
   "external_url": "https://tricksfor.com/boosters/255",
   "attributes": [
     { "trait_type": "Game",       "value": "Dice"       },
@@ -413,10 +435,10 @@ nft-assets/images/255.png     ← copy of dice-4-3x.png
 ### On-chain tokenURI
 
 ```
-https://nft.tricksfor.com/metadata/255
+https://nft.tricksfor.com/polygon/metadata/255
 ```
 
-The `_redirects` rewrite rule transparently serves `metadata/255.json` for this extensionless URI.
+The `_redirects` rewrite rule transparently serves `polygon/metadata/255.json` for this extensionless URI.
 
 ---
 
@@ -429,7 +451,7 @@ The `_redirects` rewrite rule transparently serves `metadata/255.json` for this 
 5. **The manifest is the authoritative record.** Metadata files and image files must match the manifest. Regenerate them from the manifest rather than editing them manually.
 6. **Theme grouping order (coin → dice → rps) must not change** within an active deployment.
 7. **Chain separation is per-contract.** Do not mix tokens from different chain deployments in the same contract.
-8. **Metadata and image assets are shared across all chains.** The same `nft-assets/` files are served to all chain deployments in the same environment tier. Do not create chain-specific copies of metadata or image files.
+8. **Chain separation is per-directory.** Each chain's generated metadata and image files live under `nft-assets/{chainKey}/`. Do not mix chain outputs into a shared flat directory.
 
 ---
 
@@ -439,6 +461,7 @@ The `_redirects` rewrite rule transparently serves `metadata/255.json` for this 
 |---|---|
 | [`docs/nft-asset-manifest-spec.md`](nft-asset-manifest-spec.md) | Full NFT asset manifest specification — extends the § 6 supply manifest with generation-tooling fields, global cross-chain format, and validation rules |
 | [`docs/nft-metadata-schema.md`](nft-metadata-schema.md) | Authoritative token metadata attribute schema (required fields, valid values, examples) |
+| [`docs/nft-metadata-generation.md`](nft-metadata-generation.md) | Generation script usage, output format, and release workflow integration |
 | [`nft-assets/README.md`](../nft-assets/README.md) | Static asset hosting structure and Cloudflare Pages URL conventions |
 | [`nft-assets/manifests/polygon.coin.sample.json`](../nft-assets/manifests/polygon.coin.sample.json) | Sample manifest: Polygon chain, coin theme |
 | [`nft-assets/manifests/ethereum.dice.sample.json`](../nft-assets/manifests/ethereum.dice.sample.json) | Sample manifest: Ethereum chain, dice theme |

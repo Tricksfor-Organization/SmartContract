@@ -50,19 +50,30 @@ Where:
 ## Cloudflare Pages URL Model
 
 Token metadata, images, and collection metadata are served from a single Cloudflare Pages project
-per environment tier. There are no per-chain subdirectories — all chain deployments within the same
-environment tier share the same static files.
+per environment tier. Each chain deployment has its own path prefix (`/{chainKey}/`) within
+that shared project.
 
-| Asset                        | URL pattern                                                 |
-|------------------------------|-------------------------------------------------------------|
-| Token metadata (on-chain URI)| `https://nft.tricksfor.com/metadata/{tokenId}`              |
-| Token metadata (direct file) | `https://nft.tricksfor.com/metadata/{tokenId}.json`         |
-| Token image                  | `https://nft.tricksfor.com/images/{tokenId}.png`            |
-| Collection metadata          | `https://nft.tricksfor.com/contract/collection.json`        |
-| Collection image             | `https://nft.tricksfor.com/images/collection.png`           |
+| Asset                        | URL pattern                                                          |
+|------------------------------|----------------------------------------------------------------------|
+| Token metadata (on-chain URI)| `https://nft.tricksfor.com/{chainKey}/metadata/{tokenId}`            |
+| Token metadata (direct file) | `https://nft.tricksfor.com/{chainKey}/metadata/{tokenId}.json`       |
+| Token image                  | `https://nft.tricksfor.com/{chainKey}/images/{tokenId}.png`          |
+| Collection metadata          | `https://nft.tricksfor.com/{chainKey}/contract/collection.json`      |
+| Collection image             | `https://nft.tricksfor.com/{chainKey}/images/collection.png`         |
 
-The `image` field in `contractURI` metadata must use the collection image URL above so published
-collection metadata and static assets stay consistent across consumers and environments.
+Where `{chainKey}` is the lowercase chain identifier: `ethereum`, `polygon`, `optimism`, `bsc`,
+or `avalanche`. For example, Ethereum token 1:
+
+```
+https://nft.tricksfor.com/ethereum/metadata/1        (on-chain tokenURI)
+https://nft.tricksfor.com/ethereum/metadata/1.json   (direct file)
+https://nft.tricksfor.com/ethereum/images/1.png
+https://nft.tricksfor.com/ethereum/contract/collection.json
+```
+
+The `image` field in `contractURI` metadata must use the chain-specific collection image URL
+(`/{chainKey}/images/collection.png`) so published collection metadata stays consistent across
+consumers and environments.
 
 The `_redirects` rule in `nft-assets/_redirects` rewrites extensionless requests to the
 corresponding `.json` file, so the on-chain `tokenURI` (which omits the `.json` suffix) resolves
@@ -76,12 +87,12 @@ For testnet deployments the domain is `nft-preview.tricksfor.com`. See
 The NFT contract uses the OpenZeppelin default `tokenURI` pattern:
 `tokenURI(id) = {baseURI}{id}` — **no `.json` suffix**.
 
-With `baseURI = https://nft.tricksfor.com/metadata/`, `tokenURI(1)` returns
-`https://nft.tricksfor.com/metadata/1`.
+With `baseURI = https://nft.tricksfor.com/ethereum/metadata/`, `tokenURI(1)` returns
+`https://nft.tricksfor.com/ethereum/metadata/1`.
 
-Static metadata files are named `{tokenId}.json` (e.g. `metadata/1.json`). A
+Static metadata files are named `{tokenId}.json` (e.g. `ethereum/metadata/1.json`). A
 Cloudflare Pages rewrite rule in `nft-assets/_redirects` transparently maps
-extensionless requests (`/metadata/1`) to the corresponding file (`/metadata/1.json`),
+extensionless requests (`/{chainKey}/metadata/1`) to the corresponding file (`/{chainKey}/metadata/1.json`),
 so the on-chain URI resolves correctly without renaming the files.
 
 ---

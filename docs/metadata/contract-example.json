@@ -1,7 +1,7 @@
 {
-  "name": "Tricksfor Boosters",
+  "name": "Tricksfor Boosters - Ethereum",
   "description": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay.",
-  "image": "https://nft.tricksfor.com/images/collection.png",
+  "image": "https://nft.tricksfor.com/ethereum/images/collection.png",
   "external_link": "https://tricksfor.com/boosters",
   "seller_fee_basis_points": 500,
   "fee_recipient": "0xREPLACE_WITH_ROYALTY_RECIPIENT_ADDRESS"
