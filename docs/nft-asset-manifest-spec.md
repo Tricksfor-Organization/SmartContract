@@ -46,16 +46,21 @@ token ID from `1` to `supply.total`.
 
 **Stored at:** `deployments/config/{env}/nft-manifest.json`
 
-**Sample excerpts** (partial — field/format illustration only, not conforming):
+**Sample excerpts** (intentionally non-authoritative — see [§ 9](#9-validation-rules) for
+how validators treat these files):
 - `nft-assets/manifests/ethereum.sample.json`,
   `nft-assets/manifests/polygon.sample.json`,
-  `nft-assets/manifests/bsc.sample.json` — chain-wide samples covering all three themes with
-  representative entries from every booster tier. Use these as the primary format reference.
+  `nft-assets/manifests/bsc.sample.json` — chain-wide samples covering all three themes.
+  Each contains the first and last token ID of every (theme, tier, variant) block as a
+  format reference. Use these as the primary example of the chain-specific field set.
 - `nft-assets/manifests/polygon.coin.sample.json` (coin tokens only),
   `nft-assets/manifests/ethereum.dice.sample.json` (dice tokens only).
-These files demonstrate the field structure but omit the full token set and will not pass
-the validation rules in [§ 9](#9-validation-rules). They must not be used as authoritative
-manifests without expanding the `tokens` array to include all themes and all token IDs.
+
+All sample files carry a `"_note"` field and have fewer tokens than `supply.total`.
+Per § 9, validation scripts skip rules 4–6 and 11–14 for these files (sequential ID,
+theme grouping, and per-theme count checks). They are non-authoritative excerpts and
+must not be used in place of the authoritative manifest at
+`deployments/config/{env}/nft-manifest.json`.
 
 ### 3.2 Global (cross-chain) template
 
