@@ -344,18 +344,29 @@ naming within manifest files; see also
 
 ## 8. Generation Tooling Integration
 
-The manifest is designed to be consumed directly by generation scripts. The expected workflow
-for a generation run is:
+The manifest is designed to be consumed directly by `scripts/generate-nft-assets.js`. The
+expected workflow for a generation run is:
 
 1. **Read** the authoritative manifest from `deployments/config/{env}/nft-manifest.json`.
 2. **Validate** that all token entries are present and consistent (see [§ 9](#9-validation-rules)).
-3. **Generate** `nft-assets/metadata/{tokenId}.json` for each token entry, deriving metadata
-   attributes from the table in [§ 4.3](#43-token-entry-fields).
-4. **Copy** `nft-assets/images/source/{sourceImage}` to `nft-assets/images/{tokenId}.png`
+3. **Generate** `nft-assets/{chainKey}/metadata/{tokenId}.json` for each token entry, deriving
+   metadata attributes from the table in [§ 4.3](#43-token-entry-fields).
+4. **Copy** `nft-assets/images/source/{sourceImage}` to `nft-assets/{chainKey}/images/{tokenId}.png`
    for each token entry.
-5. **Write** `nft-assets/contract/collection.json` using collection-level manifest fields.
+5. **Write** `nft-assets/{chainKey}/contract/collection.json` using collection-level manifest fields.
 6. **Verify** that no source image files are missing (all 33 slots — see
    [`docs/nft-assets-spec.md` § 2](nft-assets-spec.md#2-distinct-image-asset-slots)).
+
+```bash
+# Run generation
+node scripts/generate-nft-assets.js --env {env}
+
+# Validate the output
+node scripts/validate-nft-assets.js --env {env}
+```
+
+See [`docs/nft-metadata-generation.md`](nft-metadata-generation.md) for the complete
+generation guide, release workflow integration, and pre-commit checklist.
 
 ### Mint-definition export
 
@@ -416,7 +427,8 @@ They extend the consistency rules in [`docs/nft-assets-spec.md` § 9](nft-assets
 2. **The manifest `contract` address must match `deployment-params.json`** in the same
    `deployments/config/{env}/` directory once the contract is deployed.
 3. **`baseMetadataUri` must match the `BASE_TOKEN_URI` in the deployed contract.** The
-   release workflow validates this before publishing assets.
+   release workflow validates this before publishing assets. For chain-specific deployments,
+   `baseMetadataUri` must follow the pattern `https://{domain}/{chainKey}/metadata/`.
 4. **Token IDs are stable once minted.** Never reassign a token ID to a different
    (theme, variant, tier) combination after the contract has minted that ID.
 5. **`chainKey` in token entries must match the collection-level `chainKey`** in
@@ -448,13 +460,13 @@ The following shows how a single manifest token entry drives the full generation
 }
 ```
 
-### Generated token metadata (`nft-assets/metadata/255.json`)
+### Generated token metadata (`nft-assets/polygon/metadata/255.json`)
 
 ```json
 {
   "name": "Tricksfor Dice 4 3x Booster #255",
   "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-  "image": "https://nft.tricksfor.com/images/255.png",
+  "image": "https://nft.tricksfor.com/polygon/images/255.png",
   "external_url": "https://tricksfor.com/boosters/255",
   "attributes": [
     { "trait_type": "Game",       "value": "Dice"       },
@@ -469,7 +481,7 @@ The following shows how a single manifest token entry drives the full generation
 ### Resulting image file
 
 ```
-nft-assets/images/255.png   ← copy of nft-assets/images/source/dice-4-3x.png
+nft-assets/polygon/images/255.png   ← copy of nft-assets/images/source/dice-4-3x.png
 ```
 
 ---
@@ -480,6 +492,7 @@ nft-assets/images/255.png   ← copy of nft-assets/images/source/dice-4-3x.png
 |---|---|
 | [`docs/nft-assets-spec.md`](nft-assets-spec.md) | Asset taxonomy, token ID mapping, image naming, and the minimal supply manifest format |
 | [`docs/nft-metadata-schema.md`](nft-metadata-schema.md) | Authoritative token metadata attribute schema (valid values, name convention, examples) |
+| [`docs/nft-metadata-generation.md`](nft-metadata-generation.md) | Generation script usage, output format, and release workflow integration |
 | [`nft-assets/manifests/ethereum.sample.json`](../nft-assets/manifests/ethereum.sample.json) | Chain-wide sample manifest: Ethereum chain, all three themes |
 | [`nft-assets/manifests/polygon.sample.json`](../nft-assets/manifests/polygon.sample.json) | Chain-wide sample manifest: Polygon chain, all three themes |
 | [`nft-assets/manifests/bsc.sample.json`](../nft-assets/manifests/bsc.sample.json) | Chain-wide sample manifest: BNB Smart Chain, all three themes |

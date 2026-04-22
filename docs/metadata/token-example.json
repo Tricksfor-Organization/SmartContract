@@ -1,12 +1,13 @@
 {
   "name": "Tricksfor Coin Heads 2x Booster #1",
-  "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-  "image": "https://nft.tricksfor.com/images/1.png",
+  "description": "A Tricksfor Coin Booster NFT for the Heads outcome. Stake this NFT to activate a 2x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/ethereum/images/1.png",
   "external_url": "https://tricksfor.com/boosters/1",
   "attributes": [
     { "trait_type": "Game",       "value": "Coin"       },
     { "trait_type": "Option",     "value": "Heads"      },
     { "trait_type": "Booster",    "value": "2x Booster" },
-    { "trait_type": "Multiplier", "value": "2x"         }
+    { "trait_type": "Multiplier", "value": "2x"         },
+    { "trait_type": "Chain",      "value": "Ethereum"   }
   ]
 }

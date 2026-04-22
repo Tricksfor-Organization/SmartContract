@@ -337,26 +337,51 @@ Cloudflare Pages. The repository stores all static assets under [`nft-assets/`](
 
 ```
 nft-assets/
-├── metadata/    ← token metadata JSON files (one per token ID)
-├── images/      ← NFT image assets (one per token ID)
-├── contract/    ← collection metadata (collection.json)
-└── _headers     ← Cloudflare Pages response headers
+├── ethereum/
+│   ├── metadata/    ← token metadata JSON files for Ethereum (token IDs 1–600)
+│   ├── images/      ← NFT images for Ethereum
+│   └── contract/    ← collection metadata for Ethereum (collection.json)
+├── polygon/
+├── optimism/
+├── bsc/
+├── avalanche/
+├── images/source/   ← 33 canonical source images (copied to chain-specific image dirs)
+├── _headers         ← Cloudflare Pages response headers
+└── _redirects       ← extensionless → .json rewrite rules
 ```
 
 ### URL conventions
 
 | Asset | URL |
 |---|---|
-| Token metadata | `https://nft.tricksfor.com/metadata/{tokenId}.json` |
-| Collection metadata | `https://nft.tricksfor.com/contract/collection.json` |
-| Token image | `https://nft.tricksfor.com/images/{tokenId}.png` |
+| Token metadata | `https://nft.tricksfor.com/{chainKey}/metadata/{tokenId}.json` |
+| Collection metadata | `https://nft.tricksfor.com/{chainKey}/contract/collection.json` |
+| Token image | `https://nft.tricksfor.com/{chainKey}/images/{tokenId}.png` |
 
 ### Contract parameter derivation
 
-| Contract parameter | Derived value |
-|---|---|
-| `BASE_TOKEN_URI` | `https://nft.tricksfor.com/metadata/` |
-| `CONTRACT_URI` | `https://nft.tricksfor.com/contract/collection.json` |
+Each chain deployment uses its own chain-specific base URLs:
+
+| Chain | `BASE_TOKEN_URI` | `CONTRACT_URI` |
+|---|---|---|
+| Ethereum | `https://nft.tricksfor.com/ethereum/metadata/` | `https://nft.tricksfor.com/ethereum/contract/collection.json` |
+| Polygon | `https://nft.tricksfor.com/polygon/metadata/` | `https://nft.tricksfor.com/polygon/contract/collection.json` |
+| Optimism | `https://nft.tricksfor.com/optimism/metadata/` | `https://nft.tricksfor.com/optimism/contract/collection.json` |
+| BNB Smart Chain | `https://nft.tricksfor.com/bsc/metadata/` | `https://nft.tricksfor.com/bsc/contract/collection.json` |
+| Avalanche | `https://nft.tricksfor.com/avalanche/metadata/` | `https://nft.tricksfor.com/avalanche/contract/collection.json` |
+
+### Metadata generation
+
+Before deploying a new chain, run `scripts/generate-nft-assets.js` to produce the static
+files from the authoritative manifest:
+
+```bash
+node scripts/generate-nft-assets.js --env {env}
+```
+
+The script writes files to `nft-assets/{chainKey}/` and prints the `BASE_TOKEN_URI` and
+`CONTRACT_URI` values for the deployment. See [`docs/nft-metadata-generation.md`](nft-metadata-generation.md)
+for the complete generation guide.
 
 ### deploy-metadata job
 
@@ -372,15 +397,15 @@ test
 
 The job:
 1. Deploys `nft-assets/` to Cloudflare Pages via `cloudflare/pages-action@v1`.
-2. Resolves the final base URI from `NFT_BASE_DOMAIN` (environment variable) or falls back to `{CF_PAGES_PROJECT}.pages.dev`.
-3. Outputs `base_token_uri` and `contract_uri`.
+2. Resolves the final base domain from `NFT_BASE_DOMAIN` (environment variable) or falls back to `{CF_PAGES_PROJECT}.pages.dev`.
+3. Reads the `chainKey` from `deployments/config/{env}/nft-manifest.json` and outputs chain-specific `base_token_uri` and `contract_uri`.
 
 `deploy-contracts` receives these outputs and passes them as environment variable overrides
 to the deployment runner:
 
 ```yaml
-Deployment__Nft__BaseUri:         <from deploy-metadata>
-Deployment__Nft__ContractMetadataUri: <from deploy-metadata>
+Deployment__Nft__BaseUri:             <from deploy-metadata, e.g. https://nft.tricksfor.com/ethereum/metadata/>
+Deployment__Nft__ContractMetadataUri: <from deploy-metadata, e.g. https://nft.tricksfor.com/ethereum/contract/collection.json>
 ```
 
 These values take highest precedence over any value in `deployment-params.json`, ensuring
@@ -399,15 +424,10 @@ See [`docs/cloudflare-pages-setup.md`](cloudflare-pages-setup.md) for the full s
 
 ### Chain-aware deployment strategy
 
-Each supported chain has its own NFT contract deployment, but they all reference the same
-static metadata. The workflow is parameterised per GitHub Environment:
-
-- **All mainnet environments** share a single production Cloudflare Pages project
-  (`tricksfor-nft`) and custom domain (`nft.tricksfor.com`), so every mainnet contract
-  on every chain resolves to the same authoritative metadata URLs.
-- **All testnet environments** share a separate preview project
-  (`tricksfor-nft-preview` / `nft-preview.tricksfor.com`) so that pre-release
-  deployments never overwrite production metadata.
+All mainnet chain deployments share a single production Cloudflare Pages project
+(`tricksfor-nft`) and custom domain (`nft.tricksfor.com`). Chain separation is achieved
+through the per-chain subdirectory structure (`/ethereum/`, `/polygon/`, etc.) within that
+single project.
 
 | Environments     | Recommended `CF_PAGES_PROJECT` | Recommended `NFT_BASE_DOMAIN`   |
 |------------------|--------------------------------|---------------------------------|
@@ -415,8 +435,8 @@ static metadata. The workflow is parameterised per GitHub Environment:
 | `*-sepolia`, `*-amoy`, `*-testnet`, `*-fuji` | `tricksfor-nft-preview` | `nft-preview.tricksfor.com` |
 
 The `BASE_TOKEN_URI` and `CONTRACT_URI` resolved by each run are therefore deterministic:
-a mainnet release always produces `https://nft.tricksfor.com/metadata/` and
-`https://nft.tricksfor.com/contract/collection.json`, and a testnet release always
+a mainnet Ethereum release always produces `https://nft.tricksfor.com/ethereum/metadata/` and
+`https://nft.tricksfor.com/ethereum/contract/collection.json`, and a testnet release always
 produces the equivalent preview URLs.
 
 See [`docs/cloudflare-pages-setup.md` § Multi-Chain Deployment Strategy](cloudflare-pages-setup.md#8-multi-chain-deployment-strategy)
@@ -426,9 +446,9 @@ for the complete per-environment configuration reference.
 ### Stability guarantee
 
 Once the custom domain is bound and the contract is deployed with those URLs:
-- metadata paths are immutable (`/metadata/{tokenId}.json`)
-- image paths are immutable (`/images/{tokenId}.png`)
-- collection metadata path is immutable (`/contract/collection.json`)
+- metadata paths are immutable (`/{chainKey}/metadata/{tokenId}.json`)
+- image paths are immutable (`/{chainKey}/images/{tokenId}.png`)
+- collection metadata path is immutable (`/{chainKey}/contract/collection.json`)
 - Cloudflare Pages propagates new deployments to the same paths, preserving URL stability
 
 ---
