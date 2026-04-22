@@ -317,10 +317,14 @@ test
    node scripts/generate-nft-assets.js --env {env} --force
    ```
 
-3. **Validate the output** — run the validation script against the generated output:
+3. **Validate the manifest/assets inputs** — run the validation script as a consistency check
+   before deployment:
    ```bash
    node scripts/validate-nft-assets.js --nft-assets nft-assets --env {env}
    ```
+   Note: the current validator still checks the legacy flat layout under `nft-assets/metadata/`,
+   `nft-assets/images/`, and `nft-assets/contract/`. It does **not** validate the generated
+   chain-specific output under `nft-assets/{chainKey}/...`.
 
 4. **Commit and push** — commit all generated files under `nft-assets/{chainKey}/` to the
    release branch. The `deploy-metadata` job in `release-deploy.yml` deploys them to Cloudflare

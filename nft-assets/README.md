@@ -74,9 +74,13 @@ Each chain deployment consumes its own chain-specific base URLs:
 | BSC       | `https://nft.tricksfor.com/bsc/metadata/`          | `https://nft.tricksfor.com/bsc/contract/collection.json`     |
 | Avalanche | `https://nft.tricksfor.com/avalanche/metadata/`    | `https://nft.tricksfor.com/avalanche/contract/collection.json`|
 
-These values are resolved from the Cloudflare Pages deployment (`deploy-metadata` job) and
-passed to the contract deployment runner as `Deployment__Nft__BaseUri` and
-`Deployment__Nft__ContractMetadataUri`.
+Contract deployments must pass these chain-specific values as `Deployment__Nft__BaseUri` and
+`Deployment__Nft__ContractMetadataUri`. The configured URLs must include the `/{chainKey}/`
+path segment shown above so they match the generated Cloudflare Pages asset layout.
+
+The `deploy-metadata` job in `release-deploy.yml` reads the `chainKey` from
+`deployments/config/{env}/nft-manifest.json` and constructs the chain-specific URLs
+automatically, then passes them as output variables to the `deploy-contracts` job.
 
 ---
 

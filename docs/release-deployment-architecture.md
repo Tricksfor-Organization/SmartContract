@@ -397,8 +397,8 @@ test
 
 The job:
 1. Deploys `nft-assets/` to Cloudflare Pages via `cloudflare/pages-action@v1`.
-2. Resolves the final base URI from `NFT_BASE_DOMAIN` (environment variable) or falls back to `{CF_PAGES_PROJECT}.pages.dev`.
-3. Outputs `base_token_uri` and `contract_uri` using the chain key from the manifest.
+2. Resolves the final base domain from `NFT_BASE_DOMAIN` (environment variable) or falls back to `{CF_PAGES_PROJECT}.pages.dev`.
+3. Reads the `chainKey` from `deployments/config/{env}/nft-manifest.json` and outputs chain-specific `base_token_uri` and `contract_uri`.
 
 `deploy-contracts` receives these outputs and passes them as environment variable overrides
 to the deployment runner:

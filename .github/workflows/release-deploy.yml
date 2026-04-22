@@ -260,12 +260,27 @@ jobs:
             echo "::warning::NFT_BASE_DOMAIN is not set; using Cloudflare Pages default domain: $DOMAIN"
           fi
 
-          BASE_TOKEN_URI="https://${DOMAIN}/metadata/"
-          CONTRACT_URI="https://${DOMAIN}/contract/collection.json"
+          # Read chain key from the deployment manifest so the URLs include the /{chainKey}/ prefix
+          MANIFEST_PATH="deployments/config/${DEPLOY_ENV}/nft-manifest.json"
+          if [[ ! -f "$MANIFEST_PATH" ]]; then
+            echo "::error::Deployment manifest not found: $MANIFEST_PATH"
+            echo "::error::Generate the chain manifest and commit it before deploying. See docs/nft-metadata-generation.md."
+            exit 1
+          fi
+
+          CHAIN_KEY=$(jq -r '.chainKey // empty' "$MANIFEST_PATH")
+          if [[ -z "$CHAIN_KEY" ]]; then
+            echo "::error::\"chainKey\" is missing or null in $MANIFEST_PATH"
+            exit 1
+          fi
+
+          BASE_TOKEN_URI="https://${DOMAIN}/${CHAIN_KEY}/metadata/"
+          CONTRACT_URI="https://${DOMAIN}/${CHAIN_KEY}/contract/collection.json"
 
           echo "base_token_uri=$BASE_TOKEN_URI" >> "$GITHUB_OUTPUT"
           echo "contract_uri=$CONTRACT_URI" >> "$GITHUB_OUTPUT"
 
+          echo "Resolved chain key:     $CHAIN_KEY"
           echo "Resolved base token URI: $BASE_TOKEN_URI"
           echo "Resolved contract URI:   $CONTRACT_URI"
 

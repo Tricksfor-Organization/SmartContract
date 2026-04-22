@@ -160,31 +160,89 @@ function loadManifest(manifestPath) {
 // Manifest validation (pre-generation checks)
 // ---------------------------------------------------------------------------
 
+/** Safe characters for chainKey; no path separators or shell special chars. */
+const VALID_CHAIN_KEY_RE = /^[a-z0-9-]+$/;
+
+/** Supported chain keys — restrict to the known deployment set. */
+const KNOWN_CHAIN_KEYS = new Set(['ethereum', 'polygon', 'bsc', 'avalanche', 'optimism']);
+
 function validateManifest(manifest, manifestPath) {
   const errors = [];
 
   if (manifest.manifestVersion !== '1.0') {
     errors.push('"manifestVersion" must be "1.0"');
   }
-  if (typeof manifest.chainKey !== 'string' || !manifest.chainKey) {
+
+  // chainKey — validate before using it in path or URI checks below
+  const chainKey = manifest.chainKey;
+  if (typeof chainKey !== 'string' || !chainKey) {
     errors.push('"chainKey" is required');
+  } else if (!VALID_CHAIN_KEY_RE.test(chainKey)) {
+    errors.push('"chainKey" must contain only lowercase letters, digits, and hyphens (no path separators)');
+  } else if (!KNOWN_CHAIN_KEYS.has(chainKey)) {
+    errors.push(`"chainKey" must be one of: ${[...KNOWN_CHAIN_KEYS].join(', ')} (got: "${chainKey}")`);
   }
+
   if (typeof manifest.chain !== 'string' || !manifest.chain) {
     errors.push('"chain" is required');
   }
+
+  // baseImageUri — must be HTTPS and end with /{chainKey}/images/
   if (typeof manifest.baseImageUri !== 'string' || !manifest.baseImageUri.startsWith('https://')) {
     errors.push('"baseImageUri" must be an HTTPS URL');
+  } else if (chainKey && !manifest.baseImageUri.endsWith(`/${chainKey}/images/`)) {
+    errors.push(`"baseImageUri" must end with "/${chainKey}/images/" (got: "${manifest.baseImageUri}")`);
   }
+
+  // baseMetadataUri — must be HTTPS and end with /{chainKey}/metadata/
   if (typeof manifest.baseMetadataUri !== 'string' || !manifest.baseMetadataUri.startsWith('https://')) {
     errors.push('"baseMetadataUri" must be an HTTPS URL');
+  } else if (chainKey && !manifest.baseMetadataUri.endsWith(`/${chainKey}/metadata/`)) {
+    errors.push(`"baseMetadataUri" must end with "/${chainKey}/metadata/" (got: "${manifest.baseMetadataUri}")`);
   }
+
   if (!manifest.supply || typeof manifest.supply.total !== 'number') {
     errors.push('"supply.total" is required');
   }
+
   if (!Array.isArray(manifest.tokens)) {
     errors.push('"tokens" must be an array');
   } else if (manifest.tokens.length === 0) {
     errors.push('"tokens" array is empty');
+  } else {
+    // Per-token entry validation — run before any files are written
+    const seenIds = new Set();
+    for (let i = 0; i < manifest.tokens.length; i++) {
+      const token = manifest.tokens[i];
+      const idx   = `tokens[${i}]`;
+
+      // tokenId: integer 1–600, unique
+      if (!Number.isInteger(token.tokenId) || token.tokenId < 1 || token.tokenId > 600) {
+        errors.push(`${idx}: "tokenId" must be an integer between 1 and 600 (got: ${JSON.stringify(token.tokenId)})`);
+      } else if (seenIds.has(token.tokenId)) {
+        errors.push(`${idx}: duplicate tokenId ${token.tokenId}`);
+      } else {
+        seenIds.add(token.tokenId);
+      }
+
+      // Required string fields
+      for (const field of ['theme', 'variant', 'tier', 'sourceImage']) {
+        if (typeof token[field] !== 'string' || !token[field]) {
+          errors.push(`${idx}: "${field}" is required and must be a non-empty string`);
+        }
+      }
+
+      // Vocabulary checks
+      if (typeof token.theme === 'string' && token.theme && !THEME_TO_GAME[token.theme]) {
+        errors.push(`${idx}: "theme" must be one of: coin, dice, rps (got: "${token.theme}")`);
+      }
+      if (typeof token.variant === 'string' && token.variant && !VARIANT_TO_OPTION[token.variant]) {
+        errors.push(`${idx}: "variant" "${token.variant}" is not a recognised option`);
+      }
+      if (typeof token.tier === 'string' && token.tier && !TIER_TO_BOOSTER[token.tier]) {
+        errors.push(`${idx}: "tier" must be one of: 2x, 3x, 5x (got: "${token.tier}")`);
+      }
+    }
   }
 
   if (errors.length > 0) {
@@ -339,7 +397,6 @@ function writeJsonFile(filePath, data, dryRun, force) {
 
 function copyImageFile(sourcePath, destPath, dryRun, force) {
   if (!fs.existsSync(sourcePath)) {
-    console.warn(`  ⚠ source image not found (skipping): ${sourcePath}`);
     return false;
   }
   if (!dryRun && !force && fs.existsSync(destPath)) {
@@ -393,14 +450,29 @@ function generate(manifest, nftAssetsDir, opts) {
     }
 
     // 2. Copy source image for this token
-    if (!skipImages && sourceImage) {
-      const sourcePath = path.join(sourceDir, sourceImage);
-      const destPath   = path.join(imagesDir, `${tokenId}.png`);
-      try {
-        copyImageFile(sourcePath, destPath, dryRun, force);
-      } catch (e) {
-        console.error(`  ✗ token ${tokenId} image: ${e.message}`);
+    if (!skipImages) {
+      if (!sourceImage) {
+        console.error(`  ✗ token ${tokenId} image: "sourceImage" field is missing`);
         tokenErrors++;
+      } else {
+        const sourcePath = path.join(sourceDir, sourceImage);
+        const destPath   = path.join(imagesDir, `${tokenId}.png`);
+        try {
+          const found = copyImageFile(sourcePath, destPath, dryRun, force);
+          if (!found) {
+            if (dryRun) {
+              // In dry-run mode warn but don't fail — source images may not be present yet
+              console.warn(`  ⚠ [dry-run] source image not found: ${sourcePath}`);
+            } else {
+              // In real generation mode a missing source image is a hard error:
+              // the deployed image set would be incomplete
+              throw new Error(`source image not found: ${sourcePath}`);
+            }
+          }
+        } catch (e) {
+          console.error(`  ✗ token ${tokenId} image: ${e.message}`);
+          tokenErrors++;
+        }
       }
     }
   }
@@ -416,14 +488,34 @@ function generate(manifest, nftAssetsDir, opts) {
     tokenErrors++;
   }
 
-  // 4. Print derived URLs
+  // 4. Copy collection image (shared banner; not derived from per-token sourceImage)
+  if (!skipImages) {
+    const collectionImgSource = path.join(nftAssetsDir, 'images', 'collection.png');
+    const collectionImgDest   = path.join(imagesDir, 'collection.png');
+    try {
+      const found = copyImageFile(collectionImgSource, collectionImgDest, dryRun, force);
+      if (!found) {
+        // collection.png is a manually placed asset — warn but don't fail
+        const level = dryRun ? '[dry-run] ' : '';
+        console.warn(`  ⚠ ${level}collection image not found: ${collectionImgSource}`);
+        console.warn(`    collection.json references ${manifest.baseImageUri}collection.png`);
+        console.warn(`    Place nft-assets/images/collection.png before deploying to Cloudflare Pages.`);
+      }
+    } catch (e) {
+      console.error(`  ✗ collection image: ${e.message}`);
+      tokenErrors++;
+    }
+  }
+
+  // 5. Print derived URLs
+  // baseMetadataUri is validated to end with /{chainKey}/metadata/ — replace suffix to derive CONTRACT_URI
   console.log('\n--- Derived contract parameters ---');
-  const baseTokenUri   = manifest.baseMetadataUri;
-  const contractUri    = baseTokenUri.replace(/\/metadata\/$/, '/contract/collection.json');
+  const baseTokenUri = manifest.baseMetadataUri;
+  const contractUri  = baseTokenUri.replace(/metadata\/$/, 'contract/collection.json');
   console.log(`  BASE_TOKEN_URI : ${baseTokenUri}`);
   console.log(`  CONTRACT_URI   : ${contractUri}`);
 
-  // 5. Summary
+  // 6. Summary
   console.log('');
   if (tokenErrors > 0) {
     console.error(`Generation completed with ${tokenErrors} error(s).`);
