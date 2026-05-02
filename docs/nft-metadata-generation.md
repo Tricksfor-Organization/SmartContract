@@ -163,7 +163,7 @@ node scripts/generate-nft-assets.js --env ethereum-mainnet --force
 For each token entry in the manifest:
 
 1. Writes `nft-assets/{chainKey}/metadata/{tokenId}.json` — token metadata JSON
-2. Copies `nft-assets/images/source/{sourceImage}` to `nft-assets/{chainKey}/images/{tokenId}.png`
+2. Copies `nft-assets/source-images/{sourceImage}` to `nft-assets/{chainKey}/images/{tokenId}.png`
 
 After processing all tokens:
 
@@ -207,7 +207,7 @@ The generation script reads an authoritative chain-specific manifest stored at
 | `theme` | Canonical theme identifier: `coin`, `dice`, or `rps` |
 | `variant` | Canonical variant identifier (e.g. `heads`, `tails`, `1`–`6`, `rock`) |
 | `tier` | Booster tier: `2x`, `3x`, or `5x` |
-| `sourceImage` | Source image file name in `nft-assets/images/source/` |
+| `sourceImage` | Relative path to the source image within `nft-assets/source-images/` (e.g. `"coin/heads-2x.png"`) |
 
 Optional token entry fields that override script-derived values:
 

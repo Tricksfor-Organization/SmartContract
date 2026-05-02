@@ -17,7 +17,7 @@ A Tricksfor Booster NFT asset manifest serves the following consumers:
 | Consumer | What it reads from the manifest |
 |---|---|
 | Metadata generation script | Per-token fields to produce `metadata/{tokenId}.json` |
-| Image pipeline | `sourceImage` to copy or link `images/{tokenId}.png` from `images/source/` |
+| Image pipeline | `sourceImage` to copy or link `images/{tokenId}.png` from `source-images/{theme}/` |
 | Collection metadata writer | Collection-level fields to produce `contract/collection.json` |
 | Cloudflare Pages publisher | `baseImageUri` / `baseMetadataUri` to validate published URLs |
 | Mint-definition exporter | Token ID range and contract address to produce mint calldata |
@@ -147,7 +147,7 @@ must be present even when all themes share the same count so that tooling can sk
   "multiplierDisplay": "2x Booster",
   "displayName": "Tricksfor Coin Heads 2x Booster #1",
   "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-  "sourceImage": "coin-heads-2x.png",
+  "sourceImage": "coin/heads-2x.png",
   "imagePath": "images/1.png",
   "metadataPath": "metadata/1.json"
 }
@@ -164,7 +164,7 @@ must be present even when all themes share the same count so that tooling can sk
 | `multiplierDisplay` | optional | string | Pre-computed booster label derived from `tier` (e.g. `"2x Booster"`, `"3x Booster"`, `"5x Booster"`). When present, must equal the `"Booster"` metadata attribute value derived from `tier`. |
 | `displayName` | ✅ | string | The resolved `name` field for the token's metadata JSON. Must follow the pattern defined in [`docs/nft-metadata-schema.md` — Token Name Convention](nft-metadata-schema.md#token-name-convention). |
 | `description` | optional | string | Resolved description for this specific token. If absent, the collection-level `descriptionTemplate` is used. |
-| `sourceImage` | ✅ | string | File name of the source image in `nft-assets/images/source/`, e.g. `"coin-heads-2x.png"`. |
+| `sourceImage` | ✅ | string | Relative path to the source image within `nft-assets/source-images/`, e.g. `"coin/heads-2x.png"`. |
 | `imagePath` | ✅ | string | Relative path to the per-token image within the `nft-assets/` directory, e.g. `"images/1.png"`. The generation script copies `sourceImage` here. |
 | `metadataPath` | ✅ | string | Relative path to the per-token metadata file within the `nft-assets/` directory, e.g. `"metadata/1.json"`. The generation script writes the metadata JSON here. |
 
@@ -351,7 +351,7 @@ expected workflow for a generation run is:
 2. **Validate** that all token entries are present and consistent (see [§ 9](#9-validation-rules)).
 3. **Generate** `nft-assets/{chainKey}/metadata/{tokenId}.json` for each token entry, deriving
    metadata attributes from the table in [§ 4.3](#43-token-entry-fields).
-4. **Copy** `nft-assets/images/source/{sourceImage}` to `nft-assets/{chainKey}/images/{tokenId}.png`
+4. **Copy** `nft-assets/source-images/{sourceImage}` to `nft-assets/{chainKey}/images/{tokenId}.png`
    for each token entry.
 5. **Write** `nft-assets/{chainKey}/contract/collection.json` using collection-level manifest fields.
 6. **Verify** that no source image files are missing (all 33 slots — see
@@ -406,14 +406,14 @@ generation or minting run begins.
 8. **`variant` is valid for its `theme`** — see
    [`docs/nft-assets-spec.md` § 1.2](nft-assets-spec.md#12-image-variants-per-theme).
 9. **`tier` is one of `2x`, `3x`, `5x`.**
-10. **`sourceImage` matches the naming pattern `{theme}-{variant}-{tier}.png`** as defined in
+10. **`sourceImage` matches the naming pattern `{theme}/{variant}-{tier}.png`** as defined in
     [`docs/nft-assets-spec.md` § 3](nft-assets-spec.md#3-image-source-file-naming-convention).
 11. **`imagePath` equals `images/{tokenId}.png`.**
 12. **`metadataPath` equals `metadata/{tokenId}.json`.**
 13. **`displayName` matches the token name convention** defined in
     [`docs/nft-metadata-schema.md`](nft-metadata-schema.md#token-name-convention).
 14. **All 33 source image files referenced by `sourceImage` exist** in
-    `nft-assets/images/source/`.
+    `nft-assets/source-images/`.
 
 ---
 
@@ -454,7 +454,7 @@ The following shows how a single manifest token entry drives the full generation
   "tier": "3x",
   "displayName": "Tricksfor Dice 4 3x Booster #255",
   "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-  "sourceImage": "dice-4-3x.png",
+  "sourceImage": "dice/4-3x.png",
   "imagePath": "images/255.png",
   "metadataPath": "metadata/255.json"
 }
@@ -481,7 +481,7 @@ The following shows how a single manifest token entry drives the full generation
 ### Resulting image file
 
 ```
-nft-assets/polygon/images/255.png   ← copy of nft-assets/images/source/dice-4-3x.png
+nft-assets/polygon/images/255.png   ← copy of nft-assets/source-images/dice/4-3x.png
 ```
 
 ---

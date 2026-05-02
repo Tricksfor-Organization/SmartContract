@@ -35,7 +35,7 @@ It checks:
 | Token ID uniqueness | No duplicate token IDs exist in the metadata directory |
 | Manifest structure | If an authoritative manifest is found, its fields and supply totals are validated |
 | Manifest consistency | All tokens referenced in the manifest have corresponding metadata and image files |
-| Source images | All `sourceImage` files referenced by the manifest exist in `images/source/` |
+| Source images | All `sourceImage` files referenced by the manifest exist in `source-images/{theme}/` |
 
 The validator distinguishes between **authoritative manifests** (stored in
 `deployments/config/{env}/nft-manifest.json`) and **sample/excerpt manifests**. A manifest is
@@ -134,11 +134,11 @@ When an authoritative manifest is found (no `_note` field), the following rules 
 | 7 | `theme` is one of `coin`, `dice`, `rps` |
 | 8 | `variant` is valid for its `theme` |
 | 9 | `tier` is one of `2x`, `3x`, `5x` |
-| 10 | `sourceImage` matches `{theme}-{variant}-{tier}.png` |
+| 10 | `sourceImage` matches `{theme}/{variant}-{tier}.png` |
 | 11 | `imagePath` equals `images/{tokenId}.png` (**skipped for excerpt manifests**) |
 | 12 | `metadataPath` equals `metadata/{tokenId}.json` (**skipped for excerpt manifests**) |
 | 13 | `displayName` matches the token name convention: `Tricksfor {Game} {Option} {tier} Booster #{tokenId}` (**skipped for excerpt manifests**) |
-| 14 | All `sourceImage` files exist in `nft-assets/images/source/` (**skipped for excerpt manifests**) |
+| 14 | All `sourceImage` files exist in `nft-assets/source-images/` (**skipped for excerpt manifests**) |
 
 ### 3.5 Manifest-to-output consistency (authoritative manifests only)
 
@@ -266,7 +266,7 @@ The `Booster` and `Multiplier` attributes must be paired correctly:
 
 The metadata file `metadata/{id}.json` exists but the corresponding image `images/{id}.png`
 does not. Run the image generation step (copy the appropriate source image from
-`images/source/` to `images/{id}.png`) or add the missing file.
+`source-images/{theme}/` to `images/{id}.png`) or add the missing file.
 
 ### `manifest token {id}: metadata/{id}.json does not exist`
 

@@ -16,7 +16,7 @@
  *       - Manifest structure and field values (spec §9 rules)
  *       - All manifest-referenced metadata files exist
  *       - All manifest-referenced image files exist
- *       - Source images exist in nft-assets/images/source/
+ *       - Source images exist in nft-assets/source-images/{theme}/
  *
  * Usage:
  *   node scripts/validate-nft-assets.js [options]
@@ -566,8 +566,8 @@ function validateManifestStructure(manifest, base, report, isExcerpt) {
       );
     }
 
-    // Rule 10: sourceImage matches {theme}-{variant}-{tier}.png
-    const expectedSource = `${token.theme}-${token.variant}-${token.tier}.png`;
+    // Rule 10: sourceImage matches {theme}/{variant}-{tier}.png
+    const expectedSource = `${token.theme}/${token.variant}-${token.tier}.png`;
     if (token.sourceImage !== expectedSource) {
       report.error(
         `${base}: token ${tid}: "sourceImage" "${token.sourceImage}" ` +
@@ -645,11 +645,11 @@ function validateManifestToOutput(manifest, base, nftAssetsDir, report) {
 }
 
 function validateSourceImages(manifest, base, nftAssetsDir, report) {
-  console.log('\n--- Source images (nft-assets/images/source/) ---');
-  const sourceDir = path.join(nftAssetsDir, 'images', 'source');
+  console.log('\n--- Source images (nft-assets/source-images/{theme}/) ---');
+  const sourceDir = path.join(nftAssetsDir, 'source-images');
 
   if (!fs.existsSync(sourceDir)) {
-    report.error(`images/source directory not found: ${sourceDir}`);
+    report.error(`source-images directory not found: ${sourceDir}`);
     return;
   }
 
@@ -660,14 +660,14 @@ function validateSourceImages(manifest, base, nftAssetsDir, report) {
   for (const sourceImage of [...referenced].sort()) {
     const sourcePath = path.join(sourceDir, sourceImage);
     if (!fs.existsSync(sourcePath)) {
-      report.error(`images/source/${sourceImage}: source image referenced in manifest not found`);
+      report.error(`source-images/${sourceImage}: source image referenced in manifest not found`);
       missing++;
     }
   }
 
   if (missing === 0) {
     report.ok(
-      `All ${referenced.size} source images referenced by the manifest exist in images/source/`
+      `All ${referenced.size} source images referenced by the manifest exist in source-images/`
     );
   }
 }

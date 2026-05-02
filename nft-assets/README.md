@@ -31,10 +31,12 @@ nft-assets/
 ├── optimism/                  Chain-specific output for Optimism
 ├── bsc/                       Chain-specific output for BNB Smart Chain
 ├── avalanche/                 Chain-specific output for Avalanche
-├── images/
-│   └── source/                33 canonical source images (one per variant+tier combination)
-│       ├── coin-heads-2x.png
-│       └── ...
+├── source-images/             Canonical source images, organised by theme
+│   ├── coin/                  6 images — heads/tails × 2x/3x/5x
+│   ├── dice/                  18 images — 1–6 × 2x/3x/5x
+│   └── rps/                   9 images — rock/paper/scissors × 2x/3x/5x
+├── images/                    Shared image assets (e.g. collection banner)
+│   └── collection.png
 ├── manifests/                 Manifest samples and templates
 ├── _headers                   Cloudflare Pages response headers (CORS, content-type, cache)
 └── _redirects                 Cloudflare Pages rewrite rules (extensionless → .json)

@@ -88,65 +88,67 @@ All 33 slots must be filled before any metadata generation or contract minting r
 
 ## 3. Image Source File Naming Convention
 
-Source image files are named using the pattern:
+Source image files are stored under `nft-assets/source-images/{theme}/` and named using the pattern:
 
 ```
-{theme}-{variant}-{tier}.png
+{variant}-{tier}.png
 ```
 
 Where:
-- `{theme}` is the canonical identifier from § 1.1 (`coin`, `dice`, `rps`)
 - `{variant}` is the canonical identifier from § 1.2 (`heads`, `tails`, `1`–`6`, `rock`, `paper`, `scissors`)
 - `{tier}` is the canonical identifier from § 1.3 (`2x`, `3x`, `5x`)
 
-### Full enumeration of all 33 source image file names
+The full relative path from `nft-assets/source-images/` is therefore `{theme}/{variant}-{tier}.png`,
+which is the value stored in the `sourceImage` field of each manifest token entry.
 
-#### Coin (6 files)
+### Full enumeration of all 33 source images
 
-```
-coin-heads-2x.png
-coin-heads-3x.png
-coin-heads-5x.png
-coin-tails-2x.png
-coin-tails-3x.png
-coin-tails-5x.png
-```
-
-#### Dice (18 files)
+#### Coin (6 files — in `source-images/coin/`)
 
 ```
-dice-1-2x.png
-dice-1-3x.png
-dice-1-5x.png
-dice-2-2x.png
-dice-2-3x.png
-dice-2-5x.png
-dice-3-2x.png
-dice-3-3x.png
-dice-3-5x.png
-dice-4-2x.png
-dice-4-3x.png
-dice-4-5x.png
-dice-5-2x.png
-dice-5-3x.png
-dice-5-5x.png
-dice-6-2x.png
-dice-6-3x.png
-dice-6-5x.png
+heads-2x.png
+heads-3x.png
+heads-5x.png
+tails-2x.png
+tails-3x.png
+tails-5x.png
 ```
 
-#### Rock Paper Scissors (9 files)
+#### Dice (18 files — in `source-images/dice/`)
 
 ```
-rps-rock-2x.png
-rps-rock-3x.png
-rps-rock-5x.png
-rps-paper-2x.png
-rps-paper-3x.png
-rps-paper-5x.png
-rps-scissors-2x.png
-rps-scissors-3x.png
-rps-scissors-5x.png
+1-2x.png
+1-3x.png
+1-5x.png
+2-2x.png
+2-3x.png
+2-5x.png
+3-2x.png
+3-3x.png
+3-5x.png
+4-2x.png
+4-3x.png
+4-5x.png
+5-2x.png
+5-3x.png
+5-5x.png
+6-2x.png
+6-3x.png
+6-5x.png
+```
+
+#### Rock Paper Scissors (9 files — in `source-images/rps/`)
+
+```
+rock-2x.png
+rock-3x.png
+rock-5x.png
+paper-2x.png
+paper-3x.png
+paper-5x.png
+scissors-2x.png
+scissors-3x.png
+scissors-5x.png
 ```
 
 ---
@@ -208,22 +210,29 @@ nft-assets/
 ├── optimism/                         # Chain-specific output for Optimism
 ├── bsc/                              # Chain-specific output for BNB Smart Chain
 ├── avalanche/                        # Chain-specific output for Avalanche
-├── images/
-│   └── source/                       # 33 canonical source images (one per variant+tier combination)
-│       ├── coin-heads-2x.png
-│       ├── coin-heads-3x.png
-│       ├── coin-heads-5x.png
-│       ├── coin-tails-2x.png
-│       ├── coin-tails-3x.png
-│       ├── coin-tails-5x.png
-│       ├── dice-1-2x.png
-│       ├── ...                        # (all 33 files — see § 3 for full list)
-│       └── rps-scissors-5x.png
+├── source-images/                    # Canonical source images, organised by theme
+│   ├── coin/                         # Coin theme source images (6 files: 2 variants × 3 tiers)
+│   │   ├── heads-2x.png
+│   │   ├── heads-3x.png
+│   │   ├── heads-5x.png
+│   │   ├── tails-2x.png
+│   │   ├── tails-3x.png
+│   │   └── tails-5x.png
+│   ├── dice/                         # Dice theme source images (18 files: 6 variants × 3 tiers)
+│   │   ├── 1-2x.png
+│   │   ├── ...                       # (all 18 files — see § 3 for full list)
+│   │   └── 6-5x.png
+│   └── rps/                          # RPS theme source images (9 files: 3 variants × 3 tiers)
+│       ├── rock-2x.png
+│       ├── ...                       # (all 9 files — see § 3 for full list)
+│       └── scissors-5x.png
+├── images/                           # Shared image assets (e.g. collection banner)
+│   └── collection.png
 ├── _headers                           # Cloudflare Pages response headers (CORS, cache)
 └── _redirects                         # Extensionless → .json rewrite for tokenURI compatibility
 ```
 
-The source images in `images/source/` are the canonical master assets. Per-token image
+The source images in `source-images/{theme}/` are the canonical master assets. Per-token image
 files (`{chainKey}/images/{tokenId}.png`) are produced by the metadata generation pipeline,
 which copies the appropriate source image for each token ID based on the manifest.
 
@@ -333,14 +342,14 @@ corresponding contract deployment parameters.
       "theme": "coin",
       "variant": "heads",
       "tier": "2x",
-      "sourceImage": "coin-heads-2x.png"
+      "sourceImage": "coin/heads-2x.png"
     },
     {
       "tokenId": 2,
       "theme": "coin",
       "variant": "heads",
       "tier": "2x",
-      "sourceImage": "coin-heads-2x.png"
+      "sourceImage": "coin/heads-2x.png"
     }
   ]
 }
@@ -357,7 +366,7 @@ corresponding contract deployment parameters.
 | `theme`       | Canonical theme identifier (`coin`, `dice`, `rps`)                        |
 | `variant`     | Canonical variant identifier (e.g., `heads`, `4`, `rock`)                |
 | `tier`        | Canonical tier identifier (`2x`, `3x`, `5x`)                             |
-| `sourceImage` | File name of the source image in `nft-assets/images/source/`             |
+| `sourceImage` | Relative path to the source image within `nft-assets/source-images/` (e.g. `"dice/4-3x.png"`) |
 
 ### 6.4 Global vs. Chain-Specific Manifests
 
@@ -393,13 +402,13 @@ The following example shows how all layers align for a single token (Polygon dep
 ### Source image
 
 ```
-nft-assets/images/source/dice-4-3x.png
+nft-assets/source-images/dice/4-3x.png
 ```
 
 ### Per-token image
 
 ```
-nft-assets/polygon/images/255.png     ← copy of dice-4-3x.png
+nft-assets/polygon/images/255.png     ← copy of source-images/dice/4-3x.png
 ```
 
 ### Per-token metadata (`nft-assets/polygon/metadata/255.json`)
@@ -428,7 +437,7 @@ nft-assets/polygon/images/255.png     ← copy of dice-4-3x.png
   "theme": "dice",
   "variant": "4",
   "tier": "3x",
-  "sourceImage": "dice-4-3x.png"
+  "sourceImage": "dice/4-3x.png"
 }
 ```
 

@@ -24,7 +24,7 @@
       "tier": "2x",
       "displayName": "Tricksfor Coin Heads 2x Booster #1",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-heads-2x.png",
+      "sourceImage": "coin/heads-2x.png",
       "imagePath": "images/1.png",
       "metadataPath": "metadata/1.json"
     },
@@ -36,7 +36,7 @@
       "tier": "2x",
       "displayName": "Tricksfor Coin Heads 2x Booster #2",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-heads-2x.png",
+      "sourceImage": "coin/heads-2x.png",
       "imagePath": "images/2.png",
       "metadataPath": "metadata/2.json"
     },
@@ -48,7 +48,7 @@
       "tier": "3x",
       "displayName": "Tricksfor Coin Heads 3x Booster #35",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-heads-3x.png",
+      "sourceImage": "coin/heads-3x.png",
       "imagePath": "images/35.png",
       "metadataPath": "metadata/35.json"
     },
@@ -60,7 +60,7 @@
       "tier": "3x",
       "displayName": "Tricksfor Coin Heads 3x Booster #36",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-heads-3x.png",
+      "sourceImage": "coin/heads-3x.png",
       "imagePath": "images/36.png",
       "metadataPath": "metadata/36.json"
     },
@@ -72,7 +72,7 @@
       "tier": "5x",
       "displayName": "Tricksfor Coin Heads 5x Booster #69",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-heads-5x.png",
+      "sourceImage": "coin/heads-5x.png",
       "imagePath": "images/69.png",
       "metadataPath": "metadata/69.json"
     },
@@ -84,7 +84,7 @@
       "tier": "5x",
       "displayName": "Tricksfor Coin Heads 5x Booster #70",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-heads-5x.png",
+      "sourceImage": "coin/heads-5x.png",
       "imagePath": "images/70.png",
       "metadataPath": "metadata/70.json"
     },
@@ -96,7 +96,7 @@
       "tier": "2x",
       "displayName": "Tricksfor Coin Tails 2x Booster #102",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-tails-2x.png",
+      "sourceImage": "coin/tails-2x.png",
       "imagePath": "images/102.png",
       "metadataPath": "metadata/102.json"
     },
@@ -108,7 +108,7 @@
       "tier": "2x",
       "displayName": "Tricksfor Coin Tails 2x Booster #103",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-tails-2x.png",
+      "sourceImage": "coin/tails-2x.png",
       "imagePath": "images/103.png",
       "metadataPath": "metadata/103.json"
     },
@@ -120,7 +120,7 @@
       "tier": "3x",
       "displayName": "Tricksfor Coin Tails 3x Booster #135",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-tails-3x.png",
+      "sourceImage": "coin/tails-3x.png",
       "imagePath": "images/135.png",
       "metadataPath": "metadata/135.json"
     },
@@ -132,7 +132,7 @@
       "tier": "3x",
       "displayName": "Tricksfor Coin Tails 3x Booster #136",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-tails-3x.png",
+      "sourceImage": "coin/tails-3x.png",
       "imagePath": "images/136.png",
       "metadataPath": "metadata/136.json"
     },
@@ -144,7 +144,7 @@
       "tier": "5x",
       "displayName": "Tricksfor Coin Tails 5x Booster #168",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-tails-5x.png",
+      "sourceImage": "coin/tails-5x.png",
       "imagePath": "images/168.png",
       "metadataPath": "metadata/168.json"
     },
@@ -156,7 +156,7 @@
       "tier": "5x",
       "displayName": "Tricksfor Coin Tails 5x Booster #200",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-tails-5x.png",
+      "sourceImage": "coin/tails-5x.png",
       "imagePath": "images/200.png",
       "metadataPath": "metadata/200.json"
     }

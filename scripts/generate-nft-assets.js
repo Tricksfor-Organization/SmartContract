@@ -423,7 +423,7 @@ function generate(manifest, nftAssetsDir, opts) {
   const metadataDir = path.join(chainDir, 'metadata');
   const contractDir = path.join(chainDir, 'contract');
   const imagesDir   = path.join(chainDir, 'images');
-  const sourceDir   = path.join(nftAssetsDir, 'images', 'source');
+  const sourceDir   = path.join(nftAssetsDir, 'source-images');
 
   console.log(`\nGenerating ${manifest.tokens.length} token metadata files for chain: ${chainKey}`);
   console.log(`Output directory: ${chainDir}`);
