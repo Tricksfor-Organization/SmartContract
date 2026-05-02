@@ -1,0 +1,28 @@
+{
+  "name": "Tricksfor Dice 4 3x Booster #343",
+  "description": "A Tricksfor Dice Booster NFT for the 4 outcome. Stake this NFT to activate a 3x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/ethereum/images/343.png",
+  "external_url": "https://tricksfor.com/boosters/343",
+  "attributes": [
+    {
+      "trait_type": "Game",
+      "value": "Dice"
+    },
+    {
+      "trait_type": "Option",
+      "value": "4"
+    },
+    {
+      "trait_type": "Booster",
+      "value": "3x Booster"
+    },
+    {
+      "trait_type": "Multiplier",
+      "value": "3x"
+    },
+    {
+      "trait_type": "Chain",
+      "value": "Ethereum"
+    }
+  ]
+}

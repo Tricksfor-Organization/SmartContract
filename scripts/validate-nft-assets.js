@@ -26,6 +26,10 @@
  *   --env <env>           Deployment environment name; auto-locates manifest at
  *                         deployments/config/<env>/nft-manifest.json
  *   --manifest <path>     Explicit path to an nft-manifest.json to validate against
+ *   --chain-key <key>     Chain key to validate (e.g. ethereum, polygon); appends <key>
+ *                         to the nft-assets path so chain-specific output is checked.
+ *                         Equivalent to --nft-assets ./nft-assets/<key>
+ *                         Combine with --env to validate both output and manifest at once.
  *
  * Exit codes:
  *   0 — all checks passed (warnings are non-fatal)
@@ -92,17 +96,28 @@ const VARIANT_TO_OPTION_DISPLAY = {
 // ---------------------------------------------------------------------------
 
 function parseArgs(argv) {
-  const args = { nftAssets: './nft-assets', env: null, manifest: null };
+  const args = {
+    nftAssets:        './nft-assets',
+    env:              null,
+    manifest:         null,
+    chainKey:         null,
+    nftAssetsExplicit: false,
+  };
   for (let i = 2; i < argv.length; i++) {
     const flag = argv[i];
     const next = argv[i + 1];
-    if (flag === '--nft-assets' && next) { args.nftAssets = next; i++; }
-    else if (flag === '--env'      && next) { args.env      = next; i++; }
-    else if (flag === '--manifest' && next) { args.manifest = next; i++; }
+    if (flag === '--nft-assets' && next) { args.nftAssets = next; args.nftAssetsExplicit = true; i++; }
+    else if (flag === '--env'       && next) { args.env      = next; i++; }
+    else if (flag === '--manifest'  && next) { args.manifest = next; i++; }
+    else if (flag === '--chain-key' && next) { args.chainKey = next; i++; }
     else {
       console.error(`Unknown argument: ${flag}`);
       process.exit(1);
     }
+  }
+  // --chain-key <key> is a shortcut for --nft-assets <nftAssets>/<key>
+  if (args.chainKey && !args.nftAssetsExplicit) {
+    args.nftAssets = path.join(args.nftAssets, args.chainKey);
   }
   return args;
 }
@@ -737,6 +752,7 @@ function main() {
   console.log('NFT Asset Validation');
   console.log('='.repeat(60));
   console.log(`Assets directory: ${nftAssetsDir}`);
+  if (args.chainKey) console.log(`Chain key:        ${args.chainKey}`);
   if (args.env)      console.log(`Environment:      ${args.env}`);
   if (args.manifest) console.log(`Manifest:         ${args.manifest}`);
 
