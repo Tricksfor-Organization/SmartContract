@@ -212,13 +212,26 @@ Do not mix a `Booster` tier with an inconsistent `Multiplier` value.
 
 ## Example Token Metadata JSON
 
+The examples below cover one token from each theme × tier combination required by this issue.
+All examples use `ethereum` as a representative chain key — substitute the appropriate chain
+key (`polygon`, `optimism`, `bsc`, `avalanche`) when generating metadata for other deployments.
+Image URLs follow the chain-specific pattern
+`https://nft.tricksfor.com/{chainKey}/images/{tokenId}.png` documented in the
+[Cloudflare Pages URL Model](#cloudflare-pages-url-model) above.
+Descriptions follow the template defined in
+[`docs/nft-copy-spec.md` § 5](nft-copy-spec.md#5-token-description-template).
+Optional attributes (e.g. `Chain`) may be appended after the four required attributes — see
+[Optional Attributes](#optional-attributes) above.
+
+---
+
 ### Coin — Heads — 2x Booster
 
 ```json
 {
   "name": "Tricksfor Coin Heads 2x Booster #1",
-  "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-  "image": "https://nft.tricksfor.com/images/1.png",
+  "description": "A Tricksfor Coin Booster NFT for the Heads outcome. Stake this NFT to activate a 2x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/ethereum/images/1.png",
   "external_url": "https://tricksfor.com/boosters/1",
   "attributes": [
     { "trait_type": "Game",       "value": "Coin"       },
@@ -236,8 +249,8 @@ Do not mix a `Booster` tier with an inconsistent `Multiplier` value.
 ```json
 {
   "name": "Tricksfor Coin Tails 5x Booster #2",
-  "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-  "image": "https://nft.tricksfor.com/images/2.png",
+  "description": "A Tricksfor Coin Booster NFT for the Tails outcome. Stake this NFT to activate a 5x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/ethereum/images/2.png",
   "external_url": "https://tricksfor.com/boosters/2",
   "attributes": [
     { "trait_type": "Game",       "value": "Coin"       },
@@ -255,8 +268,8 @@ Do not mix a `Booster` tier with an inconsistent `Multiplier` value.
 ```json
 {
   "name": "Tricksfor Dice 4 3x Booster #3",
-  "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-  "image": "https://nft.tricksfor.com/images/3.png",
+  "description": "A Tricksfor Dice Booster NFT for the 4 outcome. Stake this NFT to activate a 3x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/ethereum/images/3.png",
   "external_url": "https://tricksfor.com/boosters/3",
   "attributes": [
     { "trait_type": "Game",       "value": "Dice"       },
@@ -274,8 +287,8 @@ Do not mix a `Booster` tier with an inconsistent `Multiplier` value.
 ```json
 {
   "name": "Tricksfor Rock Paper Scissors Rock 2x Booster #4",
-  "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-  "image": "https://nft.tricksfor.com/images/4.png",
+  "description": "A Tricksfor Rock Paper Scissors Booster NFT for the Rock outcome. Stake this NFT to activate a 2x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/ethereum/images/4.png",
   "external_url": "https://tricksfor.com/boosters/4",
   "attributes": [
     { "trait_type": "Game",       "value": "Rock Paper Scissors" },
@@ -293,8 +306,8 @@ Do not mix a `Booster` tier with an inconsistent `Multiplier` value.
 ```json
 {
   "name": "Tricksfor Rock Paper Scissors Scissors 5x Booster #5",
-  "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-  "image": "https://nft.tricksfor.com/images/5.png",
+  "description": "A Tricksfor Rock Paper Scissors Booster NFT for the Scissors outcome. Stake this NFT to activate a 5x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/ethereum/images/5.png",
   "external_url": "https://tricksfor.com/boosters/5",
   "attributes": [
     { "trait_type": "Game",       "value": "Rock Paper Scissors" },
