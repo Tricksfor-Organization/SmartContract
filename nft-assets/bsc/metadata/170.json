@@ -1,0 +1,28 @@
+{
+  "name": "Tricksfor Coin Tails 3x Booster #170",
+  "description": "A Tricksfor Coin Booster NFT for the Tails outcome. Stake this NFT to activate a 3x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/bsc/images/170.png",
+  "external_url": "https://tricksfor.com/boosters/170",
+  "attributes": [
+    {
+      "trait_type": "Game",
+      "value": "Coin"
+    },
+    {
+      "trait_type": "Option",
+      "value": "Tails"
+    },
+    {
+      "trait_type": "Booster",
+      "value": "3x Booster"
+    },
+    {
+      "trait_type": "Multiplier",
+      "value": "3x"
+    },
+    {
+      "trait_type": "Chain",
+      "value": "BNB Chain"
+    }
+  ]
+}

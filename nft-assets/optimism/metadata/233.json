@@ -1,0 +1,28 @@
+{
+  "name": "Tricksfor Dice 2 2x Booster #233",
+  "description": "A Tricksfor Dice Booster NFT for the 2 outcome. Stake this NFT to activate a 2x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/optimism/images/233.png",
+  "external_url": "https://tricksfor.com/boosters/233",
+  "attributes": [
+    {
+      "trait_type": "Game",
+      "value": "Dice"
+    },
+    {
+      "trait_type": "Option",
+      "value": "2"
+    },
+    {
+      "trait_type": "Booster",
+      "value": "2x Booster"
+    },
+    {
+      "trait_type": "Multiplier",
+      "value": "2x"
+    },
+    {
+      "trait_type": "Chain",
+      "value": "Optimism"
+    }
+  ]
+}

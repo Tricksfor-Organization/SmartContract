@@ -6,8 +6,8 @@
     "Nft": {
       "Name": "TricksforBooster",
       "Symbol": "TFB",
-      "BaseUri": "https://nft.tricksfor.com/metadata/",
-      "ContractMetadataUri": "https://nft.tricksfor.com/contract/collection.json",
+      "BaseUri": "https://nft-preview.tricksfor.com/polygon/metadata/",
+      "ContractMetadataUri": "https://nft-preview.tricksfor.com/polygon/contract/collection.json",
       "RoyaltyReceiver": "",
       "RoyaltyFeeBasisPoints": 500
     }
