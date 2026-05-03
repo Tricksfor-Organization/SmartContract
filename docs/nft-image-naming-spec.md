@@ -360,7 +360,10 @@ nft-assets/source-images/rps/scissors-5x.png
 
 1. Choose a canonical tier key matching the multiplier value (e.g. `10x`).
 2. Add the file `{variant}-{newTier}.png` for every existing (theme, variant) combination.
-3. Update the `VALID_TIERS` set (or equivalent) in the validation and generation scripts.
+3. Update the following constants in `scripts/validate-nft-assets.js`:
+   - `VALID_MANIFEST_TIERS` — the set of canonical tier keys used in manifest `tier` fields and source image file names (e.g. `'2x'`, `'3x'`, `'5x'`)
+   - `VALID_BOOSTERS` — the set of metadata `Booster` attribute values (e.g. `'2x Booster'`)
+   - `VALID_MULTIPLIERS` — the set of metadata `Multiplier` attribute values (e.g. `'2x'`)
 4. Update the tier table in § 1.3 of [`docs/nft-assets-spec.md`](nft-assets-spec.md) and in § 4 of this document.
 
 ### Replacing an existing source image
@@ -391,5 +394,5 @@ nft-assets/source-images/rps/scissors-5x.png
 | [`docs/nft-asset-manifest-spec.md`](nft-asset-manifest-spec.md) | Full manifest format including the `sourceImage` field and per-token generation fields |
 | [`docs/nft-metadata-schema.md`](nft-metadata-schema.md) | Token metadata attribute schema — defines valid values for `Game`, `Option`, `Booster`, and `Multiplier` |
 | [`scripts/generate-nft-assets.js`](../scripts/generate-nft-assets.js) | Metadata generation script — `expectedSourceImagePath` function implements this spec |
-| [`scripts/validate-nft-assets.js`](../scripts/validate-nft-assets.js) | Asset validation script — enforces naming rules and checks that all 33 source files are present |
+| [`scripts/validate-nft-assets.js`](../scripts/validate-nft-assets.js) | Asset validation script — enforces naming rules and checks that every `sourceImage` path referenced by the manifest exists under `source-images/`; a full collection manifest should reference all 33 unique source images |
 | [`docs/nft-metadata-generation.md`](nft-metadata-generation.md) | Generation script usage and release workflow integration |
