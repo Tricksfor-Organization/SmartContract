@@ -468,6 +468,7 @@ The `_redirects` rewrite rule transparently serves `polygon/metadata/255.json` f
 
 | Document | Description |
 |---|---|
+| [`docs/nft-image-naming-spec.md`](nft-image-naming-spec.md) | Dedicated source image naming specification — full enumeration of all 33 file names, alignment tables, and rules for future additions |
 | [`docs/nft-asset-manifest-spec.md`](nft-asset-manifest-spec.md) | Full NFT asset manifest specification — extends the § 6 supply manifest with generation-tooling fields, global cross-chain format, and validation rules |
 | [`docs/nft-metadata-schema.md`](nft-metadata-schema.md) | Authoritative token metadata attribute schema (required fields, valid values, examples) |
 | [`docs/nft-metadata-generation.md`](nft-metadata-generation.md) | Generation script usage, output format, and release workflow integration |

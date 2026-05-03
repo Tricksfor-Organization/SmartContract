@@ -24,11 +24,25 @@ This index provides a single entry point to all implementation guidance, referen
 
 ---
 
+## NFT Assets
+
+| Document | Description |
+|---|---|
+| [NFT Asset Taxonomy and Token ID Mapping](nft-assets-spec.md) | Source-of-truth for asset naming, token ID mapping, static file layout, and supply manifest format — §§ 1–3 define the canonical identifiers used across all asset layers |
+| [NFT Source Image Naming Specification](nft-image-naming-spec.md) | Deterministic naming convention for all 33 source image files: pattern, canonical keys, full file enumeration, and alignment rules with manifest and metadata fields |
+| [NFT Asset Manifest Specification](nft-asset-manifest-spec.md) | Full manifest format for metadata generation, image pipeline, collection metadata, and validation |
+| [NFT Asset Validation](nft-asset-validation.md) | Validation script usage and rule catalogue for manifest and generated asset checks |
+| [NFT Metadata Generation](nft-metadata-generation.md) | Generation script usage, output format, and release workflow integration |
+| [NFT Token Allocation Specification](nft-token-allocation-spec.md) | Per-theme token supply allocation rules and tier/variant distribution strategy |
+
+---
+
 ## Metadata
 
 | Document | Description |
 |---|---|
 | [NFT Copy Specification](nft-copy-spec.md) | Authoritative display names and description templates for all Booster NFT metadata: collection names, token names, and per-theme/option/tier descriptions |
+| [NFT Token Metadata Schema](nft-metadata-schema.md) | Authoritative token metadata attribute schema: required fields, valid values, and per-theme examples |
 | [Metadata Examples README](metadata/README.md) | Overview of token and collection metadata format, field requirements, and links to example JSON documents |
 | [Token Metadata Example](metadata/token-example.json) | Reference token metadata JSON conforming to the OpenSea metadata standard |
 | [Contract Metadata Example](metadata/contract-example.json) | Reference collection metadata JSON returned by `contractURI()` |
