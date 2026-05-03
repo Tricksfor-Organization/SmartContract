@@ -48,9 +48,10 @@ production artwork before running a live minting or deployment operation.
 1. Replace the file **in place** at `nft-assets/source-images/{theme}/{variant}-{tier}.png`.
    The file name must not change.
 2. Re-run the metadata generation pipeline to propagate the updated image to all per-token image
-   files that reference this source:
+   files that reference this source. Pass `--force` because the generator refuses to overwrite
+   existing output files without it:
    ```
-   node scripts/generate-nft-assets.js --env <env>
+   node scripts/generate-nft-assets.js --env <env> --force
    ```
 3. Do **not** change the `sourceImage` field in any manifest — the logical assignment of source
    image to token is stable once minting begins.
