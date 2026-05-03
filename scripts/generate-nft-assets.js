@@ -99,6 +99,39 @@ const COLLECTION_DESCRIPTION =
 const PLACEHOLDER_FEE_RECIPIENT = '0x000000000000000000000000000000000000dEaD';
 
 // ---------------------------------------------------------------------------
+// Source image path helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the expected sourceImage relative path for a token entry:
+ *   `{theme}/{variant}-{tier}.png`
+ *
+ * This is the canonical value stored in manifest `sourceImage` fields and
+ * used by validation (manifest-load) and the copy step (generation).
+ *
+ * @param {string} theme   - e.g. 'coin', 'dice', 'rps'
+ * @param {string} variant - e.g. 'heads', '4', 'rock'
+ * @param {string} tier    - e.g. '2x', '3x', '5x'
+ * @returns {string}
+ */
+function expectedSourceImagePath(theme, variant, tier) {
+  return `${theme}/${variant}-${tier}.png`;
+}
+
+/**
+ * Returns true if `candidatePath` is contained within `parentDir` (inclusive),
+ * using `path.relative` to avoid platform-specific `startsWith` pitfalls.
+ *
+ * @param {string} parentDir    - Resolved absolute directory path
+ * @param {string} candidatePath - Resolved absolute file path to test
+ * @returns {boolean}
+ */
+function isPathWithin(parentDir, candidatePath) {
+  const rel = path.relative(parentDir, candidatePath);
+  return !!rel && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
+
+// ---------------------------------------------------------------------------
 // Argument parsing
 // ---------------------------------------------------------------------------
 
@@ -251,10 +284,10 @@ function validateManifest(manifest, manifestPath) {
         typeof token.variant  === 'string' && token.variant &&
         typeof token.tier     === 'string' && token.tier
       ) {
-        const expectedSourceImage = `${token.theme}/${token.variant}-${token.tier}.png`;
-        if (token.sourceImage !== expectedSourceImage) {
+        const expected = expectedSourceImagePath(token.theme, token.variant, token.tier);
+        if (token.sourceImage !== expected) {
           errors.push(
-            `${idx}: "sourceImage" must be "${expectedSourceImage}" ` +
+            `${idx}: "sourceImage" must be "${expected}" ` +
             `(got: "${token.sourceImage}")`
           );
         }
@@ -478,7 +511,7 @@ function generate(manifest, nftAssetsDir, opts) {
           // Guard against path traversal: ensure the resolved source path stays within sourceDir
           const resolvedSource    = path.resolve(sourcePath);
           const resolvedSourceDir = path.resolve(sourceDir);
-          if (!resolvedSource.startsWith(resolvedSourceDir + path.sep)) {
+          if (!isPathWithin(resolvedSourceDir, resolvedSource)) {
             throw new Error(`"sourceImage" "${sourceImage}" resolves outside source directory`);
           }
           const found = copyImageFile(sourcePath, destPath, dryRun, force);
