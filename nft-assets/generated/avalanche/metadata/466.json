@@ -1,0 +1,28 @@
+{
+  "name": "Tricksfor Rock Paper Scissors Paper 2x Booster #466",
+  "description": "A Tricksfor Rock Paper Scissors Booster NFT for the Paper outcome. Stake this NFT to activate a 2x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/avalanche/images/466.png",
+  "external_url": "https://tricksfor.com/boosters/466",
+  "attributes": [
+    {
+      "trait_type": "Game",
+      "value": "Rock Paper Scissors"
+    },
+    {
+      "trait_type": "Option",
+      "value": "Paper"
+    },
+    {
+      "trait_type": "Booster",
+      "value": "2x Booster"
+    },
+    {
+      "trait_type": "Multiplier",
+      "value": "2x"
+    },
+    {
+      "trait_type": "Chain",
+      "value": "Avalanche"
+    }
+  ]
+}

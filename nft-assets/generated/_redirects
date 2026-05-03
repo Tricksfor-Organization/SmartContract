@@ -1,0 +1,14 @@
+# Rewrite extensionless metadata requests to the corresponding .json file.
+#
+# The NFT contract uses the OpenZeppelin default tokenURI pattern:
+#   tokenURI(id) = {baseURI}{id}    (no .json suffix)
+#
+# Static metadata files are named {tokenId}.json for clarity. This rewrite
+# transparently serves the .json file for requests made without a suffix.
+
+# Chain-specific paths (one collection per chain)
+/ethereum/metadata/:id   /ethereum/metadata/:id.json   200
+/polygon/metadata/:id    /polygon/metadata/:id.json    200
+/optimism/metadata/:id   /optimism/metadata/:id.json   200
+/bsc/metadata/:id        /bsc/metadata/:id.json        200
+/avalanche/metadata/:id  /avalanche/metadata/:id.json  200

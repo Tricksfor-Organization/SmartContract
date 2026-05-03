@@ -12,11 +12,12 @@ Pages deployment and contract deployment pipeline.
 2. [Output Structure](#2-output-structure)
 3. [URL Conventions](#3-url-conventions)
 4. [Generation Script](#4-generation-script)
-5. [Manifest Requirements](#5-manifest-requirements)
-6. [Generated File Formats](#6-generated-file-formats)
-7. [Release Workflow Integration](#7-release-workflow-integration)
-8. [Multi-Chain Deployment](#8-multi-chain-deployment)
-9. [Related Documents](#9-related-documents)
+5. [Standalone Metadata Generator](#5-standalone-metadata-generator)
+6. [Manifest Requirements](#6-manifest-requirements)
+7. [Generated File Formats](#7-generated-file-formats)
+8. [Release Workflow Integration](#8-release-workflow-integration)
+9. [Multi-Chain Deployment](#9-multi-chain-deployment)
+10. [Related Documents](#10-related-documents)
 
 ---
 
@@ -25,7 +26,9 @@ Pages deployment and contract deployment pipeline.
 NFT token metadata and collection metadata for the Tricksfor Booster collection are generated
 from an authoritative asset manifest and deployed as static files to Cloudflare Pages.
 
-The generation pipeline is:
+There are two generation pathways:
+
+### Pathway A — Manifest-driven (release pipeline)
 
 ```
 nft-manifest.json (deployments/config/{env}/)
@@ -46,6 +49,25 @@ BASE_TOKEN_URI and CONTRACT_URI → contract deployment (deploy-contracts job)
 
 Generation runs before contract deployment. The contract is deployed with the exact URLs
 that are live on Cloudflare Pages.
+
+### Pathway B — Standalone metadata generator (approved manifests)
+
+```
+Approved chain config (built-in or manifest file)
+        │
+        ▼
+scripts/generate-nft-metadata.js
+        │
+        ├─► nft-assets/generated/{chainKey}/metadata/{tokenId}.json  (600 per chain)
+        ├─► nft-assets/generated/{chainKey}/contract/collection.json (one per chain)
+        ├─► nft-assets/generated/_redirects                          (Cloudflare Pages rewrites)
+        └─► nft-assets/generated/_headers                            (Cloudflare Pages headers)
+```
+
+This standalone generator builds all 600 token metadata files per chain directly from the
+approved token allocation rules, naming templates, and metadata schema — without requiring a
+pre-existing deployment manifest. It writes into a self-contained `nft-assets/generated/`
+directory that is deployable to Cloudflare Pages by itself.
 
 ---
 
@@ -181,7 +203,107 @@ run for use in the contract deployment step.
 
 ---
 
-## 5. Manifest Requirements
+## 5. Standalone Metadata Generator
+
+`scripts/generate-nft-metadata.js` generates all 600 token metadata files per chain directly
+from the built-in approved token allocation rules, naming templates, and metadata schema.
+It does not require a pre-existing deployment manifest.
+
+### Usage
+
+```bash
+# Generate for a single chain
+node scripts/generate-nft-metadata.js --chain polygon
+
+# Generate for all 5 mainnet chains at once
+node scripts/generate-nft-metadata.js --all-mainnet
+
+# --all is an alias for --all-mainnet
+node scripts/generate-nft-metadata.js --all
+
+# Load chain config from an approved manifest file (overrides --chain)
+node scripts/generate-nft-metadata.js --manifest nft-assets/manifests/polygon.sample.json
+
+# Dry-run: preview what would be generated without writing any files
+node scripts/generate-nft-metadata.js --all --dry-run
+
+# Overwrite existing output files
+node scripts/generate-nft-metadata.js --all --force
+
+# npm shortcut
+npm run generate:metadata -- --all-mainnet --force
+```
+
+### Options
+
+| Option | Default | Description |
+|---|---|---|
+| `--chain <chainKey>` | — | Single chain to generate (`ethereum`, `polygon`, `bsc`, `avalanche`, `optimism`) |
+| `--all-mainnet` | false | Generate all 5 mainnet chains |
+| `--all` | false | Alias for `--all-mainnet` |
+| `--manifest <path>` | — | Load chain config from an approved manifest file; takes precedence over `--chain` |
+| `--output <path>` | `./nft-assets/generated` | Root directory for generated output |
+| `--dry-run` | false | Print what would be written without creating any files |
+| `--force` | false | Overwrite existing output files |
+
+### What the script generates
+
+For each chain:
+
+1. Writes `nft-assets/generated/{chainKey}/metadata/{tokenId}.json` — one file per token (IDs 1–600)
+2. Writes `nft-assets/generated/{chainKey}/contract/collection.json` — collection metadata
+
+On the first run (or with `--force`), also writes into the output root:
+
+3. `nft-assets/generated/_redirects` — Cloudflare Pages extensionless-to-`.json` rewrites
+4. `nft-assets/generated/_headers` — Cloudflare Pages content-type and CORS headers
+
+### Output structure
+
+```
+nft-assets/generated/
+├── _redirects                  Cloudflare Pages rewrite rules
+├── _headers                    Cloudflare Pages response headers
+├── ethereum/
+│   ├── metadata/
+│   │   ├── 1.json
+│   │   ├── 2.json
+│   │   └── ... (600 files)
+│   └── contract/
+│       └── collection.json
+├── polygon/
+│   ├── metadata/
+│   └── contract/
+├── bsc/
+├── avalanche/
+└── optimism/
+```
+
+The `nft-assets/generated/` directory is self-contained and can be deployed to Cloudflare Pages
+as its own project (set the build output directory to `nft-assets/generated/`). Token URLs
+served from this directory follow the same chain-specific pattern as the main deployment:
+
+| Asset | URL |
+|---|---|
+| Token metadata (on-chain URI) | `https://{domain}/{chainKey}/metadata/{tokenId}` |
+| Token metadata (direct file) | `https://{domain}/{chainKey}/metadata/{tokenId}.json` |
+| Collection metadata | `https://{domain}/{chainKey}/contract/collection.json` |
+
+### Determinism
+
+Repeated runs with the same inputs always produce identical output. The token allocation
+algorithm and all naming templates are deterministic. Use `--force` to regenerate existing files.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| 0 | Generation completed successfully |
+| 1 | One or more errors prevented generation |
+
+---
+
+## 6. Manifest Requirements
 
 The generation script reads an authoritative chain-specific manifest stored at
 `deployments/config/{env}/nft-manifest.json`. The manifest must conform to
@@ -230,7 +352,7 @@ The generation script derives `CONTRACT_URI` from `baseMetadataUri` by replacing
 
 ---
 
-## 6. Generated File Formats
+## 7. Generated File Formats
 
 ### Token metadata (`{chainKey}/metadata/{tokenId}.json`)
 
@@ -293,7 +415,7 @@ Collection name derivation per [`docs/nft-copy-spec.md` § 1](nft-copy-spec.md#1
 
 ---
 
-## 7. Release Workflow Integration
+## 8. Release Workflow Integration
 
 Metadata generation fits into the release workflow between the `test` job and the
 `deploy-metadata` job:
@@ -354,7 +476,7 @@ Before committing generated files for a release:
 
 ---
 
-## 8. Multi-Chain Deployment
+## 9. Multi-Chain Deployment
 
 Each supported chain deployment generates its own output tree inside `nft-assets/`. All chains
 share a single Cloudflare Pages project per environment tier; chain separation is achieved
@@ -383,7 +505,7 @@ the same content. Generation can be re-run at any time to regenerate or verify f
 
 ---
 
-## 9. Related Documents
+## 10. Related Documents
 
 | Document | Description |
 |---|---|

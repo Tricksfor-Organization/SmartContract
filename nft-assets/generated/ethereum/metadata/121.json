@@ -1,0 +1,28 @@
+{
+  "name": "Tricksfor Coin Heads 3x Booster #121",
+  "description": "A Tricksfor Coin Booster NFT for the Heads outcome. Stake this NFT to activate a 3x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/ethereum/images/121.png",
+  "external_url": "https://tricksfor.com/boosters/121",
+  "attributes": [
+    {
+      "trait_type": "Game",
+      "value": "Coin"
+    },
+    {
+      "trait_type": "Option",
+      "value": "Heads"
+    },
+    {
+      "trait_type": "Booster",
+      "value": "3x Booster"
+    },
+    {
+      "trait_type": "Multiplier",
+      "value": "3x"
+    },
+    {
+      "trait_type": "Chain",
+      "value": "Ethereum"
+    }
+  ]
+}
