@@ -138,7 +138,7 @@ When an authoritative manifest is found (no `_note` field), the following rules 
 | 11 | `imagePath` equals `images/{tokenId}.png` (**skipped for excerpt manifests**) |
 | 12 | `metadataPath` equals `metadata/{tokenId}.json` (**skipped for excerpt manifests**) |
 | 13 | `displayName` matches the token name convention: `Tricksfor {Game} {Option} {tier} Booster #{tokenId}` (**skipped for excerpt manifests**) |
-| 14 | All `sourceImage` files exist in `nft-assets/source-images/` (**skipped for excerpt manifests**) |
+| 14 | All `sourceImage` files exist in `nft-assets/source-images/{theme}/` (**skipped for excerpt manifests**) |
 
 ### 3.5 Manifest-to-output consistency (authoritative manifests only)
 

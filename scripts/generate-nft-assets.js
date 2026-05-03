@@ -242,6 +242,23 @@ function validateManifest(manifest, manifestPath) {
       if (typeof token.tier === 'string' && token.tier && !TIER_TO_BOOSTER[token.tier]) {
         errors.push(`${idx}: "tier" must be one of: 2x, 3x, 5x (got: "${token.tier}")`);
       }
+
+      // sourceImage must match {theme}/{variant}-{tier}.png derived from the token's own fields.
+      // Validating against the derived value also prevents path traversal via manifest data.
+      if (
+        typeof token.sourceImage === 'string' && token.sourceImage &&
+        typeof token.theme    === 'string' && token.theme &&
+        typeof token.variant  === 'string' && token.variant &&
+        typeof token.tier     === 'string' && token.tier
+      ) {
+        const expectedSourceImage = `${token.theme}/${token.variant}-${token.tier}.png`;
+        if (token.sourceImage !== expectedSourceImage) {
+          errors.push(
+            `${idx}: "sourceImage" must be "${expectedSourceImage}" ` +
+            `(got: "${token.sourceImage}")`
+          );
+        }
+      }
     }
   }
 
@@ -458,6 +475,12 @@ function generate(manifest, nftAssetsDir, opts) {
         const sourcePath = path.join(sourceDir, sourceImage);
         const destPath   = path.join(imagesDir, `${tokenId}.png`);
         try {
+          // Guard against path traversal: ensure the resolved source path stays within sourceDir
+          const resolvedSource    = path.resolve(sourcePath);
+          const resolvedSourceDir = path.resolve(sourceDir);
+          if (!resolvedSource.startsWith(resolvedSourceDir + path.sep)) {
+            throw new Error(`"sourceImage" "${sourceImage}" resolves outside source directory`);
+          }
           const found = copyImageFile(sourcePath, destPath, dryRun, force);
           if (!found) {
             if (dryRun) {
