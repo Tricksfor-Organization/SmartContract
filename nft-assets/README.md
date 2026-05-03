@@ -35,6 +35,16 @@ nft-assets/
 │   ├── coin/                  6 images — heads/tails × 2x/3x/5x
 │   ├── dice/                  18 images — 1–6 × 2x/3x/5x
 │   └── rps/                   9 images — rock/paper/scissors × 2x/3x/5x
+├── generated/                 Pre-generated metadata output (self-contained, Pages-deployable)
+│   ├── _redirects             Cloudflare Pages rewrite rules for the generated directory
+│   ├── _headers               Cloudflare Pages response headers for the generated directory
+│   ├── ethereum/              Generated metadata for Ethereum (600 tokens)
+│   │   ├── metadata/
+│   │   └── contract/
+│   ├── polygon/               Generated metadata for Polygon
+│   ├── bsc/                   Generated metadata for BSC
+│   ├── avalanche/             Generated metadata for Avalanche
+│   └── optimism/              Generated metadata for Optimism
 ├── images/                    Shared image assets (e.g. collection banner)
 │   └── collection.png
 ├── manifests/                 Manifest samples and templates
@@ -111,6 +121,35 @@ and `nft-assets/{chainKey}/images/`. It also prints the derived `BASE_TOKEN_URI`
 
 See [`docs/nft-metadata-generation.md`](../docs/nft-metadata-generation.md) for the complete
 generation guide including the release workflow integration.
+
+---
+
+## Standalone Metadata Generator
+
+Use `scripts/generate-nft-metadata.js` to generate all 600 token metadata files per chain
+directly from the built-in token allocation rules — no pre-existing deployment manifest required.
+
+```bash
+# Generate for a single chain
+node scripts/generate-nft-metadata.js --chain polygon
+
+# Generate for all 5 mainnet chains at once
+node scripts/generate-nft-metadata.js --all-mainnet --force
+
+# Load chain config from an approved manifest file
+node scripts/generate-nft-metadata.js --manifest nft-assets/manifests/ethereum.sample.json
+
+# npm shortcut
+npm run generate:metadata -- --all-mainnet --force
+```
+
+The script writes files to `nft-assets/generated/{chainKey}/metadata/` and
+`nft-assets/generated/{chainKey}/contract/`. It also writes `_redirects` and `_headers`
+into `nft-assets/generated/` so the directory is self-contained and deployable to Cloudflare
+Pages (set the build output directory to `nft-assets/generated/`).
+
+See [`docs/nft-metadata-generation.md` § 5](../docs/nft-metadata-generation.md#5-standalone-metadata-generator)
+for the full option reference.
 
 ---
 

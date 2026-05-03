@@ -1,0 +1,28 @@
+{
+  "name": "Tricksfor Coin Tails 2x Booster #75",
+  "description": "A Tricksfor Coin Booster NFT for the Tails outcome. Stake this NFT to activate a 2x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/avalanche/images/75.png",
+  "external_url": "https://tricksfor.com/boosters/75",
+  "attributes": [
+    {
+      "trait_type": "Game",
+      "value": "Coin"
+    },
+    {
+      "trait_type": "Option",
+      "value": "Tails"
+    },
+    {
+      "trait_type": "Booster",
+      "value": "2x Booster"
+    },
+    {
+      "trait_type": "Multiplier",
+      "value": "2x"
+    },
+    {
+      "trait_type": "Chain",
+      "value": "Avalanche"
+    }
+  ]
+}

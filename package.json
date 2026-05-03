@@ -11,6 +11,7 @@
     "clean": "hardhat clean",
     "generate:manifest": "node scripts/generate-nft-manifest.js",
     "generate:assets": "node scripts/generate-nft-assets.js",
+    "generate:metadata": "node scripts/generate-nft-metadata.js",
     "validate:assets": "node scripts/validate-nft-assets.js"
   },
   "devDependencies": {

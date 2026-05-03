@@ -1,0 +1,28 @@
+{
+  "name": "Tricksfor Coin Heads 5x Booster #181",
+  "description": "A Tricksfor Coin Booster NFT for the Heads outcome. Stake this NFT to activate a 5x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/polygon/images/181.png",
+  "external_url": "https://tricksfor.com/boosters/181",
+  "attributes": [
+    {
+      "trait_type": "Game",
+      "value": "Coin"
+    },
+    {
+      "trait_type": "Option",
+      "value": "Heads"
+    },
+    {
+      "trait_type": "Booster",
+      "value": "5x Booster"
+    },
+    {
+      "trait_type": "Multiplier",
+      "value": "5x"
+    },
+    {
+      "trait_type": "Chain",
+      "value": "Polygon"
+    }
+  ]
+}

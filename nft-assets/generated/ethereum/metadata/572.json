@@ -1,0 +1,28 @@
+{
+  "name": "Tricksfor Rock Paper Scissors Rock 5x Booster #572",
+  "description": "A Tricksfor Rock Paper Scissors Booster NFT for the Rock outcome. Stake this NFT to activate a 5x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+  "image": "https://nft.tricksfor.com/ethereum/images/572.png",
+  "external_url": "https://tricksfor.com/boosters/572",
+  "attributes": [
+    {
+      "trait_type": "Game",
+      "value": "Rock Paper Scissors"
+    },
+    {
+      "trait_type": "Option",
+      "value": "Rock"
+    },
+    {
+      "trait_type": "Booster",
+      "value": "5x Booster"
+    },
+    {
+      "trait_type": "Multiplier",
+      "value": "5x"
+    },
+    {
+      "trait_type": "Chain",
+      "value": "Ethereum"
+    }
+  ]
+}
