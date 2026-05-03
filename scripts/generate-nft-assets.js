@@ -99,6 +99,39 @@ const COLLECTION_DESCRIPTION =
 const PLACEHOLDER_FEE_RECIPIENT = '0x000000000000000000000000000000000000dEaD';
 
 // ---------------------------------------------------------------------------
+// Source image path helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the expected sourceImage relative path for a token entry:
+ *   `{theme}/{variant}-{tier}.png`
+ *
+ * This is the canonical value stored in manifest `sourceImage` fields and
+ * used by validation (manifest-load) and the copy step (generation).
+ *
+ * @param {string} theme   - e.g. 'coin', 'dice', 'rps'
+ * @param {string} variant - e.g. 'heads', '4', 'rock'
+ * @param {string} tier    - e.g. '2x', '3x', '5x'
+ * @returns {string}
+ */
+function expectedSourceImagePath(theme, variant, tier) {
+  return `${theme}/${variant}-${tier}.png`;
+}
+
+/**
+ * Returns true if `candidatePath` is contained within `parentDir` (inclusive),
+ * using `path.relative` to avoid platform-specific `startsWith` pitfalls.
+ *
+ * @param {string} parentDir    - Resolved absolute directory path
+ * @param {string} candidatePath - Resolved absolute file path to test
+ * @returns {boolean}
+ */
+function isPathWithin(parentDir, candidatePath) {
+  const rel = path.relative(parentDir, candidatePath);
+  return !!rel && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
+
+// ---------------------------------------------------------------------------
 // Argument parsing
 // ---------------------------------------------------------------------------
 
@@ -241,6 +274,23 @@ function validateManifest(manifest, manifestPath) {
       }
       if (typeof token.tier === 'string' && token.tier && !TIER_TO_BOOSTER[token.tier]) {
         errors.push(`${idx}: "tier" must be one of: 2x, 3x, 5x (got: "${token.tier}")`);
+      }
+
+      // sourceImage must match {theme}/{variant}-{tier}.png derived from the token's own fields.
+      // Validating against the derived value also prevents path traversal via manifest data.
+      if (
+        typeof token.sourceImage === 'string' && token.sourceImage &&
+        typeof token.theme    === 'string' && token.theme &&
+        typeof token.variant  === 'string' && token.variant &&
+        typeof token.tier     === 'string' && token.tier
+      ) {
+        const expected = expectedSourceImagePath(token.theme, token.variant, token.tier);
+        if (token.sourceImage !== expected) {
+          errors.push(
+            `${idx}: "sourceImage" must be "${expected}" ` +
+            `(got: "${token.sourceImage}")`
+          );
+        }
       }
     }
   }
@@ -423,7 +473,7 @@ function generate(manifest, nftAssetsDir, opts) {
   const metadataDir = path.join(chainDir, 'metadata');
   const contractDir = path.join(chainDir, 'contract');
   const imagesDir   = path.join(chainDir, 'images');
-  const sourceDir   = path.join(nftAssetsDir, 'images', 'source');
+  const sourceDir   = path.join(nftAssetsDir, 'source-images');
 
   console.log(`\nGenerating ${manifest.tokens.length} token metadata files for chain: ${chainKey}`);
   console.log(`Output directory: ${chainDir}`);
@@ -458,6 +508,12 @@ function generate(manifest, nftAssetsDir, opts) {
         const sourcePath = path.join(sourceDir, sourceImage);
         const destPath   = path.join(imagesDir, `${tokenId}.png`);
         try {
+          // Guard against path traversal: ensure the resolved source path stays within sourceDir
+          const resolvedSource    = path.resolve(sourcePath);
+          const resolvedSourceDir = path.resolve(sourceDir);
+          if (!isPathWithin(resolvedSourceDir, resolvedSource)) {
+            throw new Error(`"sourceImage" "${sourceImage}" resolves outside source directory`);
+          }
           const found = copyImageFile(sourcePath, destPath, dryRun, force);
           if (!found) {
             if (dryRun) {

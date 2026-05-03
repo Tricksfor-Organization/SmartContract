@@ -27,7 +27,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Coin Heads 2x Booster #1",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-heads-2x.png",
+      "sourceImage": "coin/heads-2x.png",
       "imagePath": "images/1.png",
       "metadataPath": "metadata/1.json"
     },
@@ -41,7 +41,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Coin Heads 2x Booster #50",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-heads-2x.png",
+      "sourceImage": "coin/heads-2x.png",
       "imagePath": "images/50.png",
       "metadataPath": "metadata/50.json"
     },
@@ -55,7 +55,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Coin Tails 2x Booster #51",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-tails-2x.png",
+      "sourceImage": "coin/tails-2x.png",
       "imagePath": "images/51.png",
       "metadataPath": "metadata/51.json"
     },
@@ -69,7 +69,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Coin Tails 2x Booster #100",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-tails-2x.png",
+      "sourceImage": "coin/tails-2x.png",
       "imagePath": "images/100.png",
       "metadataPath": "metadata/100.json"
     },
@@ -83,7 +83,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Coin Heads 3x Booster #101",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-heads-3x.png",
+      "sourceImage": "coin/heads-3x.png",
       "imagePath": "images/101.png",
       "metadataPath": "metadata/101.json"
     },
@@ -97,7 +97,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Coin Heads 3x Booster #135",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-heads-3x.png",
+      "sourceImage": "coin/heads-3x.png",
       "imagePath": "images/135.png",
       "metadataPath": "metadata/135.json"
     },
@@ -111,7 +111,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Coin Tails 3x Booster #136",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-tails-3x.png",
+      "sourceImage": "coin/tails-3x.png",
       "imagePath": "images/136.png",
       "metadataPath": "metadata/136.json"
     },
@@ -125,7 +125,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Coin Tails 3x Booster #170",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-tails-3x.png",
+      "sourceImage": "coin/tails-3x.png",
       "imagePath": "images/170.png",
       "metadataPath": "metadata/170.json"
     },
@@ -139,7 +139,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Coin Heads 5x Booster #171",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-heads-5x.png",
+      "sourceImage": "coin/heads-5x.png",
       "imagePath": "images/171.png",
       "metadataPath": "metadata/171.json"
     },
@@ -153,7 +153,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Coin Heads 5x Booster #185",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-heads-5x.png",
+      "sourceImage": "coin/heads-5x.png",
       "imagePath": "images/185.png",
       "metadataPath": "metadata/185.json"
     },
@@ -167,7 +167,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Coin Tails 5x Booster #186",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-tails-5x.png",
+      "sourceImage": "coin/tails-5x.png",
       "imagePath": "images/186.png",
       "metadataPath": "metadata/186.json"
     },
@@ -181,7 +181,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Coin Tails 5x Booster #200",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "coin-tails-5x.png",
+      "sourceImage": "coin/tails-5x.png",
       "imagePath": "images/200.png",
       "metadataPath": "metadata/200.json"
     },
@@ -195,7 +195,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Dice 1 2x Booster #201",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-1-2x.png",
+      "sourceImage": "dice/1-2x.png",
       "imagePath": "images/201.png",
       "metadataPath": "metadata/201.json"
     },
@@ -209,7 +209,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Dice 1 2x Booster #217",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-1-2x.png",
+      "sourceImage": "dice/1-2x.png",
       "imagePath": "images/217.png",
       "metadataPath": "metadata/217.json"
     },
@@ -223,7 +223,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Dice 2 2x Booster #218",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-2-2x.png",
+      "sourceImage": "dice/2-2x.png",
       "imagePath": "images/218.png",
       "metadataPath": "metadata/218.json"
     },
@@ -237,7 +237,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Dice 2 2x Booster #234",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-2-2x.png",
+      "sourceImage": "dice/2-2x.png",
       "imagePath": "images/234.png",
       "metadataPath": "metadata/234.json"
     },
@@ -251,7 +251,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Dice 3 2x Booster #235",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-3-2x.png",
+      "sourceImage": "dice/3-2x.png",
       "imagePath": "images/235.png",
       "metadataPath": "metadata/235.json"
     },
@@ -265,7 +265,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Dice 3 2x Booster #251",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-3-2x.png",
+      "sourceImage": "dice/3-2x.png",
       "imagePath": "images/251.png",
       "metadataPath": "metadata/251.json"
     },
@@ -279,7 +279,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Dice 4 2x Booster #252",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-4-2x.png",
+      "sourceImage": "dice/4-2x.png",
       "imagePath": "images/252.png",
       "metadataPath": "metadata/252.json"
     },
@@ -293,7 +293,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Dice 4 2x Booster #268",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-4-2x.png",
+      "sourceImage": "dice/4-2x.png",
       "imagePath": "images/268.png",
       "metadataPath": "metadata/268.json"
     },
@@ -307,7 +307,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Dice 5 2x Booster #269",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-5-2x.png",
+      "sourceImage": "dice/5-2x.png",
       "imagePath": "images/269.png",
       "metadataPath": "metadata/269.json"
     },
@@ -321,7 +321,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Dice 5 2x Booster #284",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-5-2x.png",
+      "sourceImage": "dice/5-2x.png",
       "imagePath": "images/284.png",
       "metadataPath": "metadata/284.json"
     },
@@ -335,7 +335,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Dice 6 2x Booster #285",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-6-2x.png",
+      "sourceImage": "dice/6-2x.png",
       "imagePath": "images/285.png",
       "metadataPath": "metadata/285.json"
     },
@@ -349,7 +349,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Dice 6 2x Booster #300",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-6-2x.png",
+      "sourceImage": "dice/6-2x.png",
       "imagePath": "images/300.png",
       "metadataPath": "metadata/300.json"
     },
@@ -363,7 +363,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Dice 1 3x Booster #301",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-1-3x.png",
+      "sourceImage": "dice/1-3x.png",
       "imagePath": "images/301.png",
       "metadataPath": "metadata/301.json"
     },
@@ -377,7 +377,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Dice 1 3x Booster #312",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-1-3x.png",
+      "sourceImage": "dice/1-3x.png",
       "imagePath": "images/312.png",
       "metadataPath": "metadata/312.json"
     },
@@ -391,7 +391,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Dice 2 3x Booster #313",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-2-3x.png",
+      "sourceImage": "dice/2-3x.png",
       "imagePath": "images/313.png",
       "metadataPath": "metadata/313.json"
     },
@@ -405,7 +405,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Dice 2 3x Booster #324",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-2-3x.png",
+      "sourceImage": "dice/2-3x.png",
       "imagePath": "images/324.png",
       "metadataPath": "metadata/324.json"
     },
@@ -419,7 +419,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Dice 3 3x Booster #325",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-3-3x.png",
+      "sourceImage": "dice/3-3x.png",
       "imagePath": "images/325.png",
       "metadataPath": "metadata/325.json"
     },
@@ -433,7 +433,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Dice 3 3x Booster #336",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-3-3x.png",
+      "sourceImage": "dice/3-3x.png",
       "imagePath": "images/336.png",
       "metadataPath": "metadata/336.json"
     },
@@ -447,7 +447,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Dice 4 3x Booster #337",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-4-3x.png",
+      "sourceImage": "dice/4-3x.png",
       "imagePath": "images/337.png",
       "metadataPath": "metadata/337.json"
     },
@@ -461,7 +461,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Dice 4 3x Booster #348",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-4-3x.png",
+      "sourceImage": "dice/4-3x.png",
       "imagePath": "images/348.png",
       "metadataPath": "metadata/348.json"
     },
@@ -475,7 +475,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Dice 5 3x Booster #349",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-5-3x.png",
+      "sourceImage": "dice/5-3x.png",
       "imagePath": "images/349.png",
       "metadataPath": "metadata/349.json"
     },
@@ -489,7 +489,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Dice 5 3x Booster #359",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-5-3x.png",
+      "sourceImage": "dice/5-3x.png",
       "imagePath": "images/359.png",
       "metadataPath": "metadata/359.json"
     },
@@ -503,7 +503,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Dice 6 3x Booster #360",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-6-3x.png",
+      "sourceImage": "dice/6-3x.png",
       "imagePath": "images/360.png",
       "metadataPath": "metadata/360.json"
     },
@@ -517,7 +517,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Dice 6 3x Booster #370",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-6-3x.png",
+      "sourceImage": "dice/6-3x.png",
       "imagePath": "images/370.png",
       "metadataPath": "metadata/370.json"
     },
@@ -531,7 +531,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Dice 1 5x Booster #371",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-1-5x.png",
+      "sourceImage": "dice/1-5x.png",
       "imagePath": "images/371.png",
       "metadataPath": "metadata/371.json"
     },
@@ -545,7 +545,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Dice 1 5x Booster #375",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-1-5x.png",
+      "sourceImage": "dice/1-5x.png",
       "imagePath": "images/375.png",
       "metadataPath": "metadata/375.json"
     },
@@ -559,7 +559,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Dice 2 5x Booster #376",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-2-5x.png",
+      "sourceImage": "dice/2-5x.png",
       "imagePath": "images/376.png",
       "metadataPath": "metadata/376.json"
     },
@@ -573,7 +573,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Dice 2 5x Booster #380",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-2-5x.png",
+      "sourceImage": "dice/2-5x.png",
       "imagePath": "images/380.png",
       "metadataPath": "metadata/380.json"
     },
@@ -587,7 +587,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Dice 3 5x Booster #381",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-3-5x.png",
+      "sourceImage": "dice/3-5x.png",
       "imagePath": "images/381.png",
       "metadataPath": "metadata/381.json"
     },
@@ -601,7 +601,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Dice 3 5x Booster #385",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-3-5x.png",
+      "sourceImage": "dice/3-5x.png",
       "imagePath": "images/385.png",
       "metadataPath": "metadata/385.json"
     },
@@ -615,7 +615,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Dice 4 5x Booster #386",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-4-5x.png",
+      "sourceImage": "dice/4-5x.png",
       "imagePath": "images/386.png",
       "metadataPath": "metadata/386.json"
     },
@@ -629,7 +629,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Dice 4 5x Booster #390",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-4-5x.png",
+      "sourceImage": "dice/4-5x.png",
       "imagePath": "images/390.png",
       "metadataPath": "metadata/390.json"
     },
@@ -643,7 +643,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Dice 5 5x Booster #391",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-5-5x.png",
+      "sourceImage": "dice/5-5x.png",
       "imagePath": "images/391.png",
       "metadataPath": "metadata/391.json"
     },
@@ -657,7 +657,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Dice 5 5x Booster #395",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-5-5x.png",
+      "sourceImage": "dice/5-5x.png",
       "imagePath": "images/395.png",
       "metadataPath": "metadata/395.json"
     },
@@ -671,7 +671,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Dice 6 5x Booster #396",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-6-5x.png",
+      "sourceImage": "dice/6-5x.png",
       "imagePath": "images/396.png",
       "metadataPath": "metadata/396.json"
     },
@@ -685,7 +685,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Dice 6 5x Booster #400",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "dice-6-5x.png",
+      "sourceImage": "dice/6-5x.png",
       "imagePath": "images/400.png",
       "metadataPath": "metadata/400.json"
     },
@@ -699,7 +699,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Rock 2x Booster #401",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-rock-2x.png",
+      "sourceImage": "rps/rock-2x.png",
       "imagePath": "images/401.png",
       "metadataPath": "metadata/401.json"
     },
@@ -713,7 +713,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Rock 2x Booster #434",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-rock-2x.png",
+      "sourceImage": "rps/rock-2x.png",
       "imagePath": "images/434.png",
       "metadataPath": "metadata/434.json"
     },
@@ -727,7 +727,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Paper 2x Booster #435",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-paper-2x.png",
+      "sourceImage": "rps/paper-2x.png",
       "imagePath": "images/435.png",
       "metadataPath": "metadata/435.json"
     },
@@ -741,7 +741,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Paper 2x Booster #467",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-paper-2x.png",
+      "sourceImage": "rps/paper-2x.png",
       "imagePath": "images/467.png",
       "metadataPath": "metadata/467.json"
     },
@@ -755,7 +755,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Scissors 2x Booster #468",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-scissors-2x.png",
+      "sourceImage": "rps/scissors-2x.png",
       "imagePath": "images/468.png",
       "metadataPath": "metadata/468.json"
     },
@@ -769,7 +769,7 @@
       "multiplierDisplay": "2x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Scissors 2x Booster #500",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-scissors-2x.png",
+      "sourceImage": "rps/scissors-2x.png",
       "imagePath": "images/500.png",
       "metadataPath": "metadata/500.json"
     },
@@ -783,7 +783,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Rock 3x Booster #501",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-rock-3x.png",
+      "sourceImage": "rps/rock-3x.png",
       "imagePath": "images/501.png",
       "metadataPath": "metadata/501.json"
     },
@@ -797,7 +797,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Rock 3x Booster #524",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-rock-3x.png",
+      "sourceImage": "rps/rock-3x.png",
       "imagePath": "images/524.png",
       "metadataPath": "metadata/524.json"
     },
@@ -811,7 +811,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Paper 3x Booster #525",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-paper-3x.png",
+      "sourceImage": "rps/paper-3x.png",
       "imagePath": "images/525.png",
       "metadataPath": "metadata/525.json"
     },
@@ -825,7 +825,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Paper 3x Booster #547",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-paper-3x.png",
+      "sourceImage": "rps/paper-3x.png",
       "imagePath": "images/547.png",
       "metadataPath": "metadata/547.json"
     },
@@ -839,7 +839,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Scissors 3x Booster #548",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-scissors-3x.png",
+      "sourceImage": "rps/scissors-3x.png",
       "imagePath": "images/548.png",
       "metadataPath": "metadata/548.json"
     },
@@ -853,7 +853,7 @@
       "multiplierDisplay": "3x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Scissors 3x Booster #570",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-scissors-3x.png",
+      "sourceImage": "rps/scissors-3x.png",
       "imagePath": "images/570.png",
       "metadataPath": "metadata/570.json"
     },
@@ -867,7 +867,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Rock 5x Booster #571",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-rock-5x.png",
+      "sourceImage": "rps/rock-5x.png",
       "imagePath": "images/571.png",
       "metadataPath": "metadata/571.json"
     },
@@ -881,7 +881,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Rock 5x Booster #580",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-rock-5x.png",
+      "sourceImage": "rps/rock-5x.png",
       "imagePath": "images/580.png",
       "metadataPath": "metadata/580.json"
     },
@@ -895,7 +895,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Paper 5x Booster #581",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-paper-5x.png",
+      "sourceImage": "rps/paper-5x.png",
       "imagePath": "images/581.png",
       "metadataPath": "metadata/581.json"
     },
@@ -909,7 +909,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Paper 5x Booster #590",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-paper-5x.png",
+      "sourceImage": "rps/paper-5x.png",
       "imagePath": "images/590.png",
       "metadataPath": "metadata/590.json"
     },
@@ -923,7 +923,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Scissors 5x Booster #591",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-scissors-5x.png",
+      "sourceImage": "rps/scissors-5x.png",
       "imagePath": "images/591.png",
       "metadataPath": "metadata/591.json"
     },
@@ -937,7 +937,7 @@
       "multiplierDisplay": "5x Booster",
       "displayName": "Tricksfor Rock Paper Scissors Scissors 5x Booster #600",
       "description": "A Tricksfor Booster NFT. Stake this NFT to activate a reward boost during gameplay. An unstaked Booster confers no in-game advantage.",
-      "sourceImage": "rps-scissors-5x.png",
+      "sourceImage": "rps/scissors-5x.png",
       "imagePath": "images/600.png",
       "metadataPath": "metadata/600.json"
     }

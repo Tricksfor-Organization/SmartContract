@@ -345,7 +345,7 @@ nft-assets/
 ├── optimism/
 ├── bsc/
 ├── avalanche/
-├── images/source/   ← 33 canonical source images (copied to chain-specific image dirs)
+├── source-images/   ← 33 canonical source images, organised by theme (coin/dice/rps)
 ├── _headers         ← Cloudflare Pages response headers
 └── _redirects       ← extensionless → .json rewrite rules
 ```
