@@ -388,6 +388,9 @@ Attribute derivation:
 
 ### Collection metadata (`{chainKey}/contract/collection.json`)
 
+`contractURI()` on the deployed NFT contract returns a URI string. That URI should resolve
+to this JSON file, served at `https://nft.tricksfor.com/{chainKey}/contract/collection.json`.
+
 ```json
 {
   "name": "Tricksfor Boosters - Ethereum",
@@ -403,15 +406,29 @@ Attribute derivation:
 > actual royalty recipient address before mainnet deployment. Using the burn address means OpenSea
 > royalty payments are permanently lost.
 
-Collection name derivation per [`docs/nft-copy-spec.md` § 1](nft-copy-spec.md#1-collection-naming):
+#### `contractURI()` output per chain
 
-| `chainKey` | Collection `name` |
-|---|---|
-| `ethereum` | `Tricksfor Boosters - Ethereum` |
-| `polygon` | `Tricksfor Boosters - Polygon` |
-| `optimism` | `Tricksfor Boosters - Optimism` |
-| `bsc` | `Tricksfor Boosters - BSC` |
-| `avalanche` | `Tricksfor Boosters - Avalanche` |
+The table below summarises the `contractURI()` URL and resulting chain-specific fields for each
+supported chain. The `description` and `external_link` fields are identical across chains.
+`seller_fee_basis_points` is `500` in all generated files; only `name` and `image` are
+chain-specific. `fee_recipient` is a placeholder in all generated files and **must** be replaced
+with the actual royalty recipient address before mainnet deployment (see warning above).
+
+| `chainKey` | `CONTRACT_URI` | Collection `name` | Collection `image` |
+|---|---|---|---|
+| `ethereum` | `https://nft.tricksfor.com/ethereum/contract/collection.json` | `Tricksfor Boosters - Ethereum` | `https://nft.tricksfor.com/ethereum/images/collection.png` |
+| `polygon` | `https://nft.tricksfor.com/polygon/contract/collection.json` | `Tricksfor Boosters - Polygon` | `https://nft.tricksfor.com/polygon/images/collection.png` |
+| `optimism` | `https://nft.tricksfor.com/optimism/contract/collection.json` | `Tricksfor Boosters - Optimism` | `https://nft.tricksfor.com/optimism/images/collection.png` |
+| `bsc` | `https://nft.tricksfor.com/bsc/contract/collection.json` | `Tricksfor Boosters - BSC` | `https://nft.tricksfor.com/bsc/images/collection.png` |
+| `avalanche` | `https://nft.tricksfor.com/avalanche/contract/collection.json` | `Tricksfor Boosters - Avalanche` | `https://nft.tricksfor.com/avalanche/images/collection.png` |
+
+Collection name derivation follows [`docs/nft-copy-spec.md` § 1](nft-copy-spec.md#1-collection-naming).
+The generated files live at `nft-assets/generated/{chainKey}/contract/collection.json` and can be
+regenerated at any time with:
+
+```bash
+node scripts/generate-nft-metadata.js --all-mainnet --force
+```
 
 ---
 

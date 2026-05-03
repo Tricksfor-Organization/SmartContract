@@ -39,9 +39,9 @@ This checklist must be completed before deploying the `TricksforBoosterNFT` coll
 
 - [ ] The collection metadata URI is set in the constructor (or via `setContractURI`) before launch
 - [ ] The URI resolves to a valid JSON document conforming to the OpenSea collection metadata standard (see [contract-example.json](metadata/contract-example.json)):
-  - `name` — the collection name (e.g., `"Tricksfor Boosters"`)
+  - `name` — the chain-specific collection name (e.g., `"Tricksfor Boosters - Ethereum"`) — see [nft-copy-spec.md § 1](nft-copy-spec.md#1-collection-naming) for all chain names
   - `description` — collection-level description
-  - `image` — URI to the collection banner or logo image
+  - `image` — URI to the collection banner or logo image (`https://nft.tricksfor.com/{chainKey}/images/collection.png`)
   - `external_link` — link to the collection's page on the Tricksfor website
   - `seller_fee_basis_points` — royalty fee in basis points (e.g., `500` = 5%)
   - `fee_recipient` — royalty recipient address (must match `royaltyInfo` on-chain)
