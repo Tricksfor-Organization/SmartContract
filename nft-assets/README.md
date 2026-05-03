@@ -45,6 +45,13 @@ nft-assets/
 │   ├── bsc/                   Generated metadata for BSC
 │   ├── avalanche/             Generated metadata for Avalanche
 │   └── optimism/              Generated metadata for Optimism
+├── sample/                    Validation sample — Coin theme on Ethereum (200 tokens)
+│   ├── README.md              Validation checklist and sample documentation
+│   ├── ethereum/
+│   │   ├── metadata/          Token metadata for IDs 1–200 (all Coin tokens)
+│   │   └── contract/          Collection metadata
+│   ├── _redirects
+│   └── _headers
 ├── images/                    Shared image assets (e.g. collection banner)
 │   └── collection.png
 ├── manifests/                 Manifest samples and templates
@@ -136,6 +143,9 @@ node scripts/generate-nft-metadata.js --chain polygon
 # Generate for all 5 mainnet chains at once
 node scripts/generate-nft-metadata.js --all-mainnet --force
 
+# Generate for one chain, one theme only (token IDs remain globally consistent)
+node scripts/generate-nft-metadata.js --chain ethereum --theme coin --output nft-assets/sample --force
+
 # Load chain config from an approved manifest file
 node scripts/generate-nft-metadata.js --manifest nft-assets/manifests/ethereum.sample.json
 
@@ -150,6 +160,23 @@ Pages (set the build output directory to `nft-assets/generated/`).
 
 See [`docs/nft-metadata-generation.md` § 5](../docs/nft-metadata-generation.md#5-standalone-metadata-generator)
 for the full option reference.
+
+---
+
+## Validation Sample
+
+A pre-generated validation sample covering the complete **Coin** theme on **Ethereum**
+(200 tokens, IDs 1–200) lives in [`nft-assets/sample/`](./sample/).
+
+Use it to verify naming templates, description templates, the attribute schema, image URL
+patterns, and token ID allocation before reviewing the full generated output.
+
+```bash
+# Regenerate the sample from scratch
+npm run generate:sample
+```
+
+See [`nft-assets/sample/README.md`](./sample/README.md) for a full validation checklist.
 
 ---
 

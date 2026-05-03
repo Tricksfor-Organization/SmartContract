@@ -30,6 +30,8 @@
  *   --all                 Alias for --all-mainnet
  *   --manifest <path>     Load chain config from an approved manifest file (overrides --chain)
  *   --output <path>       Output root directory (default: ./nft-assets/generated)
+ *   --theme <themeId>     Restrict output to a single theme (coin|dice|rps); token IDs still
+ *                         follow full-collection ordering so they remain globally consistent
  *   --dry-run             Print what would be written without creating any files
  *   --force               Overwrite existing output files (default: error if files exist)
  *
@@ -168,6 +170,7 @@ function parseArgs(argv) {
     allMainnet: false,
     manifest:   null,
     output:     './nft-assets/generated',
+    theme:      null,
     dryRun:     false,
     force:      false,
   };
@@ -178,6 +181,7 @@ function parseArgs(argv) {
     if      (flag === '--chain'     && next) { args.chain      = next; i++; }
     else if (flag === '--manifest'  && next) { args.manifest   = next; i++; }
     else if (flag === '--output'    && next) { args.output     = next; i++; }
+    else if (flag === '--theme'     && next) { args.theme      = next; i++; }
     else if (flag === '--all-mainnet')       { args.allMainnet = true; }
     else if (flag === '--all')               { args.allMainnet = true; }
     else if (flag === '--dry-run')           { args.dryRun     = true; }
@@ -258,10 +262,13 @@ function loadManifest(manifestPath) {
  * Generates the full 600-entry token array for a chain using the deterministic
  * allocation algorithm: theme (coin→dice→rps) → tier (2x→3x→5x) → option.
  *
- * @param {string} chainKey - Chain identifier (e.g. 'polygon')
- * @returns {object[]}      - Array of 600 token entry objects
+ * @param {string}      chainKey    - Chain identifier (e.g. 'polygon')
+ * @param {string|null} themeFilter - When set, only tokens belonging to this theme are returned;
+ *                                    token IDs still follow full-collection ordering so they
+ *                                    remain globally consistent.
+ * @returns {object[]}              - Array of token entry objects
  */
-function generateTokenEntries(chainKey) {
+function generateTokenEntries(chainKey, themeFilter = null) {
   const tokens = [];
   let nextId   = 1;
 
@@ -277,14 +284,17 @@ function generateTokenEntries(chainKey) {
         const option  = VARIANT_TO_OPTION[variant];
 
         for (let j = 0; j < count; j++) {
-          tokens.push({
-            tokenId:  nextId++,
-            chainKey,
-            theme:    theme.id,
-            variant,
-            option,
-            tier:     tier.id,
-          });
+          if (!themeFilter || theme.id === themeFilter) {
+            tokens.push({
+              tokenId:  nextId,
+              chainKey,
+              theme:    theme.id,
+              variant,
+              option,
+              tier:     tier.id,
+            });
+          }
+          nextId++;
         }
       }
     }
@@ -523,16 +533,17 @@ function writePagesConfig(outputDir, dryRun, force) {
 // ---------------------------------------------------------------------------
 
 /**
- * Generates all 600 token metadata files and the collection metadata file for
- * one chain.
+ * Generates token metadata files and the collection metadata file for one chain.
+ * When themeFilter is set, only the tokens belonging to that theme are generated;
+ * token IDs remain globally consistent with the full-collection ordering.
  *
- * @param {object} chainConfig - Entry from CHAIN_CONFIGS (chain, chainKey, domain)
- * @param {string} outputDir   - Resolved path to the generated output root
- * @param {object} opts        - { dryRun, force }
- * @returns {number}           - Number of errors encountered
+ * @param {object}      chainConfig  - Entry from CHAIN_CONFIGS (chain, chainKey, domain)
+ * @param {string}      outputDir    - Resolved path to the generated output root
+ * @param {object}      opts         - { dryRun, force, themeFilter }
+ * @returns {number}                 - Number of errors encountered
  */
 function generateChain(chainConfig, outputDir, opts) {
-  const { dryRun, force } = opts;
+  const { dryRun, force, themeFilter } = opts;
   const { chain, chainKey, domain } = chainConfig;
 
   const baseImageUri    = `https://${domain}/${chainKey}/images/`;
@@ -542,7 +553,8 @@ function generateChain(chainConfig, outputDir, opts) {
   const metadataDir = path.join(chainDir, 'metadata');
   const contractDir = path.join(chainDir, 'contract');
 
-  console.log(`\nGenerating 600 token metadata files for chain: ${chainKey} (${chain})`);
+  const themeLabel = themeFilter ? ` (theme: ${themeFilter})` : '';
+  console.log(`\nGenerating token metadata for chain: ${chainKey} (${chain})${themeLabel}`);
   console.log(`  Output: ${chainDir}`);
   console.log(`  BASE_TOKEN_URI : ${baseMetadataUri}`);
   console.log(`  CONTRACT_URI   : ${baseMetadataUri.replace(/metadata\/$/, 'contract/collection.json')}`);
@@ -551,7 +563,7 @@ function generateChain(chainConfig, outputDir, opts) {
   ensureDir(metadataDir, dryRun);
   ensureDir(contractDir, dryRun);
 
-  const tokens    = generateTokenEntries(chainKey);
+  const tokens    = generateTokenEntries(chainKey, themeFilter || null);
   let tokenErrors = 0;
 
   // 1. Token metadata files
@@ -595,9 +607,18 @@ function main() {
   const args      = parseArgs(process.argv);
   const chainList = resolveChainList(args);
   const outputDir = path.resolve(args.output);
-  const opts      = { dryRun: args.dryRun, force: args.force };
+
+  // Validate --theme if provided
+  const validThemes = THEMES.map(t => t.id);
+  if (args.theme && !validThemes.includes(args.theme)) {
+    console.error(`Error: unknown theme "${args.theme}". Valid themes: ${validThemes.join(', ')}`);
+    process.exit(1);
+  }
+
+  const opts = { dryRun: args.dryRun, force: args.force, themeFilter: args.theme || null };
 
   console.log(`Output root: ${outputDir}`);
+  if (args.theme)  console.log(`Theme filter: ${args.theme}`);
   if (args.dryRun) console.log('(dry-run mode — no files will be written)');
 
   // Ensure the output root exists
