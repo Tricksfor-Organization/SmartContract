@@ -388,8 +388,8 @@ Attribute derivation:
 
 ### Collection metadata (`{chainKey}/contract/collection.json`)
 
-This file is the JSON document returned by `contractURI()` on the deployed NFT contract.
-It is served at `https://nft.tricksfor.com/{chainKey}/contract/collection.json`.
+`contractURI()` on the deployed NFT contract returns a URI string. That URI should resolve
+to this JSON file, served at `https://nft.tricksfor.com/{chainKey}/contract/collection.json`.
 
 ```json
 {
@@ -408,9 +408,11 @@ It is served at `https://nft.tricksfor.com/{chainKey}/contract/collection.json`.
 
 #### `contractURI()` output per chain
 
-The table below summarises the `contractURI()` URL and resulting `name` field for each supported
-chain. All other fields (`description`, `external_link`, `seller_fee_basis_points`) are identical
-across chains; only `name` and `image` are chain-specific.
+The table below summarises the `contractURI()` URL and resulting chain-specific fields for each
+supported chain. The `description` and `external_link` fields are identical across chains.
+`seller_fee_basis_points` is `500` in all generated files; only `name` and `image` are
+chain-specific. `fee_recipient` is a placeholder in all generated files and **must** be replaced
+with the actual royalty recipient address before mainnet deployment (see warning above).
 
 | `chainKey` | `CONTRACT_URI` | Collection `name` | Collection `image` |
 |---|---|---|---|
