@@ -644,6 +644,15 @@ function validateManifestToOutput(manifest, base, nftAssetsDir, report) {
   }
 }
 
+/**
+ * Minimum byte size a source image must exceed to be considered non-placeholder.
+ * The committed 1×1 grey placeholder PNGs are 69 bytes. Any real production
+ * artwork will be orders of magnitude larger. 200 bytes is a generous ceiling
+ * for any 1×1 single-colour stub while remaining safely below the smallest
+ * conceivable real NFT image.
+ */
+const PLACEHOLDER_MAX_BYTES = 200;
+
 function validateSourceImages(manifest, base, nftAssetsDir, report) {
   console.log('\n--- Source images (nft-assets/source-images/{theme}/) ---');
   const sourceDir = path.join(nftAssetsDir, 'source-images');
@@ -656,18 +665,33 @@ function validateSourceImages(manifest, base, nftAssetsDir, report) {
   // Collect the unique set of sourceImage values referenced by the manifest
   const referenced = new Set(manifest.tokens.map(t => t.sourceImage).filter(Boolean));
   let missing = 0;
+  let placeholder = 0;
 
   for (const sourceImage of [...referenced].sort()) {
     const sourcePath = path.join(sourceDir, sourceImage);
     if (!fs.existsSync(sourcePath)) {
       report.error(`source-images/${sourceImage}: source image referenced in manifest not found`);
       missing++;
+      continue;
+    }
+
+    // Guard: reject placeholder-sized files so they cannot be deployed unintentionally.
+    // Real artwork must exceed PLACEHOLDER_MAX_BYTES in size.
+    const { size } = fs.statSync(sourcePath);
+    if (size <= PLACEHOLDER_MAX_BYTES) {
+      report.error(
+        `source-images/${sourceImage}: file is ${size} bytes — ` +
+        `this looks like a placeholder. Replace with final artwork before deploying ` +
+        `(minimum size: ${PLACEHOLDER_MAX_BYTES + 1} bytes)`
+      );
+      placeholder++;
     }
   }
 
-  if (missing === 0) {
+  if (missing === 0 && placeholder === 0) {
     report.ok(
-      `All ${referenced.size} source images referenced by the manifest exist in source-images/`
+      `All ${referenced.size} source images referenced by the manifest exist in source-images/ ` +
+      `and exceed the minimum size threshold`
     );
   }
 }
