@@ -12,6 +12,7 @@
     "generate:manifest": "node scripts/generate-nft-manifest.js",
     "generate:assets": "node scripts/generate-nft-assets.js",
     "generate:metadata": "node scripts/generate-nft-metadata.js",
+    "generate:sample": "node scripts/generate-nft-metadata.js --chain ethereum --theme coin --output nft-assets/sample --force",
     "validate:assets": "node scripts/validate-nft-assets.js"
   },
   "devDependencies": {

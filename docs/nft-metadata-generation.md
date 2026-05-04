@@ -13,6 +13,7 @@ Pages deployment and contract deployment pipeline.
 3. [URL Conventions](#3-url-conventions)
 4. [Generation Script](#4-generation-script)
 5. [Standalone Metadata Generator](#5-standalone-metadata-generator)
+   - [5.1. Validation Sample](#51-validation-sample)
 6. [Manifest Requirements](#6-manifest-requirements)
 7. [Generated File Formats](#7-generated-file-formats)
 8. [Release Workflow Integration](#8-release-workflow-integration)
@@ -230,6 +231,9 @@ node scripts/generate-nft-metadata.js --all --dry-run
 # Overwrite existing output files
 node scripts/generate-nft-metadata.js --all --force
 
+# Generate one theme only (for validation samples — see § 5.1)
+node scripts/generate-nft-metadata.js --chain ethereum --theme coin --output nft-assets/sample --force
+
 # npm shortcut
 npm run generate:metadata -- --all-mainnet --force
 ```
@@ -243,6 +247,7 @@ npm run generate:metadata -- --all-mainnet --force
 | `--all` | false | Alias for `--all-mainnet` |
 | `--manifest <path>` | — | Load chain config from an approved manifest file; takes precedence over `--chain` |
 | `--output <path>` | `./nft-assets/generated` | Root directory for generated output |
+| `--theme <themeId>` | — | Restrict output to a single theme (`coin`, `dice`, or `rps`); token IDs still follow the full-collection ordering so they remain globally consistent |
 | `--dry-run` | false | Print what would be written without creating any files |
 | `--force` | false | Overwrite existing output files |
 
@@ -300,6 +305,28 @@ algorithm and all naming templates are deterministic. Use `--force` to regenerat
 |---|---|
 | 0 | Generation completed successfully |
 | 1 | One or more errors prevented generation |
+
+---
+
+## 5.1. Validation Sample
+
+A pre-generated validation sample covering the complete **Coin** theme on **Ethereum** is
+committed at [`nft-assets/sample/`](../nft-assets/sample/).
+
+To regenerate it:
+
+```bash
+npm run generate:sample
+# or equivalently:
+node scripts/generate-nft-metadata.js --chain ethereum --theme coin --output nft-assets/sample --force
+```
+
+The `--theme coin` flag restricts output to the 200 Coin-theme tokens (IDs 1–200) while
+preserving globally consistent token IDs. The sample is a strict subset of the full generated
+output at `nft-assets/generated/`.
+
+See [`nft-assets/sample/README.md`](../nft-assets/sample/README.md) for the validation
+checklist and a full breakdown of what the sample covers.
 
 ---
 
