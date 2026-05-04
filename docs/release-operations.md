@@ -410,9 +410,11 @@ The `release-deploy.yml` workflow starts automatically.
 1. Go to **Actions → Release — Deploy Contracts** to view the running workflow.
 2. Monitor the `resolve-environment` job for tag validation errors.
 3. Monitor the `test` job for any test failures.
-4. Monitor the `deploy-metadata` job — if this fails, `deploy-contracts` will not run.
-5. If deploying to mainnet, approve the pending deployment in the `deploy-metadata` and `deploy-contracts` jobs.
-6. Check the `verify-contracts` and `publish-nuget` jobs after `deploy-contracts` completes.
+4. Monitor the `validate-assets` job — validates NFT manifests, images, and source structure.
+5. Monitor the `generate-nft-assets` job — generates chain-specific metadata and images; uploads artifact. If this fails, `deploy-metadata` will not run.
+6. Monitor the `deploy-metadata` job — if this fails, `deploy-contracts` will not run.
+7. If deploying to mainnet, approve the pending deployment in the `deploy-metadata` and `deploy-contracts` jobs.
+8. Check the `verify-contracts` and `publish-nuget` jobs after `deploy-contracts` completes.
 
 ---
 
@@ -435,9 +437,24 @@ GitHub Release published
              │
              ▼
 ┌─────────────────────────┐
-│    deploy-metadata      │  Environment-scoped. Deploys nft-assets/ to
-│    (environment gate    │  Cloudflare Pages. Resolves BASE_TOKEN_URI
-│     for mainnet)        │  and CONTRACT_URI. Blocking.
+│    validate-assets      │  Validates NFT manifests, images, and source
+│                         │  structure. Fails fast; no secrets required.
+└────────────┬────────────┘
+             │
+             ▼
+┌─────────────────────────┐
+│  generate-nft-assets    │  Generates chain-specific token metadata,
+│                         │  collection metadata, and image files from
+│                         │  the approved manifest. Uploads generated
+│                         │  output as a build artifact. No secrets.
+└────────────┬────────────┘
+             │
+             ▼
+┌─────────────────────────┐
+│    deploy-metadata      │  Environment-scoped. Downloads generated
+│    (environment gate    │  artifact. Deploys nft-assets/ to Cloudflare
+│     for mainnet)        │  Pages. Resolves BASE_TOKEN_URI and
+│                         │  CONTRACT_URI. Blocking.
 └────────────┬────────────┘
              │
              ▼
@@ -463,6 +480,8 @@ GitHub Release published
 |---|---|---|---|
 | `resolve-environment` | None | Yes | No |
 | `test` | None | Yes | No |
+| `validate-assets` | None | Yes | No |
+| `generate-nft-assets` | None | Yes | No |
 | `deploy-metadata` | `{DEPLOY_ENV}` | Yes | No |
 | `deploy-contracts` | `{DEPLOY_ENV}` | Yes | No |
 | `verify-contracts` | `{DEPLOY_ENV}` | No | Yes |
@@ -471,6 +490,22 @@ GitHub Release published
 ---
 
 ## 11. Failure Recovery
+
+### Asset generation fails (`generate-nft-assets`)
+
+When `generate-nft-assets` fails, `deploy-metadata` and all downstream jobs are automatically
+skipped. No on-chain state is changed — this is a safe failure point.
+
+**Recovery steps:**
+
+1. Open the failed workflow run in **Actions**.
+2. Check the `generate-nft-assets` job logs for the root cause:
+   - `Deployment manifest not found` → create `deployments/config/{env}/nft-manifest.json` (see `docs/nft-asset-manifest-spec.md`).
+   - `\"chainKey\" is missing or null` → add the `chainKey` field to the manifest.
+   - Script error during generation → inspect the logs for the specific error; fix the manifest or source images.
+3. Note: even when the generation step fails, any partially generated output is uploaded as the
+   `nft-generated-{env}-{tag}` artifact (`if: always()`).
+4. Fix the root cause, then re-run the `generate-nft-assets` job or publish a new release.
 
 ### Metadata deployment fails (`deploy-metadata`)
 
@@ -588,6 +623,15 @@ If `DEPLOY_ENV` points to the wrong environment:
 ## 12. Artifacts
 
 All artifacts are uploaded under **Actions → {workflow run} → Artifacts**.
+
+### Generated NFT assets
+
+| Artifact name | Job | Retention | Contents |
+|---|---|---|---|
+| `nft-generated-{env}-{tag}` | `generate-nft-assets` | 30 days | `metadata/{id}.json` (600 token files), `contract/collection.json`, `images/{id}.png` — the complete chain-specific generated output for `{chainKey}` |
+
+Generated assets are uploaded with `if: always()` — they are retained even when the subsequent
+Pages deployment fails, allowing manual re-deployment without re-running the full pipeline.
 
 ### Deployment manifests
 

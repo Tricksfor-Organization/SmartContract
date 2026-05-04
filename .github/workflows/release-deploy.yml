@@ -5,11 +5,12 @@
 #
 # Job graph:
 #   test
-#    └── validate-assets  (validates NFT metadata, images, and manifest; no secrets required)
-#          └── deploy-metadata  (environment-scoped; deploys nft-assets/ to Cloudflare Pages)
-#                └── deploy-contracts   (environment-scoped; chain secrets: RPC_URL, DEPLOYER_PRIVATE_KEY)
-#                      ├── verify-contracts  (environment-scoped; uses RPC_URL + EXPLORER_API_KEY)
-#                      └── publish-nuget
+#    └── validate-assets      (validates NFT metadata, images, and manifest; no secrets required)
+#          └── generate-nft-assets  (generates chain-specific metadata + images; uploads artifact)
+#                └── deploy-metadata  (environment-scoped; deploys nft-assets/ to Cloudflare Pages)
+#                      └── deploy-contracts   (environment-scoped; chain secrets: RPC_URL, DEPLOYER_PRIVATE_KEY)
+#                            ├── verify-contracts  (environment-scoped; uses RPC_URL + EXPLORER_API_KEY)
+#                            └── publish-nuget
 #
 # Environment resolution:
 #   The target GitHub Environment is read from the DEPLOY_ENV environment variable
@@ -172,12 +173,70 @@ jobs:
             --env "${{ needs.resolve-environment.outputs.deploy_env }}"
 
   # ---------------------------------------------------------------------------
-  # 4. Deploy NFT metadata and images to Cloudflare Pages (blocking)
+  # 4. Generate NFT static metadata and images (no environment secrets required)
+  # ---------------------------------------------------------------------------
+  generate-nft-assets:
+    name: Generate NFT metadata (${{ needs.resolve-environment.outputs.deploy_env }})
+    runs-on: ubuntu-latest
+    needs: [resolve-environment, test, validate-assets]
+    env:
+      DEPLOY_ENV: ${{ needs.resolve-environment.outputs.deploy_env }}
+    outputs:
+      chain_key: ${{ steps.resolve-chain.outputs.chain_key }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Generate NFT static metadata and images
+        run: |
+          node scripts/generate-nft-assets.js \
+            --env "$DEPLOY_ENV" \
+            --force
+
+      - name: Resolve chain key from manifest
+        id: resolve-chain
+        run: |
+          MANIFEST_PATH="deployments/config/${DEPLOY_ENV}/nft-manifest.json"
+          if [[ ! -f "$MANIFEST_PATH" ]]; then
+            echo "::error::Deployment manifest not found: $MANIFEST_PATH"
+            echo "::error::Create deployments/config/${DEPLOY_ENV}/nft-manifest.json before deploying. See docs/nft-metadata-generation.md."
+            exit 1
+          fi
+
+          CHAIN_KEY=$(jq -r '.chainKey // empty' "$MANIFEST_PATH")
+          if [[ -z "$CHAIN_KEY" ]]; then
+            echo "::error::\"chainKey\" is missing or null in $MANIFEST_PATH"
+            exit 1
+          fi
+
+          echo "chain_key=$CHAIN_KEY" >> "$GITHUB_OUTPUT"
+          echo "Resolved chain key: $CHAIN_KEY"
+
+      - name: Upload generated NFT assets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nft-generated-${{ needs.resolve-environment.outputs.deploy_env }}-${{ needs.resolve-environment.outputs.tag }}
+          path: nft-assets/${{ steps.resolve-chain.outputs.chain_key }}/
+          retention-days: 30
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # 5. Deploy NFT metadata and images to Cloudflare Pages (blocking)
   # ---------------------------------------------------------------------------
   deploy-metadata:
     name: Deploy NFT metadata (${{ needs.resolve-environment.outputs.deploy_env }})
     runs-on: ubuntu-latest
-    needs: [resolve-environment, test, validate-assets]
+    needs: [resolve-environment, test, validate-assets, generate-nft-assets]
     environment: ${{ needs.resolve-environment.outputs.deploy_env }}
     env:
       DEPLOY_ENV: ${{ needs.resolve-environment.outputs.deploy_env }}
@@ -187,6 +246,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Download generated NFT assets
+        uses: actions/download-artifact@v4
+        with:
+          name: nft-generated-${{ needs.resolve-environment.outputs.deploy_env }}-${{ needs.resolve-environment.outputs.tag }}
+          path: nft-assets/${{ needs.generate-nft-assets.outputs.chain_key }}/
 
       - name: Validate Cloudflare Pages configuration
         id: check-cf
@@ -303,7 +368,7 @@ jobs:
           exit 1
 
   # ---------------------------------------------------------------------------
-  # 5. Deploy contracts (environment-scoped; chain secrets injected here)
+  # 6. Deploy contracts (environment-scoped; chain secrets injected here)
   # ---------------------------------------------------------------------------
   deploy-contracts:
     name: Deploy contracts (${{ needs.resolve-environment.outputs.deploy_env }})
@@ -393,7 +458,7 @@ jobs:
           if-no-files-found: warn
 
   # ---------------------------------------------------------------------------
-  # 6. Verify contracts on block explorer (non-blocking)
+  # 7. Verify contracts on block explorer (non-blocking)
   # ---------------------------------------------------------------------------
   verify-contracts:
     name: Verify contracts (${{ needs.resolve-environment.outputs.deploy_env }})
@@ -567,7 +632,7 @@ jobs:
           if-no-files-found: warn
 
   # ---------------------------------------------------------------------------
-  # 7. Publish NuGet package (non-blocking)
+  # 8. Publish NuGet package (non-blocking)
   # ---------------------------------------------------------------------------
   publish-nuget:
     name: Publish NuGet package

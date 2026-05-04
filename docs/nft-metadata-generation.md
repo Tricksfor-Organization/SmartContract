@@ -461,16 +461,18 @@ node scripts/generate-nft-metadata.js --all-mainnet --force
 
 ## 8. Release Workflow Integration
 
-Metadata generation fits into the release workflow between the `test` job and the
-`deploy-metadata` job:
+Metadata generation is built directly into the release workflow as a dedicated
+`generate-nft-assets` job that runs after asset validation and before Cloudflare Pages
+deployment. Developers do **not** need to generate or commit generated files locally.
 
 ```
 test
- └── [generate metadata] ← run locally or as pre-deploy CI step
-       └── deploy-metadata   (Cloudflare Pages deployment)
-             └── deploy-contracts   (contract deployment)
-                   ├── verify-contracts
-                   └── publish-nuget
+ └── validate-assets   (validates manifests, images, source structure)
+       └── generate-nft-assets   (runs generate-nft-assets.js; uploads artifact)
+             └── deploy-metadata   (downloads artifact; deploys to Cloudflare Pages)
+                   └── deploy-contracts   (contract deployment)
+                         ├── verify-contracts
+                         └── publish-nuget
 ```
 
 ### Step-by-step release sequence
@@ -478,25 +480,19 @@ test
 1. **Finalise the manifest** — ensure `deployments/config/{env}/nft-manifest.json` is complete
    and passes validation (`node scripts/validate-nft-assets.js --env {env}`).
 
-2. **Generate static files** — run the generation script to produce the output tree:
-   ```bash
-   node scripts/generate-nft-assets.js --env {env} --force
-   ```
+2. **Commit the manifest** — commit `deployments/config/{env}/nft-manifest.json` (and any
+   updated source images under `nft-assets/source-images/`) to the release branch. The workflow
+   generates all output files automatically — generated files do **not** need to be committed.
 
-3. **Validate the manifest/assets inputs** — run the validation script as a consistency check
-   before deployment:
-   ```bash
-   node scripts/validate-nft-assets.js --nft-assets nft-assets --env {env}
-   ```
-   Note: the current validator still checks the legacy flat layout under `nft-assets/metadata/`,
-   `nft-assets/images/`, and `nft-assets/contract/`. It does **not** validate the generated
-   chain-specific output under `nft-assets/{chainKey}/...`.
+3. **Publish the release** — the `release-deploy.yml` workflow runs automatically and:
+   - Validates manifests and assets (`validate-assets` job).
+   - Generates all chain-specific metadata and image files (`generate-nft-assets` job).
+   - Uploads the generated output as the `nft-generated-{env}-{tag}` artifact.
+   - Deploys the generated output to Cloudflare Pages (`deploy-metadata` job).
+   - Derives `BASE_TOKEN_URI` and `CONTRACT_URI` from the live Pages deployment.
+   - Deploys contracts with the final stable metadata URLs (`deploy-contracts` job).
 
-4. **Commit and push** — commit all generated files under `nft-assets/{chainKey}/` to the
-   release branch. The `deploy-metadata` job in `release-deploy.yml` deploys them to Cloudflare
-   Pages.
-
-5. **Derive contract parameters** — the `deploy-metadata` job resolves the final `BASE_TOKEN_URI`
+4. **Derive contract parameters** — the `deploy-metadata` job resolves the final `BASE_TOKEN_URI`
    and `CONTRACT_URI` from the Cloudflare Pages deployment and passes them as environment variable
    overrides to `deploy-contracts`:
    ```yaml
@@ -507,15 +503,13 @@ test
 The contract is always deployed with the URLs that are live on Cloudflare Pages, ensuring
 on-chain URIs and hosted metadata are consistent from the moment the contract is deployed.
 
-### Pre-commit checklist
+### Pre-release checklist
 
-Before committing generated files for a release:
+Before publishing a release:
 
 - [ ] `node scripts/validate-nft-assets.js --env {env}` passes with no errors
-- [ ] All 600 token metadata files exist under `nft-assets/{chainKey}/metadata/`
-- [ ] `nft-assets/{chainKey}/contract/collection.json` exists and `fee_recipient` is correct
-- [ ] All 600 per-token images exist under `nft-assets/{chainKey}/images/`
-- [ ] `nft-assets/{chainKey}/images/collection.png` exists
+- [ ] `deployments/config/{env}/nft-manifest.json` exists and contains a valid `chainKey`
+- [ ] All source images referenced by the manifest exist under `nft-assets/source-images/{theme}/`
 - [ ] `baseImageUri` and `baseMetadataUri` in the manifest point to the correct chain-specific paths
 
 ---
