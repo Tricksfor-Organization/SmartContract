@@ -359,7 +359,7 @@ function validateTokenMetadata(chainDir, chainKey, report) {
   const tokens = readTokenFiles(chainDir, chainKey, report);
 
   if (tokens.length === 0) {
-    report.warn(`[${chainKey}] No token metadata files found — has metadata been generated?`);
+    report.error(`[${chainKey}] No token metadata files found — has metadata been generated?`);
     return;
   }
 
@@ -405,7 +405,7 @@ function validateTokenMetadata(chainDir, chainKey, report) {
   for (const tier of TIERS) {
     for (const theme of THEMES) {
       tierCounts[theme.id][tier.id]   = 0;
-      optionCounts[theme.id][tier.id] = {};
+      optionCounts[theme.id][tier.id] = Object.create(null);
       for (const opt of theme.options) {
         optionCounts[theme.id][tier.id][opt] = 0;
       }
@@ -523,7 +523,7 @@ function validateTokenMetadata(chainDir, chainKey, report) {
 
       // Also flag any unexpected option values that appeared
       for (const opt of Object.keys(actualMap)) {
-        if (!expectedMap.hasOwnProperty(opt)) {
+        if (!Object.prototype.hasOwnProperty.call(expectedMap, opt)) {
           report.error(
             `[${chainKey}] ${theme.display} ${tier.booster}: ` +
             `unexpected option value "${opt}" (count: ${actualMap[opt]})`
