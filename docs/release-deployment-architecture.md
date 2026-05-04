@@ -383,22 +383,41 @@ The script writes files to `nft-assets/{chainKey}/` and prints the `BASE_TOKEN_U
 `CONTRACT_URI` values for the deployment. See [`docs/nft-metadata-generation.md`](nft-metadata-generation.md)
 for the complete generation guide.
 
-### deploy-metadata job
+### generate-nft-assets job
 
-The `deploy-metadata` job in `release-deploy.yml` runs between `test` and `deploy-contracts`:
+The `generate-nft-assets` job runs between `validate-assets` and `deploy-metadata`. It has no
+environment scope and does not consume any secrets.
 
 ```
 test
- └── deploy-metadata   (environment-scoped; Cloudflare Pages secrets)
-       └── deploy-contracts   (environment-scoped; chain secrets)
-             ├── verify-contracts
-             └── publish-nuget
+ └── validate-assets
+       └── generate-nft-assets   (no environment scope; generates output; uploads artifact)
+             └── deploy-metadata   (environment-scoped; Cloudflare Pages secrets)
+                   └── deploy-contracts   (environment-scoped; chain secrets)
+                         ├── verify-contracts
+                         └── publish-nuget
 ```
 
 The job:
-1. Deploys `nft-assets/` to Cloudflare Pages via `cloudflare/pages-action@v1`.
-2. Resolves the final base domain from `NFT_BASE_DOMAIN` (environment variable) or falls back to `{CF_PAGES_PROJECT}.pages.dev`.
-3. Reads the `chainKey` from `deployments/config/{env}/nft-manifest.json` and outputs chain-specific `base_token_uri` and `contract_uri`.
+1. Runs `node scripts/generate-nft-assets.js --env {deploy_env} --force` to produce the
+   chain-specific output tree under `nft-assets/{chainKey}/`.
+2. Reads the `chainKey` from `deployments/config/{env}/nft-manifest.json` and exposes it as a
+   job output (`chain_key`) for use by `deploy-metadata`.
+3. Uploads `nft-assets/{chainKey}/` as the `nft-generated-{env}-{tag}` artifact with
+   `if: always()` — retained for 30 days even if the subsequent Pages deployment fails.
+
+If `generate-nft-assets` fails, `deploy-metadata` and all downstream jobs are skipped.
+
+### deploy-metadata job
+
+The `deploy-metadata` job in `release-deploy.yml` runs after `generate-nft-assets`:
+
+The job:
+1. Downloads the `nft-generated-{env}-{tag}` artifact into `nft-assets/{chainKey}/`, overlaying
+   the freshly generated files on top of the checked-out repository.
+2. Deploys `nft-assets/` to Cloudflare Pages via `cloudflare/pages-action@v1`.
+3. Resolves the final base domain from `NFT_BASE_DOMAIN` (environment variable) or falls back to `{CF_PAGES_PROJECT}.pages.dev`.
+4. Reads the `chainKey` from `deployments/config/{env}/nft-manifest.json` and outputs chain-specific `base_token_uri` and `contract_uri`.
 
 `deploy-contracts` receives these outputs and passes them as environment variable overrides
 to the deployment runner:

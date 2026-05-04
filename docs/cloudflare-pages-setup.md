@@ -116,16 +116,23 @@ Add these under **Settings → Environments → {env-name} → Variables**.
 When a GitHub Release is published, the `release-deploy.yml` workflow:
 
 1. **Runs tests** (`test` job).
-2. **Deploys NFT assets** (`deploy-metadata` job):
+2. **Validates NFT assets** (`validate-assets` job):
+   - Validates manifests, images, and source structure. No secrets required.
+3. **Generates NFT static metadata** (`generate-nft-assets` job):
+   - Runs `node scripts/generate-nft-assets.js --env {env} --force` to produce the
+     chain-specific output tree under `nft-assets/{chainKey}/`.
+   - Uploads the generated output as a build artifact (`nft-generated-{env}-{tag}`).
+4. **Deploys NFT assets** (`deploy-metadata` job):
    - Checks out the repository.
+   - Downloads the generated artifact into `nft-assets/{chainKey}/`.
    - Validates that `CF_PAGES_PROJECT` is set.
    - Runs `cloudflare/pages-action@v1` to deploy the `nft-assets/` directory, including
-     `_headers`, `_redirects`, `metadata/`, `images/`, and `contract/`.
+     `_headers`, `_redirects`, `{chainKey}/metadata/`, `{chainKey}/images/`, and `{chainKey}/contract/`.
    - Resolves the final base URI and contract URI:
-     - If `NFT_BASE_DOMAIN` is set: `https://{NFT_BASE_DOMAIN}/metadata/`
-     - Otherwise: `https://{CF_PAGES_PROJECT}.pages.dev/metadata/`
+     - If `NFT_BASE_DOMAIN` is set: `https://{NFT_BASE_DOMAIN}/{chainKey}/metadata/`
+     - Otherwise: `https://{CF_PAGES_PROJECT}.pages.dev/{chainKey}/metadata/`
    - Outputs `base_token_uri` and `contract_uri`.
-3. **Deploys contracts** (`deploy-contracts` job):
+5. **Deploys contracts** (`deploy-contracts` job):
    - Receives `base_token_uri` and `contract_uri` from `deploy-metadata`.
    - Overrides the deployment runner config via `Deployment__Nft__BaseUri` and
      `Deployment__Nft__ContractMetadataUri` environment variables.
