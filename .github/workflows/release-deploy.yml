@@ -196,12 +196,6 @@ jobs:
       - name: Install Node.js dependencies
         run: npm ci
 
-      - name: Generate NFT static metadata and images
-        run: |
-          node scripts/generate-nft-assets.js \
-            --env "$DEPLOY_ENV" \
-            --force
-
       - name: Resolve chain key from manifest
         id: resolve-chain
         run: |
@@ -221,8 +215,14 @@ jobs:
           echo "chain_key=$CHAIN_KEY" >> "$GITHUB_OUTPUT"
           echo "Resolved chain key: $CHAIN_KEY"
 
+      - name: Generate NFT static metadata and images
+        run: |
+          node scripts/generate-nft-assets.js \
+            --env "$DEPLOY_ENV" \
+            --force
+
       - name: Upload generated NFT assets
-        if: always()
+        if: always() && steps.resolve-chain.outputs.chain_key != ''
         uses: actions/upload-artifact@v4
         with:
           name: nft-generated-${{ needs.resolve-environment.outputs.deploy_env }}-${{ needs.resolve-environment.outputs.tag }}

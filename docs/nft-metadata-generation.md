@@ -510,6 +510,7 @@ Before publishing a release:
 - [ ] `node scripts/validate-nft-assets.js --env {env}` passes with no errors
 - [ ] `deployments/config/{env}/nft-manifest.json` exists and contains a valid `chainKey`
 - [ ] All source images referenced by the manifest exist under `nft-assets/source-images/{theme}/`
+- [ ] `nft-assets/images/collection.png` exists (used as the collection image in `contract/collection.json`; missing file causes a 404 for the collection image URL after deployment)
 - [ ] `baseImageUri` and `baseMetadataUri` in the manifest point to the correct chain-specific paths
 
 ---
