@@ -119,7 +119,7 @@ When a GitHub Release is published, the `release-deploy.yml` workflow:
 2. **Validates NFT assets** (`validate-assets` job):
    - Validates manifests, images, and source structure. No secrets required.
 3. **Generates NFT static metadata** (`generate-nft-assets` job):
-   - Runs `node scripts/generate-nft-assets.js --env {deploy_env} --force` to produce the
+   - Runs `node scripts/generate-nft-assets.js --env {env} --force` to produce the
      chain-specific output tree under `nft-assets/{chainKey}/`.
    - Uploads the generated output as a build artifact (`nft-generated-{env}-{tag}`).
 4. **Deploys NFT assets** (`deploy-metadata` job):

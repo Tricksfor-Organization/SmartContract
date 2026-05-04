@@ -208,7 +208,7 @@ jobs:
           MANIFEST_PATH="deployments/config/${DEPLOY_ENV}/nft-manifest.json"
           if [[ ! -f "$MANIFEST_PATH" ]]; then
             echo "::error::Deployment manifest not found: $MANIFEST_PATH"
-            echo "::error::Create deployments/config/${DEPLOY_ENV}/nft-manifest.json before deploying. See docs/nft-metadata-generation.md."
+            echo "::error::Create deployments/config/${DEPLOY_ENV}/nft-manifest.json before deploying. See docs/nft-asset-manifest-spec.md and docs/nft-metadata-generation.md."
             exit 1
           fi
 
