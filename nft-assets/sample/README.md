@@ -27,7 +27,7 @@ is treated as final.
 ## Token ID Allocation
 
 Token IDs follow the deterministic allocation algorithm documented in
-[`docs/nft-token-allocation-spec.md`](../docs/nft-token-allocation-spec.md).
+[`docs/nft-token-allocation-spec.md`](../../docs/nft-token-allocation-spec.md).
 
 For the Coin theme on any chain, the allocation is:
 
@@ -170,7 +170,7 @@ globally consistent token IDs (IDs remain 1–200, matching the full-collection 
 ## Relation to Full Generated Output
 
 This sample is a strict subset of the full generated output at
-[`nft-assets/generated/`](../generated/README.md). Every file in this sample directory
+[`nft-assets/generated/`](../generated/). Every file in this sample directory
 is byte-for-byte identical to the corresponding file in
 `nft-assets/generated/ethereum/metadata/`.
 

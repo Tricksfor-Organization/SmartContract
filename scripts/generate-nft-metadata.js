@@ -259,14 +259,19 @@ function loadManifest(manifestPath) {
 // ---------------------------------------------------------------------------
 
 /**
- * Generates the full 600-entry token array for a chain using the deterministic
- * allocation algorithm: theme (coin→dice→rps) → tier (2x→3x→5x) → option.
+ * Generates token entries for a chain using the deterministic allocation algorithm:
+ * theme (coin→dice→rps) → tier (2x→3x→5x) → option.
+ *
+ * Without a theme filter this returns all 600 entries. When themeFilter is set,
+ * only the entries belonging to that theme are returned (200 for coin/rps,
+ * 200 for dice), but the nextId counter still advances across all themes so token
+ * IDs remain globally consistent with the full-collection ordering.
  *
  * @param {string}      chainKey    - Chain identifier (e.g. 'polygon')
  * @param {string|null} themeFilter - When set, only tokens belonging to this theme are returned;
  *                                    token IDs still follow full-collection ordering so they
  *                                    remain globally consistent.
- * @returns {object[]}              - Array of token entry objects
+ * @returns {object[]}              - Array of token entry objects (up to 600)
  */
 function generateTokenEntries(chainKey, themeFilter = null) {
   const tokens = [];
