@@ -301,7 +301,7 @@ function validateOneToken(tokenId, meta, chainKey, report) {
   }
 
   if (!Array.isArray(meta.attributes)) {
-    report.error(`[${chainKey}] ${fileName}: "attributes" must be a non-empty array`);
+    report.error(`[${chainKey}] ${fileName}: "attributes" must be an array`);
     return null;
   }
 
