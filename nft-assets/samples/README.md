@@ -47,8 +47,9 @@ Each file follows the OpenSea metadata standard with the four required Tricksfor
 }
 ```
 
-Image URLs use `ethereum` as the representative chain key. The full collection will use the
-appropriate chain key (`polygon`, `bsc`, `avalanche`, `optimism`) for each deployment.
+Image URLs use `ethereum` as the representative chain key. The full collection uses the
+appropriate chain key for each deployment — one of: `ethereum`, `polygon`, `bsc`, `avalanche`,
+`optimism`.
 
 ---
 
