@@ -65,6 +65,29 @@ Token IDs follow the deterministic layout from [`docs/nft-token-allocation-spec.
 
 ---
 
+## Collection Metadata Samples
+
+The `contract/` subdirectory contains one sample collection metadata JSON per supported chain.
+These represent the shape of the JSON document returned by `contractURI()` and served from
+`https://nft.tricksfor.com/{chainKey}/contract/collection.json` on Cloudflare Pages.
+
+| File | Collection name | `contractURI()` URL |
+|---|---|---|
+| [`contract/ethereum.json`](contract/ethereum.json) | `Tricksfor Boosters - Ethereum` | `https://nft.tricksfor.com/ethereum/contract/collection.json` |
+| [`contract/polygon.json`](contract/polygon.json) | `Tricksfor Boosters - Polygon` | `https://nft.tricksfor.com/polygon/contract/collection.json` |
+| [`contract/optimism.json`](contract/optimism.json) | `Tricksfor Boosters - Optimism` | `https://nft.tricksfor.com/optimism/contract/collection.json` |
+| [`contract/bsc.json`](contract/bsc.json) | `Tricksfor Boosters - BSC` | `https://nft.tricksfor.com/bsc/contract/collection.json` |
+| [`contract/avalanche.json`](contract/avalanche.json) | `Tricksfor Boosters - Avalanche` | `https://nft.tricksfor.com/avalanche/contract/collection.json` |
+
+Fields that are **identical across all chains**: `description`, `external_link`, `seller_fee_basis_points`.
+Fields that are **chain-specific**: `name`, `image`.
+
+> **⚠ Important:** The `fee_recipient` field in each sample contains the placeholder value
+> `0xREPLACE_WITH_ROYALTY_RECIPIENT_ADDRESS`. Replace it with the actual royalty recipient
+> address before publishing. Using the zero address causes royalties to be permanently lost.
+
+---
+
 ## Related Documents
 
 | Document | Description |
@@ -73,3 +96,4 @@ Token IDs follow the deterministic layout from [`docs/nft-token-allocation-spec.
 | [`docs/nft-copy-spec.md`](../../docs/nft-copy-spec.md) | Authoritative token name and description templates |
 | [`docs/nft-token-allocation-spec.md`](../../docs/nft-token-allocation-spec.md) | Deterministic token ID allocation rules |
 | [`nft-assets/sample/`](../sample/) | Full Coin-theme Ethereum validation sample (200 tokens) |
+| [`docs/metadata/README.md`](../../docs/metadata/README.md) | Collection and token metadata format overview |

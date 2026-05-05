@@ -20,9 +20,28 @@ The collection name follows the pattern `Tricksfor Boosters - {Chain}` (e.g. `Tr
 
 See [`contract-example.json`](contract-example.json) for a reference collection metadata document returned by `contractURI()`.
 
+### `contractURI()` per chain
+
+The table below lists the `contractURI()` URL and the chain-specific fields for each supported deployment.
+`description`, `external_link`, and `seller_fee_basis_points` are identical across all chains.
+
+| Chain | `contractURI()` URL | Collection `name` | Collection `image` |
+|---|---|---|---|
+| Ethereum | `https://nft.tricksfor.com/ethereum/contract/collection.json` | `Tricksfor Boosters - Ethereum` | `https://nft.tricksfor.com/ethereum/images/collection.png` |
+| Polygon | `https://nft.tricksfor.com/polygon/contract/collection.json` | `Tricksfor Boosters - Polygon` | `https://nft.tricksfor.com/polygon/images/collection.png` |
+| Optimism | `https://nft.tricksfor.com/optimism/contract/collection.json` | `Tricksfor Boosters - Optimism` | `https://nft.tricksfor.com/optimism/images/collection.png` |
+| BSC | `https://nft.tricksfor.com/bsc/contract/collection.json` | `Tricksfor Boosters - BSC` | `https://nft.tricksfor.com/bsc/images/collection.png` |
+| Avalanche | `https://nft.tricksfor.com/avalanche/contract/collection.json` | `Tricksfor Boosters - Avalanche` | `https://nft.tricksfor.com/avalanche/images/collection.png` |
+
+The files are intended for Cloudflare Pages hosting. `TricksforBoosterNFT.setContractURI()` (admin-only)
+sets the URI returned by `contractURI()` to the appropriate chain-specific URL at deployment time.
+
 > **Note:** Replace `0xREPLACE_WITH_ROYALTY_RECIPIENT_ADDRESS` in `contract-example.json` with the actual royalty recipient address before publishing. Using the zero address causes royalties to be permanently lost.
 
 > **Warning:** `collection-example.json` is a legacy alias for the same format and is kept only for historical reference. It may still contain an unsafe zero `fee_recipient`, so do **not** copy it as-is for production use. Prefer `contract-example.json` and replace the royalty recipient placeholder before publishing.
+
+Chain-specific sample collection metadata files ready for review are in
+[`nft-assets/samples/contract/`](../../nft-assets/samples/contract/).
 
 ## Attribute Schema
 
