@@ -40,6 +40,17 @@ npm run generate-assets -- --all-mainnet --force
 node scripts/generate-nft-metadata.js --chain polygon
 ```
 
+### Related npm scripts
+
+| Command | Description |
+|---|---|
+| `npm run generate-assets` | **Primary entry point** — standalone generator; writes to `nft-assets/generated/` |
+| `npm run generate:metadata` | Backward-compatible alias for `generate-assets` (same script) |
+| `npm run generate:assets` | Release-pipeline generator — writes to `nft-assets/{chain}/` and copies images; used by CI |
+
+Use `generate-assets` (or `generate:metadata`) for contributor and review workflows.  
+Use `generate:assets` only for the release pipeline (requires a deployment manifest and source images).
+
 ---
 
 ## 2. Output Structure
@@ -127,7 +138,7 @@ Works with any manifest file that conforms to `docs/nft-asset-manifest-spec.md`.
 npm run generate-assets -- --all-mainnet --force
 ```
 
-Generates 600 metadata files per chain (3 000 total) across all 5 mainnet chains. `--force`
+Generates 600 metadata files per chain (3,000 total) across all 5 mainnet chains. `--force`
 is required when output files already exist.
 
 ### Preview without writing files
