@@ -1,0 +1,344 @@
+{
+  "_version": "1.0",
+  "_description": "Reusable copy templates for Tricksfor Booster NFT metadata generation. See docs/nft-copy-spec.md for the authoritative copy rules these templates implement.",
+  "_note": "Template strings use {variable} placeholders. All variables must be resolved before embedding in generated output. See the 'variables' section for resolution rules and the 'lookupTables' section for display-name mappings.",
+
+  "templates": {
+
+    "tokenName": {
+      "template": "Tricksfor {themeDisplay} {optionDisplay} {multiplierDisplay} Booster #{tokenId}",
+      "description": "Per-token name. Follows nft-copy-spec.md § 4.1 naming pattern.",
+      "variables": ["themeDisplay", "optionDisplay", "multiplierDisplay", "tokenId"],
+      "notes": [
+        "The literal word 'Booster' and the '#' prefix are fixed parts of the template.",
+        "No punctuation between segments.",
+        "Rock Paper Scissors is never abbreviated to RPS here."
+      ]
+    },
+
+    "tokenDescription": {
+      "template": "A Tricksfor {themeDisplay} Booster NFT for the {optionDisplay} outcome. Stake this NFT to activate a {multiplierDisplay} reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+      "description": "Per-token description. Follows nft-copy-spec.md § 5.1. Single paragraph; no linebreaks in resolved output.",
+      "variables": ["themeDisplay", "optionDisplay", "multiplierDisplay"],
+      "notes": [
+        "tokenId and chainName are intentionally absent — the description is stable across token IDs and chains.",
+        "Reward settlement is off-chain and must not be referenced here.",
+        "Do not alter the wording. See nft-copy-spec.md § 5.2 for rationale."
+      ]
+    },
+
+    "collectionName": {
+      "template": "Tricksfor Boosters - {chainName}",
+      "description": "Per-chain collection name. Follows nft-copy-spec.md § 1.",
+      "variables": ["chainName"],
+      "notes": [
+        "Use the canonical short chain display name from lookupTables.chainDisplayMap (e.g. 'BSC', not 'BNB Smart Chain')."
+      ]
+    },
+
+    "collectionDescription": {
+      "template": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay.",
+      "description": "Fixed collection description used in collection.json (contractURI). No variable substitution required.",
+      "variables": [],
+      "notes": [
+        "This text is chain-independent and token-independent.",
+        "Used verbatim as the 'description' field in collection metadata output."
+      ]
+    }
+
+  },
+
+  "variables": {
+
+    "themeDisplay": {
+      "description": "User-facing theme display name used in token names and descriptions.",
+      "type": "string",
+      "source": "lookupTables.themeDisplayMap[token.theme]",
+      "requiredFor": ["tokenName", "tokenDescription"],
+      "examples": ["Coin", "Dice", "Rock Paper Scissors"]
+    },
+
+    "optionDisplay": {
+      "description": "User-facing option (variant) display name used in token names and descriptions.",
+      "type": "string",
+      "source": "lookupTables.optionDisplayMap[token.variant]",
+      "requiredFor": ["tokenName", "tokenDescription"],
+      "examples": ["Heads", "Tails", "1", "2", "3", "4", "5", "6", "Rock", "Paper", "Scissors"]
+    },
+
+    "multiplierDisplay": {
+      "description": "Multiplier label used in token names and descriptions (e.g. '2x'). Equal to the token's canonical tier identifier.",
+      "type": "string",
+      "source": "token.tier",
+      "requiredFor": ["tokenName", "tokenDescription"],
+      "examples": ["2x", "3x", "5x"]
+    },
+
+    "tierDisplay": {
+      "description": "Full booster tier label used in the 'Booster' metadata attribute (e.g. '2x Booster'). Not used directly in name/description templates — the word 'Booster' is literal text in those templates.",
+      "type": "string",
+      "source": "lookupTables.tierDisplayMap[token.tier]",
+      "requiredFor": [],
+      "usedIn": ["metadata attribute: Booster"],
+      "examples": ["2x Booster", "3x Booster", "5x Booster"]
+    },
+
+    "tokenId": {
+      "description": "On-chain token ID. Positive integer, 1–600. No zero-padding.",
+      "type": "integer",
+      "source": "token.tokenId",
+      "requiredFor": ["tokenName"],
+      "examples": [1, 51, 186, 201, 278, 395, 401, 468, 423]
+    },
+
+    "chainName": {
+      "description": "User-facing chain display name used in the collection name.",
+      "type": "string",
+      "source": "lookupTables.chainDisplayMap[manifest.chainKey]",
+      "requiredFor": ["collectionName"],
+      "examples": ["Ethereum", "Polygon", "BSC", "Avalanche", "Optimism"]
+    },
+
+    "collectionName": {
+      "description": "Full collection name for the chain, used in per-token manifest fields and collection metadata.",
+      "type": "string",
+      "source": "lookupTables.chainCollectionMap[manifest.chainKey]",
+      "requiredFor": [],
+      "notes": "This is itself a resolved output of the collectionName template, stored as a convenience value in manifests.",
+      "examples": [
+        "Tricksfor Boosters - Ethereum",
+        "Tricksfor Boosters - Polygon",
+        "Tricksfor Boosters - BSC",
+        "Tricksfor Boosters - Avalanche",
+        "Tricksfor Boosters - Optimism"
+      ]
+    }
+
+  },
+
+  "lookupTables": {
+
+    "themeDisplayMap": {
+      "_description": "Maps canonical theme identifier → user-facing display name. Mirrors THEME_TO_GAME in generate-nft-metadata.js.",
+      "coin": "Coin",
+      "dice": "Dice",
+      "rps":  "Rock Paper Scissors"
+    },
+
+    "optionDisplayMap": {
+      "_description": "Maps canonical variant identifier → user-facing option display name. Mirrors VARIANT_TO_OPTION in generate-nft-metadata.js.",
+      "heads":    "Heads",
+      "tails":    "Tails",
+      "1":        "1",
+      "2":        "2",
+      "3":        "3",
+      "4":        "4",
+      "5":        "5",
+      "6":        "6",
+      "rock":     "Rock",
+      "paper":    "Paper",
+      "scissors": "Scissors"
+    },
+
+    "tierDisplayMap": {
+      "_description": "Maps canonical tier identifier → full booster tier label used in the 'Booster' metadata attribute. Mirrors TIER_TO_BOOSTER in generate-nft-metadata.js.",
+      "2x": "2x Booster",
+      "3x": "3x Booster",
+      "5x": "5x Booster"
+    },
+
+    "chainDisplayMap": {
+      "_description": "Maps chainKey → short user-facing chain display name used in the collectionName template. Use the short canonical name (e.g. 'BSC', not 'BNB Smart Chain').",
+      "ethereum":  "Ethereum",
+      "polygon":   "Polygon",
+      "bsc":       "BSC",
+      "avalanche": "Avalanche",
+      "optimism":  "Optimism"
+    },
+
+    "chainCollectionMap": {
+      "_description": "Maps chainKey → resolved collection name. This is the pre-resolved output of the collectionName template for each supported chain.",
+      "ethereum":  "Tricksfor Boosters - Ethereum",
+      "polygon":   "Tricksfor Boosters - Polygon",
+      "bsc":       "Tricksfor Boosters - BSC",
+      "avalanche": "Tricksfor Boosters - Avalanche",
+      "optimism":  "Tricksfor Boosters - Optimism"
+    }
+
+  },
+
+  "samples": [
+
+    {
+      "label": "Coin — Heads — 2x Booster (token #1, Ethereum)",
+      "inputs": {
+        "themeDisplay":    "Coin",
+        "optionDisplay":   "Heads",
+        "multiplierDisplay": "2x",
+        "tierDisplay":     "2x Booster",
+        "tokenId":         1,
+        "chainName":       "Ethereum",
+        "collectionName":  "Tricksfor Boosters - Ethereum"
+      },
+      "resolved": {
+        "tokenName":           "Tricksfor Coin Heads 2x Booster #1",
+        "tokenDescription":    "A Tricksfor Coin Booster NFT for the Heads outcome. Stake this NFT to activate a 2x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+        "collectionName":      "Tricksfor Boosters - Ethereum",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
+      }
+    },
+
+    {
+      "label": "Coin — Tails — 3x Booster (token #136, Polygon)",
+      "inputs": {
+        "themeDisplay":    "Coin",
+        "optionDisplay":   "Tails",
+        "multiplierDisplay": "3x",
+        "tierDisplay":     "3x Booster",
+        "tokenId":         136,
+        "chainName":       "Polygon",
+        "collectionName":  "Tricksfor Boosters - Polygon"
+      },
+      "resolved": {
+        "tokenName":        "Tricksfor Coin Tails 3x Booster #136",
+        "tokenDescription": "A Tricksfor Coin Booster NFT for the Tails outcome. Stake this NFT to activate a 3x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+        "collectionName":   "Tricksfor Boosters - Polygon",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
+      }
+    },
+
+    {
+      "label": "Coin — Heads — 5x Booster (token #186, BSC)",
+      "inputs": {
+        "themeDisplay":    "Coin",
+        "optionDisplay":   "Heads",
+        "multiplierDisplay": "5x",
+        "tierDisplay":     "5x Booster",
+        "tokenId":         186,
+        "chainName":       "BSC",
+        "collectionName":  "Tricksfor Boosters - BSC"
+      },
+      "resolved": {
+        "tokenName":        "Tricksfor Coin Heads 5x Booster #186",
+        "tokenDescription": "A Tricksfor Coin Booster NFT for the Heads outcome. Stake this NFT to activate a 5x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+        "collectionName":   "Tricksfor Boosters - BSC",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
+      }
+    },
+
+    {
+      "label": "Dice — 1 — 2x Booster (token #201, Avalanche)",
+      "inputs": {
+        "themeDisplay":    "Dice",
+        "optionDisplay":   "1",
+        "multiplierDisplay": "2x",
+        "tierDisplay":     "2x Booster",
+        "tokenId":         201,
+        "chainName":       "Avalanche",
+        "collectionName":  "Tricksfor Boosters - Avalanche"
+      },
+      "resolved": {
+        "tokenName":        "Tricksfor Dice 1 2x Booster #201",
+        "tokenDescription": "A Tricksfor Dice Booster NFT for the 1 outcome. Stake this NFT to activate a 2x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+        "collectionName":   "Tricksfor Boosters - Avalanche",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
+      }
+    },
+
+    {
+      "label": "Dice — 6 — 3x Booster (token #360, Optimism)",
+      "inputs": {
+        "themeDisplay":    "Dice",
+        "optionDisplay":   "6",
+        "multiplierDisplay": "3x",
+        "tierDisplay":     "3x Booster",
+        "tokenId":         360,
+        "chainName":       "Optimism",
+        "collectionName":  "Tricksfor Boosters - Optimism"
+      },
+      "resolved": {
+        "tokenName":        "Tricksfor Dice 6 3x Booster #360",
+        "tokenDescription": "A Tricksfor Dice Booster NFT for the 6 outcome. Stake this NFT to activate a 3x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+        "collectionName":   "Tricksfor Boosters - Optimism",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
+      }
+    },
+
+    {
+      "label": "Dice — 3 — 5x Booster (token #395, Ethereum)",
+      "inputs": {
+        "themeDisplay":    "Dice",
+        "optionDisplay":   "3",
+        "multiplierDisplay": "5x",
+        "tierDisplay":     "5x Booster",
+        "tokenId":         395,
+        "chainName":       "Ethereum",
+        "collectionName":  "Tricksfor Boosters - Ethereum"
+      },
+      "resolved": {
+        "tokenName":        "Tricksfor Dice 3 5x Booster #395",
+        "tokenDescription": "A Tricksfor Dice Booster NFT for the 3 outcome. Stake this NFT to activate a 5x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+        "collectionName":   "Tricksfor Boosters - Ethereum",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
+      }
+    },
+
+    {
+      "label": "Rock Paper Scissors — Rock — 2x Booster (token #401, Ethereum)",
+      "inputs": {
+        "themeDisplay":    "Rock Paper Scissors",
+        "optionDisplay":   "Rock",
+        "multiplierDisplay": "2x",
+        "tierDisplay":     "2x Booster",
+        "tokenId":         401,
+        "chainName":       "Ethereum",
+        "collectionName":  "Tricksfor Boosters - Ethereum"
+      },
+      "resolved": {
+        "tokenName":        "Tricksfor Rock Paper Scissors Rock 2x Booster #401",
+        "tokenDescription": "A Tricksfor Rock Paper Scissors Booster NFT for the Rock outcome. Stake this NFT to activate a 2x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+        "collectionName":   "Tricksfor Boosters - Ethereum",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
+      }
+    },
+
+    {
+      "label": "Rock Paper Scissors — Paper — 3x Booster (token #525, Polygon)",
+      "inputs": {
+        "themeDisplay":    "Rock Paper Scissors",
+        "optionDisplay":   "Paper",
+        "multiplierDisplay": "3x",
+        "tierDisplay":     "3x Booster",
+        "tokenId":         525,
+        "chainName":       "Polygon",
+        "collectionName":  "Tricksfor Boosters - Polygon"
+      },
+      "resolved": {
+        "tokenName":        "Tricksfor Rock Paper Scissors Paper 3x Booster #525",
+        "tokenDescription": "A Tricksfor Rock Paper Scissors Booster NFT for the Paper outcome. Stake this NFT to activate a 3x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+        "collectionName":   "Tricksfor Boosters - Polygon",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
+      }
+    },
+
+    {
+      "label": "Rock Paper Scissors — Scissors — 5x Booster (token #591, BSC)",
+      "inputs": {
+        "themeDisplay":    "Rock Paper Scissors",
+        "optionDisplay":   "Scissors",
+        "multiplierDisplay": "5x",
+        "tierDisplay":     "5x Booster",
+        "tokenId":         591,
+        "chainName":       "BSC",
+        "collectionName":  "Tricksfor Boosters - BSC"
+      },
+      "resolved": {
+        "tokenName":        "Tricksfor Rock Paper Scissors Scissors 5x Booster #591",
+        "tokenDescription": "A Tricksfor Rock Paper Scissors Booster NFT for the Scissors outcome. Stake this NFT to activate a 5x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
+        "collectionName":   "Tricksfor Boosters - BSC",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
+      }
+    }
+
+  ]
+}
