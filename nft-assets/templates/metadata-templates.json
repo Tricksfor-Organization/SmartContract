@@ -189,20 +189,21 @@
     },
 
     {
-      "label": "Coin — Tails — 3x Booster (token #51, Polygon)",
+      "label": "Coin — Tails — 3x Booster (token #136, Polygon)",
       "inputs": {
         "themeDisplay":    "Coin",
         "optionDisplay":   "Tails",
         "multiplierDisplay": "3x",
         "tierDisplay":     "3x Booster",
-        "tokenId":         51,
+        "tokenId":         136,
         "chainName":       "Polygon",
         "collectionName":  "Tricksfor Boosters - Polygon"
       },
       "resolved": {
-        "tokenName":        "Tricksfor Coin Tails 3x Booster #51",
+        "tokenName":        "Tricksfor Coin Tails 3x Booster #136",
         "tokenDescription": "A Tricksfor Coin Booster NFT for the Tails outcome. Stake this NFT to activate a 3x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
-        "collectionName":   "Tricksfor Boosters - Polygon"
+        "collectionName":   "Tricksfor Boosters - Polygon",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
       }
     },
 
@@ -220,7 +221,8 @@
       "resolved": {
         "tokenName":        "Tricksfor Coin Heads 5x Booster #186",
         "tokenDescription": "A Tricksfor Coin Booster NFT for the Heads outcome. Stake this NFT to activate a 5x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
-        "collectionName":   "Tricksfor Boosters - BSC"
+        "collectionName":   "Tricksfor Boosters - BSC",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
       }
     },
 
@@ -238,25 +240,27 @@
       "resolved": {
         "tokenName":        "Tricksfor Dice 1 2x Booster #201",
         "tokenDescription": "A Tricksfor Dice Booster NFT for the 1 outcome. Stake this NFT to activate a 2x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
-        "collectionName":   "Tricksfor Boosters - Avalanche"
+        "collectionName":   "Tricksfor Boosters - Avalanche",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
       }
     },
 
     {
-      "label": "Dice — 6 — 3x Booster (token #278, Optimism)",
+      "label": "Dice — 6 — 3x Booster (token #360, Optimism)",
       "inputs": {
         "themeDisplay":    "Dice",
         "optionDisplay":   "6",
         "multiplierDisplay": "3x",
         "tierDisplay":     "3x Booster",
-        "tokenId":         278,
+        "tokenId":         360,
         "chainName":       "Optimism",
         "collectionName":  "Tricksfor Boosters - Optimism"
       },
       "resolved": {
-        "tokenName":        "Tricksfor Dice 6 3x Booster #278",
+        "tokenName":        "Tricksfor Dice 6 3x Booster #360",
         "tokenDescription": "A Tricksfor Dice Booster NFT for the 6 outcome. Stake this NFT to activate a 3x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
-        "collectionName":   "Tricksfor Boosters - Optimism"
+        "collectionName":   "Tricksfor Boosters - Optimism",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
       }
     },
 
@@ -274,7 +278,8 @@
       "resolved": {
         "tokenName":        "Tricksfor Dice 3 5x Booster #395",
         "tokenDescription": "A Tricksfor Dice Booster NFT for the 3 outcome. Stake this NFT to activate a 5x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
-        "collectionName":   "Tricksfor Boosters - Ethereum"
+        "collectionName":   "Tricksfor Boosters - Ethereum",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
       }
     },
 
@@ -292,43 +297,46 @@
       "resolved": {
         "tokenName":        "Tricksfor Rock Paper Scissors Rock 2x Booster #401",
         "tokenDescription": "A Tricksfor Rock Paper Scissors Booster NFT for the Rock outcome. Stake this NFT to activate a 2x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
-        "collectionName":   "Tricksfor Boosters - Ethereum"
+        "collectionName":   "Tricksfor Boosters - Ethereum",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
       }
     },
 
     {
-      "label": "Rock Paper Scissors — Paper — 3x Booster (token #468, Polygon)",
+      "label": "Rock Paper Scissors — Paper — 3x Booster (token #525, Polygon)",
       "inputs": {
         "themeDisplay":    "Rock Paper Scissors",
         "optionDisplay":   "Paper",
         "multiplierDisplay": "3x",
         "tierDisplay":     "3x Booster",
-        "tokenId":         468,
+        "tokenId":         525,
         "chainName":       "Polygon",
         "collectionName":  "Tricksfor Boosters - Polygon"
       },
       "resolved": {
-        "tokenName":        "Tricksfor Rock Paper Scissors Paper 3x Booster #468",
+        "tokenName":        "Tricksfor Rock Paper Scissors Paper 3x Booster #525",
         "tokenDescription": "A Tricksfor Rock Paper Scissors Booster NFT for the Paper outcome. Stake this NFT to activate a 3x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
-        "collectionName":   "Tricksfor Boosters - Polygon"
+        "collectionName":   "Tricksfor Boosters - Polygon",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
       }
     },
 
     {
-      "label": "Rock Paper Scissors — Scissors — 5x Booster (token #423, BSC)",
+      "label": "Rock Paper Scissors — Scissors — 5x Booster (token #591, BSC)",
       "inputs": {
         "themeDisplay":    "Rock Paper Scissors",
         "optionDisplay":   "Scissors",
         "multiplierDisplay": "5x",
         "tierDisplay":     "5x Booster",
-        "tokenId":         423,
+        "tokenId":         591,
         "chainName":       "BSC",
         "collectionName":  "Tricksfor Boosters - BSC"
       },
       "resolved": {
-        "tokenName":        "Tricksfor Rock Paper Scissors Scissors 5x Booster #423",
+        "tokenName":        "Tricksfor Rock Paper Scissors Scissors 5x Booster #591",
         "tokenDescription": "A Tricksfor Rock Paper Scissors Booster NFT for the Scissors outcome. Stake this NFT to activate a 5x reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.",
-        "collectionName":   "Tricksfor Boosters - BSC"
+        "collectionName":   "Tricksfor Boosters - BSC",
+        "collectionDescription": "Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay."
       }
     }
 
