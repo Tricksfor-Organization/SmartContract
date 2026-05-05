@@ -68,8 +68,10 @@ Token IDs follow the deterministic layout from [`docs/nft-token-allocation-spec.
 ## Collection Metadata Samples
 
 The `contract/` subdirectory contains one sample collection metadata JSON per supported chain.
-These represent the shape of the JSON document returned by `contractURI()` and served from
-`https://nft.tricksfor.com/{chainKey}/contract/collection.json` on Cloudflare Pages.
+These are **review/draft samples** that show the intended shape of the JSON document returned by
+`contractURI()`. They may not be identical to the files currently served from
+`https://nft.tricksfor.com/{chainKey}/contract/collection.json` — the deployed `collection.json`
+files under `nft-assets/{chainKey}/contract/` are the live source for each chain.
 
 | File | Collection name | `contractURI()` URL |
 |---|---|---|

@@ -36,7 +36,7 @@ The table below lists the `contractURI()` URL and the chain-specific fields for 
 The files are intended for Cloudflare Pages hosting. `TricksforBoosterNFT.setContractURI()` (admin-only)
 sets the URI returned by `contractURI()` to the appropriate chain-specific URL at deployment time.
 
-> **Note:** Replace `0xREPLACE_WITH_ROYALTY_RECIPIENT_ADDRESS` in `contract-example.json` with the actual royalty recipient address before publishing. Using the zero address causes royalties to be permanently lost.
+> **Note:** Replace `0xREPLACE_WITH_ROYALTY_RECIPIENT_ADDRESS` in `contract-example.json` **and in every file under `nft-assets/samples/contract/`** with the actual royalty recipient address before publishing. Using the zero address causes royalties to be permanently lost.
 
 > **Warning:** `collection-example.json` is a legacy alias for the same format and is kept only for historical reference. It may still contain an unsafe zero `fee_recipient`, so do **not** copy it as-is for production use. Prefer `contract-example.json` and replace the royalty recipient placeholder before publishing.
 
