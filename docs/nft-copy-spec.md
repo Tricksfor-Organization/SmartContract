@@ -403,3 +403,102 @@ attribute schema.
 | [`docs/nft-assets-spec.md`](nft-assets-spec.md) | Asset taxonomy, token ID mapping, and static file layout |
 | [`docs/nft-asset-manifest-spec.md`](nft-asset-manifest-spec.md) | Manifest format and description template variable reference |
 | [`docs/metadata/token-example.json`](metadata/token-example.json) | Reference token metadata JSON |
+| [`nft-assets/templates/metadata-templates.json`](../nft-assets/templates/metadata-templates.json) | Machine-readable template definitions, resolver variable spec, and sample resolved outputs |
+
+---
+
+## 9. Resolver Variable Specification
+
+The machine-readable template file at
+[`nft-assets/templates/metadata-templates.json`](../nft-assets/templates/metadata-templates.json)
+defines the canonical template strings and the **resolver variables** used to substitute
+placeholders at generation time. This section documents those variables for implementors.
+
+### 9.1 Resolver variables
+
+The table below maps each resolver variable name to its source and the template(s) that require it.
+Variable names use camelCase to distinguish them from the `{Placeholder}` notation used in earlier
+sections of this document.
+
+| Variable | Type | Required for | Resolution rule |
+|---|---|---|---|
+| `themeDisplay` | string | `tokenName`, `tokenDescription` | `themeDisplayMap[token.theme]` (see § 9.2) |
+| `optionDisplay` | string | `tokenName`, `tokenDescription` | `optionDisplayMap[token.variant]` (see § 9.2) |
+| `multiplierDisplay` | string | `tokenName`, `tokenDescription` | `token.tier` (e.g. `"2x"`, `"3x"`, `"5x"`) |
+| `tierDisplay` | string | `Booster` attribute only | `tierDisplayMap[token.tier]` (e.g. `"2x Booster"`) |
+| `tokenId` | integer | `tokenName` | `token.tokenId` (no padding) |
+| `chainName` | string | `collectionName` | `chainDisplayMap[manifest.chainKey]` (see § 9.2) |
+| `collectionName` | string | manifest field | Resolved output of the `collectionName` template |
+
+**Note on `multiplierDisplay` vs `tierDisplay`:** `multiplierDisplay` is the bare multiplier
+value (`"2x"`) used inside template strings. `tierDisplay` is the full attribute label
+(`"2x Booster"`) used only in the `Booster` metadata attribute — it does not appear directly
+in the `tokenName` or `tokenDescription` templates because the word `Booster` is literal text
+in those templates.
+
+### 9.2 Lookup tables
+
+The lookup tables that back the resolution rules in § 9.1 are reproduced below. They are
+also embedded in `nft-assets/templates/metadata-templates.json` as the `lookupTables` object
+and mirrored in `scripts/generate-nft-metadata.js`.
+
+#### `themeDisplayMap` — theme identifier → display name
+
+| `token.theme` | `themeDisplay` |
+|---|---|
+| `coin` | `Coin` |
+| `dice` | `Dice` |
+| `rps`  | `Rock Paper Scissors` |
+
+#### `optionDisplayMap` — variant identifier → display name
+
+| `token.variant` | `optionDisplay` |
+|---|---|
+| `heads`    | `Heads`    |
+| `tails`    | `Tails`    |
+| `1`–`6`    | `1`–`6`    |
+| `rock`     | `Rock`     |
+| `paper`    | `Paper`    |
+| `scissors` | `Scissors` |
+
+#### `tierDisplayMap` — tier identifier → full booster label
+
+| `token.tier` | `tierDisplay` |
+|---|---|
+| `2x` | `2x Booster` |
+| `3x` | `3x Booster` |
+| `5x` | `5x Booster` |
+
+#### `chainDisplayMap` — chainKey → chain display name
+
+| `manifest.chainKey` | `chainName` |
+|---|---|
+| `ethereum`  | `Ethereum`  |
+| `polygon`   | `Polygon`   |
+| `bsc`       | `BSC`       |
+| `avalanche` | `Avalanche` |
+| `optimism`  | `Optimism`  |
+
+### 9.3 Template strings (machine-readable form)
+
+The canonical template strings using resolver variable notation are:
+
+```
+tokenName:           Tricksfor {themeDisplay} {optionDisplay} {multiplierDisplay} Booster #{tokenId}
+tokenDescription:    A Tricksfor {themeDisplay} Booster NFT for the {optionDisplay} outcome. Stake this NFT to activate a {multiplierDisplay} reward boost during eligible Tricksfor gameplay. An unstaked Booster confers no in-game advantage. Subject to platform rules.
+collectionName:      Tricksfor Boosters - {chainName}
+collectionDescription: Tricksfor Booster NFTs are in-game items that activate a reward boost when staked. Stake your Booster to earn enhanced rewards during gameplay.
+```
+
+The human-readable placeholder notation used in earlier sections (`{Game}`, `{Option}`,
+`{multiplier}`) maps to resolver variables as follows:
+
+| Spec notation | Resolver variable |
+|---|---|
+| `{Game}` | `themeDisplay` |
+| `{Option}` | `optionDisplay` |
+| `{multiplier}` | `multiplierDisplay` |
+| `{tokenId}` | `tokenId` |
+
+Sample resolved outputs for all three themes and all tiers are provided in
+`nft-assets/templates/metadata-templates.json` under the `samples` key.
