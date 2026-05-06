@@ -103,10 +103,10 @@ automatically, then passes them as output variables to the `deploy-contracts` jo
 
 ---
 
-## Generating Static Assets
+## Generating Static Assets (release pipeline)
 
-Use `scripts/generate-nft-assets.js` to generate token metadata and collection metadata from
-an authoritative manifest:
+`scripts/generate-nft-assets.js` is used by the release pipeline to generate token metadata,
+collection metadata, and token images from an authoritative deployment manifest:
 
 ```bash
 # Generate from a deployment manifest
@@ -122,7 +122,7 @@ node scripts/generate-nft-assets.js --env ethereum-mainnet --dry-run
 node scripts/generate-nft-assets.js --env ethereum-mainnet --skip-images
 ```
 
-The script writes files to `nft-assets/{chainKey}/metadata/`, `nft-assets/{chainKey}/contract/`,
+This script writes files to `nft-assets/{chainKey}/metadata/`, `nft-assets/{chainKey}/contract/`,
 and `nft-assets/{chainKey}/images/`. It also prints the derived `BASE_TOKEN_URI` and
 `CONTRACT_URI` values for use in the contract deployment.
 
@@ -131,35 +131,32 @@ generation guide including the release workflow integration.
 
 ---
 
-## Standalone Metadata Generator
+## Generating Metadata (generate-assets)
 
-Use `scripts/generate-nft-metadata.js` to generate all 600 token metadata files per chain
-directly from the built-in token allocation rules — no pre-existing deployment manifest required.
+`generate-assets` is the primary entry point for producing token metadata and collection
+metadata into `nft-assets/generated/`. Run it with a chain name or a manifest file path:
 
 ```bash
 # Generate for a single chain
-node scripts/generate-nft-metadata.js --chain polygon
+npm run generate-assets -- --chain polygon
+
+# Generate from an approved manifest file
+npm run generate-assets -- --manifest nft-assets/manifests/polygon.full.json
 
 # Generate for all 5 mainnet chains at once
-node scripts/generate-nft-metadata.js --all-mainnet --force
+npm run generate-assets -- --all-mainnet --force
 
-# Generate for one chain, one theme only (token IDs remain globally consistent)
-node scripts/generate-nft-metadata.js --chain ethereum --theme coin --output nft-assets/sample --force
-
-# Load chain config from an approved manifest file
-node scripts/generate-nft-metadata.js --manifest nft-assets/manifests/ethereum.sample.json
-
-# npm shortcut
-npm run generate:metadata -- --all-mainnet --force
+# Dry-run (preview what would be written without creating files)
+npm run generate-assets -- --chain ethereum --dry-run
 ```
 
-The script writes files to `nft-assets/generated/{chainKey}/metadata/` and
-`nft-assets/generated/{chainKey}/contract/`. It also writes `_redirects` and `_headers`
-into `nft-assets/generated/` so the directory is self-contained and deployable to Cloudflare
-Pages (set the build output directory to `nft-assets/generated/`).
+Output is written to `nft-assets/generated/{chainKey}/metadata/` and
+`nft-assets/generated/{chainKey}/contract/`. The `_redirects` and `_headers` files are also
+written into `nft-assets/generated/` so the directory is self-contained and deployable to
+Cloudflare Pages (set the build output directory to `nft-assets/generated/`).
 
-See [`docs/nft-metadata-generation.md` § 5](../docs/nft-metadata-generation.md#5-standalone-metadata-generator)
-for the full option reference.
+See [`docs/generate-assets.md`](../docs/generate-assets.md) for the full option reference,
+CI integration guide, and example output.
 
 ---
 
