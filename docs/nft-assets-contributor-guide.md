@@ -67,7 +67,9 @@ The `sourceImage` field in every manifest token entry stores the relative path f
    nft-assets/source-images/{theme}/{variant}-{tier}.png
    ```
 3. Commit the file. No manifest changes are required for a straight image replacement.
-4. Run `npm run validate:assets` to confirm the file is found by the validator.
+4. Run `npm run validate:assets -- --env {env}` (or `--manifest ...`) to confirm the file is
+   found by the validator. Running without `--env`/`--manifest` skips source-image existence
+   checks because those checks are driven by manifest `sourceImage` references.
 5. Regenerate metadata with `--force` (see [§ 3](#3-generation)) to distribute the updated
    image across all token slots.
 
@@ -86,14 +88,14 @@ All 33 source image slots must be present before running the release-pipeline ge
 | Type | Location | Purpose |
 |------|----------|---------|
 | **Authoritative deployment manifest** | `deployments/config/{env}/nft-manifest.json` | Single source of truth for a live or planned deployment. Used by CI to generate and validate output. |
-| **Chain-wide sample** | `nft-assets/manifests/{chainKey}.sample.json` | Format reference. Contains a representative subset of tokens. Not used by CI generation. |
-| **Theme-specific sample** | `nft-assets/manifests/{chainKey}.{theme}.sample.json` | Narrow format example for a single theme. |
+| **Full chain-wide sample** | `nft-assets/manifests/{chainKey}.sample.json` | Format reference containing all 600 tokens for one chain. No `_note` field — validators treat it as authoritative and run all consistency checks. Do not use as a deployment manifest; the `contract` address is the zero address. |
+| **Theme excerpt sample** | `nft-assets/manifests/{chainKey}.{theme}.sample.json` | Narrow format example for a single theme (e.g. `ethereum.dice.sample.json`). Contains a `_note` field and fewer tokens than `supply.total`; validators skip sequential-ID, theme-grouping, and source-image checks for these files. |
 | **Global template** | `nft-assets/manifests/global.sample.json` | Cross-chain template showing all 5 chains. |
 
 For any real deployment, edit or create the authoritative manifest at
-`deployments/config/{env}/nft-manifest.json`. Do not use sample manifests as deployment
-manifests — they carry a `"_note"` field and the validators skip full consistency checks for
-them.
+`deployments/config/{env}/nft-manifest.json`. Full chain-wide samples can be used as a
+complete field-by-field format reference, but they use the zero contract address and must
+not be deployed as-is.
 
 ### Manifest fields
 
@@ -115,14 +117,15 @@ them.
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `name` | ✅ | Token identifier matching the mint definition |
-| `displayName` | ✅ | Human-readable name: `Tricksfor {Game} {Option} {tier} Booster #{tokenId}` |
+| `tokenId` | ✅ | On-chain token ID (sequential from `1`) |
+| `displayName` | ✅ | Human-readable name: `Tricksfor {Game} {Option} {tier} Booster #{tokenId}` — becomes the `name` field in generated token metadata |
 | `theme` | ✅ | `coin`, `dice`, or `rps` |
 | `variant` | ✅ | Canonical variant key for the theme (see [§ 1](#1-source-images)) |
 | `tier` | ✅ | `2x`, `3x`, or `5x` |
 | `sourceImage` | ✅ | Relative path from `source-images/`: `{theme}/{variant}-{tier}.png` |
 | `imagePath` | ✅ | Output path: `images/{tokenId}.png` |
 | `metadataPath` | ✅ | Output path: `metadata/{tokenId}.json` |
+| `name` | optional | Legacy alias for `displayName`; present in some sample manifests but not required by the spec |
 | `description` | optional | Per-token description; falls back to `descriptionTemplate` if absent |
 | `collectionName` | optional | Collection display name |
 | `option` | optional | Display value of the variant (convenience field for generation scripts) |
@@ -135,8 +138,10 @@ them.
 3. Keep theme grouping order: all Coin tokens first (IDs 1–200), then Dice (201–400),
    then RPS (401–600).
 4. Ensure `supply.total` equals `supply.coin + supply.dice + supply.rps`.
-5. Run `npm run validate:assets -- --env {env}` to check the manifest against the
-   generated output. Fix any reported errors before proceeding.
+5. Run `npm run validate:assets -- --env {env}` to check the manifest structure and source
+   images against `nft-assets/`. To also check the generated metadata output, run
+   `npm run validate:output` separately (see [§ 4](#4-validation)). Fix any reported errors
+   before proceeding.
 6. Re-run generation if the manifest changes affect token metadata content
    (see [§ 3](#3-generation)).
 
@@ -367,22 +372,37 @@ catch unintended output drift.
 
 ### Which output folder is deployable
 
-The `nft-assets/generated/` directory is self-contained and deployable to Cloudflare Pages
-as-is. It contains the Cloudflare Pages configuration files (`_redirects`, `_headers`) alongside
-the chain-specific metadata trees.
+There are two deployable outputs depending on the context:
 
-Set the **build output directory** in your Cloudflare Pages project to `nft-assets/generated/`.
+**Contributor preview / standalone generator — `nft-assets/generated/`**
+
+The `nft-assets/generated/` directory is self-contained and deployable to Cloudflare Pages
+as-is. It contains its own `_redirects` and `_headers` files alongside the chain-specific
+metadata trees (no images). Use this directory when setting up a preview Pages project or
+reviewing generated output locally.
+
+Set the build output directory to `nft-assets/generated/` for a contributor preview project.
+
+**Release pipeline — `nft-assets/`**
+
+The release workflow (`deploy-metadata` job) deploys the `nft-assets/` root directory, which
+includes `nft-assets/_redirects`, `nft-assets/_headers`, and the per-chain trees
+`nft-assets/{chainKey}/metadata/`, `nft-assets/{chainKey}/images/`, and
+`nft-assets/{chainKey}/contract/` (populated by the `generate-nft-assets` job before
+deployment). This is the production deployment path.
 
 ### How chain-specific paths are structured
 
-Each chain has its own subdirectory under the Pages root:
+Both deployment roots follow the same chain-subdirectory layout:
+
+**`nft-assets/generated/`** (standalone/contributor preview):
 
 ```
 nft-assets/generated/
 ├── _redirects
 ├── _headers
 ├── ethereum/
-│   ├── metadata/          1.json … 600.json
+│   ├── metadata/          1.json ... 600.json
 │   └── contract/
 │       └── collection.json
 ├── polygon/
@@ -393,7 +413,27 @@ nft-assets/generated/
 └── optimism/
 ```
 
-After deployment, assets are served at `https://nft.tricksfor.com/{chainKey}/…`.
+**`nft-assets/`** (release pipeline — includes images):
+
+```
+nft-assets/
+├── _redirects
+├── _headers
+├── ethereum/
+│   ├── metadata/          1.json ... 600.json
+│   ├── images/            1.png ... 600.png
+│   └── contract/
+│       └── collection.json
+├── polygon/
+│   ├── metadata/
+│   ├── images/
+│   └── contract/
+├── bsc/
+├── avalanche/
+└── optimism/
+```
+
+After deployment, assets are served at `https://nft.tricksfor.com/{chainKey}/...`.
 
 The `_redirects` file rewrites extensionless requests to `.json` files so that
 `tokenURI(id) = {baseURI}{id}` (no `.json` suffix) resolves correctly:
@@ -521,10 +561,12 @@ deployment occurs — the release must be fixed and re-triggered.
 | Source images | `nft-assets/source-images/{theme}/{variant}-{tier}.png` |
 | Sample manifests | `nft-assets/manifests/` |
 | Authoritative deployment manifest | `deployments/config/{env}/nft-manifest.json` |
-| Generated metadata (contributor) | `nft-assets/generated/{chainKey}/metadata/{id}.json` |
-| Generated metadata (release) | `nft-assets/{chainKey}/metadata/{id}.json` |
-| Collection metadata | `nft-assets/generated/{chainKey}/contract/collection.json` |
-| Cloudflare Pages config | `nft-assets/generated/_redirects`, `nft-assets/generated/_headers` |
+| Generated metadata (contributor/standalone) | `nft-assets/generated/{chainKey}/metadata/{id}.json` |
+| Generated metadata (release pipeline) | `nft-assets/{chainKey}/metadata/{id}.json` |
+| Collection metadata (contributor/standalone) | `nft-assets/generated/{chainKey}/contract/collection.json` |
+| Collection metadata (release pipeline) | `nft-assets/{chainKey}/contract/collection.json` |
+| Cloudflare Pages config (contributor/standalone) | `nft-assets/generated/_redirects`, `nft-assets/generated/_headers` |
+| Cloudflare Pages config (release pipeline) | `nft-assets/_redirects`, `nft-assets/_headers` |
 
 ### Related documents
 
