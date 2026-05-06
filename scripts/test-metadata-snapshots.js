@@ -40,6 +40,7 @@ const {
   buildTokenMetadata,
   buildCollectionMetadata,
   generateTokenEntries,
+  CHAIN_CONFIGS,
 } = require('./generate-nft-metadata');
 
 // ---------------------------------------------------------------------------
@@ -47,12 +48,6 @@ const {
 // ---------------------------------------------------------------------------
 
 const SNAPSHOTS_DIR = path.join(__dirname, '../nft-assets/snapshots');
-
-/**
- * Domain used when constructing base image URIs for snapshot generation.
- * Must match the domain used when the golden files were created.
- */
-const NFT_DOMAIN = 'nft.tricksfor.com';
 
 /**
  * Snapshot test cases.
@@ -109,12 +104,18 @@ function parseArgs(argv) {
 // ---------------------------------------------------------------------------
 
 /**
- * Returns the base image URI for a given chain key.
+ * Returns the base image URI for a given chain key, derived from the canonical
+ * domain in CHAIN_CONFIGS so snapshot generation always matches the generator's
+ * own domain logic.
  * @param {string} chainKey
  * @returns {string}
  */
 function baseImageUri(chainKey) {
-  return `https://${NFT_DOMAIN}/${chainKey}/images/`;
+  const cfg = CHAIN_CONFIGS[chainKey];
+  if (!cfg) {
+    throw new Error(`Unknown chainKey "${chainKey}" — not present in CHAIN_CONFIGS`);
+  }
+  return `https://${cfg.domain}/${chainKey}/images/`;
 }
 
 /**
@@ -198,7 +199,7 @@ function collectDiffs(actual, expected, keyPath) {
     }
     const allKeys = new Set([...Object.keys(expected), ...Object.keys(actual)]);
     for (const k of allKeys) {
-      const nextPath = keyPath ? `${keyPath}.${k}` : k;
+      const nextPath = `${keyPath}.${k}`;
       if (!(k in expected)) {
         diffs.push(`${nextPath}: unexpected extra key with value ${JSON.stringify(actual[k])}`);
       } else if (!(k in actual)) {
@@ -291,7 +292,7 @@ function runTests() {
     }
 
     // 4. Deep-equal diff
-    const diffs = collectDiffs(generated, golden, '');
+    const diffs = collectDiffs(generated, golden, '<root>');
     if (diffs.length === 0) {
       console.log(`  ✓ PASS  ${label}`);
       passed++;
