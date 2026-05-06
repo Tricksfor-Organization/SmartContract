@@ -18,7 +18,8 @@
     "generate:metadata": "node scripts/generate-nft-metadata.js",
     "generate:sample": "node scripts/generate-nft-metadata.js --chain ethereum --theme coin --output nft-assets/sample --force",
     "validate:assets": "node scripts/validate-nft-assets.js",
-    "validate:output": "node scripts/validate-nft-output.js"
+    "validate:output": "node scripts/validate-nft-output.js",
+    "test:snapshots": "node scripts/test-metadata-snapshots.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

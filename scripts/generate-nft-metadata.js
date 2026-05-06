@@ -647,4 +647,19 @@ function main() {
   console.log(`${label}. Generated metadata for ${chainList.length} chain(s).`);
 }
 
-main();
+// ---------------------------------------------------------------------------
+// Module exports (for programmatic use, e.g., snapshot tests)
+// ---------------------------------------------------------------------------
+
+module.exports = {
+  buildTokenMetadata,
+  buildCollectionMetadata,
+  generateTokenEntries,
+  CHAIN_CONFIGS,
+  ALL_MAINNET_CHAINS,
+};
+
+/* Run the CLI when this script is executed directly. */
+if (require.main === module) {
+  main();
+}
