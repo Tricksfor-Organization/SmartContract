@@ -25,8 +25,8 @@ Two independent Solidity contracts are deployed per chain:
 
 ERC-721 NFT collection (OpenZeppelin). OpenSea-compatible: supports `tokenURI`, `contractURI`,
 and ERC-2981 royalties. Minting is role-gated (`MINTER_ROLE`) and can be paused by the default
-admin. Contains 600 tokens per chain across three game themes: Coin, Dice, and Rock Paper
-Scissors.
+admin. Each deployed collection holds 600 tokens across three game themes (Coin, Dice, Rock
+Paper Scissors) — a project specification constraint, not an on-chain enforced supply cap.
 
 ### `TricksforBoosterStaking`
 
@@ -50,7 +50,8 @@ be consistent with the event log. Reward calculation and game settlement are off
 contracts/                     Solidity source (TricksforBoosterNFT, TricksforBoosterStaking)
 interfaces/                    Solidity interfaces
 libraries/                     Solidity library helpers
-test/ & tests/                 Hardhat tests
+test/                          Hardhat contract tests
+tests/                         .NET test projects (unit, integration, deployment)
 scripts/                       Asset generation, validation, and deployment scripts
 src/
   Tricksfor.Blockchain.Booster/          NuGet package — Nethereum DTOs, services, ABI/BIN
