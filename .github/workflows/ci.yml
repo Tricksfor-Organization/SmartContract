@@ -31,6 +31,37 @@ jobs:
           name: npm-development-audit
           path: npm-audit-development.json
 
+  security-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: npm run compile
+      - run: python -m pip install slither-analyzer==0.11.5
+      - run: npm run security:prepare
+      - name: Slither static analysis
+        run: >-
+          slither .
+          --hardhat-ignore-compile
+          --hardhat-artifacts-directory .slither-artifacts
+          --exclude-dependencies
+          --filter-paths 'contracts/test|node_modules'
+          --fail-medium
+          --json slither-report.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: slither-report
+          path: slither-report.json
+          if-no-files-found: warn
+
   dotnet:
     runs-on: ubuntu-latest
     steps:

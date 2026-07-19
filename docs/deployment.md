@@ -22,6 +22,11 @@ dotnet test SmartContract.sln --configuration Release --no-build
 artifacts/build information and atomically refreshes the ABI and bytecode embedded in
 `Tricksfor.SmartContracts`. CI rejects any drift with `artifacts:check`.
 
+CI also runs Slither 0.11.5 against those exact artifacts. `npm run security:prepare` adapts
+Hardhat 3's split build information into the combined read-only shape currently expected by
+crytic-compile; Slither runs with compilation disabled, excluding dependencies and test doubles,
+and blocks medium/high findings. The report is uploaded as a CI artifact.
+
 ## Protected environments
 
 Create a GitHub Environment for every key under `deployments/config/`. Testnets are

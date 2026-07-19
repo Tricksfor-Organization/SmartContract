@@ -82,6 +82,7 @@ This index provides a single entry point to all implementation guidance, referen
 | Document | Description |
 |---|---|
 | [Architecture Guardrails](ai/architecture-guardrails.md) | Architectural separation rules, event stability expectations, state model rules, testing expectations, security review expectations, and indexing compatibility requirements |
+| [Automated Security Review — 2026-07-19](security-review-2026-07-19.md) | Reproducible Slither results, state-machine invariants, reviewed properties, and residual operational risks |
 
 ---
 

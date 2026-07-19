@@ -85,6 +85,9 @@ npm run test
 # Run tests with coverage
 npm run test:coverage
 
+# Prepare the exact build information consumed by Slither 0.11.5
+npm run security:prepare
+
 # Build and test every retained .NET project
 dotnet test SmartContract.sln
 ```
@@ -181,6 +184,7 @@ Full documentation is indexed at [`docs/README.md`](docs/README.md). Key referen
 | NFT assets contributor guide | [`docs/nft-assets-contributor-guide.md`](docs/nft-assets-contributor-guide.md) |
 | Indexing specification | [`docs/indexing-spec.md`](docs/indexing-spec.md) |
 | Backend integration contract | [`docs/backend-integration-contract.md`](docs/backend-integration-contract.md) |
+| Automated security review | [`docs/security-review-2026-07-19.md`](docs/security-review-2026-07-19.md) |
 | Hardened deployment | [`docs/deployment.md`](docs/deployment.md) |
 | OpenSea readiness checklist | [`docs/opensea-readiness-checklist.md`](docs/opensea-readiness-checklist.md) |
 | NuGet packaging | [`docs/nuget-packaging.md`](docs/nuget-packaging.md) |
