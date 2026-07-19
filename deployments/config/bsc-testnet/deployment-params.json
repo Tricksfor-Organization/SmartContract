@@ -3,8 +3,12 @@
     "Network": "bsc-testnet",
     "ChainId": 97,
     "DeploymentsOutputPath": "deployments",
+    "AdminAddress": "",
+    "MinterAddress": "",
+    "StakingOwnerAddress": "",
+    "DefaultAdminDelay": 0,
     "Nft": {
-      "Name": "TricksforBooster",
+      "Name": "Tricksfor Boosters - BSC",
       "Symbol": "TFB",
       "BaseUri": "https://nft-preview.tricksfor.com/bsc/metadata/",
       "ContractMetadataUri": "https://nft-preview.tricksfor.com/bsc/contract/collection.json",

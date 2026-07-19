@@ -1,7 +1,10 @@
 import { expect } from "chai";
-import hre from "hardhat";
+import { network } from "hardhat";
 import { TricksforBoosterNFT, TricksforBoosterStaking } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
+
+const { ethers } = await network.create();
+const hre = { ethers };
 
 describe("TricksforBoosterStaking", function () {
   let nft: TricksforBoosterNFT;
@@ -24,14 +27,18 @@ describe("TricksforBoosterStaking", function () {
       "https://metadata.tricksfor.com/booster/",
       "https://metadata.tricksfor.com/booster/contract",
       owner.address,
-      500n
+      500n,
+      owner.address,
+      owner.address,
+      0n
     )) as TricksforBoosterNFT;
     await nft.waitForDeployment();
 
     // Deploy staking contract with reference to the NFT contract
     const stakingFactory = await hre.ethers.getContractFactory("TricksforBoosterStaking");
     staking = (await stakingFactory.deploy(
-      await nft.getAddress()
+      await nft.getAddress(),
+      owner.address
     )) as TricksforBoosterStaking;
     await staking.waitForDeployment();
 
@@ -56,10 +63,72 @@ describe("TricksforBoosterStaking", function () {
 
     it("reverts if constructed with zero address", async function () {
       const factory = await hre.ethers.getContractFactory("TricksforBoosterStaking");
-      await expect(factory.deploy(hre.ethers.ZeroAddress)).to.be.revertedWithCustomError(
+      await expect(factory.deploy(hre.ethers.ZeroAddress, owner.address)).to.be.revertedWithCustomError(
         staking,
         "ZeroAddress"
       );
+    });
+
+    it("reverts if constructed with a zero initial owner", async function () {
+      const factory = await hre.ethers.getContractFactory("TricksforBoosterStaking");
+      await expect(factory.deploy(await nft.getAddress(), hre.ethers.ZeroAddress))
+        .to.be.revertedWithCustomError(staking, "OwnableInvalidOwner")
+        .withArgs(hre.ethers.ZeroAddress);
+    });
+
+    it("requires the pending owner to accept an ownership transfer", async function () {
+      await staking.transferOwnership(alice.address);
+      expect(await staking.owner()).to.equal(owner.address);
+      expect(await staking.pendingOwner()).to.equal(alice.address);
+
+      await staking.connect(alice).acceptOwnership();
+      expect(await staking.owner()).to.equal(alice.address);
+      expect(await staking.pendingOwner()).to.equal(hre.ethers.ZeroAddress);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // rescueUntrackedToken
+  // ---------------------------------------------------------------------------
+
+  describe("rescueUntrackedToken", function () {
+    beforeEach(async function () {
+      await nft.connect(alice).transferFrom(alice.address, await staking.getAddress(), TOKEN_2);
+    });
+
+    it("recovers a token sent directly without creating staking state", async function () {
+      expect(await staking.isStaked(TOKEN_2)).to.be.false;
+      const tx = await staking.rescueUntrackedToken(TOKEN_2, alice.address);
+      const receipt = await tx.wait();
+      const block = await hre.ethers.provider.getBlock(receipt!.blockNumber);
+
+      await expect(tx)
+        .to.emit(staking, "UntrackedTokenRescued")
+        .withArgs(alice.address, TOKEN_2, block!.timestamp);
+      expect(await nft.ownerOf(TOKEN_2)).to.equal(alice.address);
+    });
+
+    it("reverts for a zero recipient", async function () {
+      await expect(staking.rescueUntrackedToken(TOKEN_2, hre.ethers.ZeroAddress))
+        .to.be.revertedWithCustomError(staking, "ZeroAddress");
+    });
+
+    it("reverts when called by a non-owner", async function () {
+      await expect(staking.connect(alice).rescueUntrackedToken(TOKEN_2, alice.address))
+        .to.be.revertedWithCustomError(staking, "OwnableUnauthorizedAccount")
+        .withArgs(alice.address);
+    });
+
+    it("reverts when the contract does not hold the token", async function () {
+      await expect(staking.rescueUntrackedToken(TOKEN_1, alice.address))
+        .to.be.revertedWithCustomError(staking, "TokenNotHeld");
+    });
+
+    it("cannot rescue a tracked stake", async function () {
+      await nft.connect(alice).approve(await staking.getAddress(), TOKEN_1);
+      await staking.connect(alice).stake(TOKEN_1);
+      await expect(staking.rescueUntrackedToken(TOKEN_1, alice.address))
+        .to.be.revertedWithCustomError(staking, "TokenIsTracked");
     });
   });
 
@@ -143,6 +212,29 @@ describe("TricksforBoosterStaking", function () {
         "EnforcedPause"
       );
     });
+
+    it("rejects a reentrant stake attempted by the configured NFT contract", async function () {
+      const maliciousFactory = await hre.ethers.getContractFactory("ReentrantERC721");
+      const stakingFactory = await hre.ethers.getContractFactory("TricksforBoosterStaking");
+      // The immutable callback target must be the same staking instance, so use CREATE address
+      // prediction to construct the mutually-referencing pair deterministically.
+      const nonce = await hre.ethers.provider.getTransactionCount(owner.address);
+      const predictedNft = hre.ethers.getCreateAddress({ from: owner.address, nonce });
+      const predictedStaking = hre.ethers.getCreateAddress({ from: owner.address, nonce: nonce + 1 });
+      const attackNft = await maliciousFactory.deploy(predictedStaking);
+      await attackNft.waitForDeployment();
+      expect(await attackNft.getAddress()).to.equal(predictedNft);
+      const guardedStaking = await stakingFactory.deploy(predictedNft, owner.address);
+      await guardedStaking.waitForDeployment();
+      expect(await guardedStaking.getAddress()).to.equal(predictedStaking);
+
+      await attackNft.mint(alice.address, TOKEN_1);
+      await attackNft.enableAttack();
+      await expect(guardedStaking.connect(alice).stake(TOKEN_1))
+        .to.be.revertedWithCustomError(guardedStaking, "ReentrancyGuardReentrantCall");
+      expect(await attackNft.ownerOf(TOKEN_1)).to.equal(alice.address);
+      expect(await guardedStaking.isStaked(TOKEN_1)).to.be.false;
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -215,24 +307,24 @@ describe("TricksforBoosterStaking", function () {
       await staking.connect(alice).stake(TOKEN_1);
     });
 
-    it("transfers the token to the specified recipient", async function () {
-      await staking.emergencyWithdraw(TOKEN_1, bob.address);
-      expect(await nft.ownerOf(TOKEN_1)).to.equal(bob.address);
+    it("returns the token to the original staker", async function () {
+      await staking.emergencyWithdraw(TOKEN_1, alice.address);
+      expect(await nft.ownerOf(TOKEN_1)).to.equal(alice.address);
     });
 
     it("clears the staking record", async function () {
-      await staking.emergencyWithdraw(TOKEN_1, bob.address);
+      await staking.emergencyWithdraw(TOKEN_1, alice.address);
       expect(await staking.isStaked(TOKEN_1)).to.be.false;
     });
 
     it("emits EmergencyWithdrawn with correct indexed fields and timestamp", async function () {
-      const tx = await staking.emergencyWithdraw(TOKEN_1, bob.address);
+      const tx = await staking.emergencyWithdraw(TOKEN_1, alice.address);
       const receipt = await tx.wait();
       const block = await hre.ethers.provider.getBlock(receipt!.blockNumber);
 
       await expect(tx)
         .to.emit(staking, "EmergencyWithdrawn")
-        .withArgs(alice.address, TOKEN_1, bob.address, block!.timestamp);
+        .withArgs(alice.address, TOKEN_1, alice.address, block!.timestamp);
     });
 
     it("reverts if token is not staked", async function () {
@@ -246,6 +338,11 @@ describe("TricksforBoosterStaking", function () {
       await expect(
         staking.emergencyWithdraw(TOKEN_1, hre.ethers.ZeroAddress)
       ).to.be.revertedWithCustomError(staking, "ZeroAddress");
+    });
+
+    it("reverts if recipient is not the original staker", async function () {
+      await expect(staking.emergencyWithdraw(TOKEN_1, bob.address))
+        .to.be.revertedWithCustomError(staking, "InvalidEmergencyRecipient");
     });
 
     it("reverts if called by non-owner", async function () {
@@ -370,7 +467,7 @@ describe("TricksforBoosterStaking", function () {
     it("removes the token after an emergency withdrawal", async function () {
       await nft.connect(alice).approve(await staking.getAddress(), TOKEN_1);
       await staking.connect(alice).stake(TOKEN_1);
-      await staking.emergencyWithdraw(TOKEN_1, bob.address);
+      await staking.emergencyWithdraw(TOKEN_1, alice.address);
       const tokens = await staking.getWalletStakedTokens(alice.address);
       expect(tokens).to.deep.equal([]);
     });
@@ -426,7 +523,10 @@ describe("TricksforBoosterStaking", function () {
         "https://other.example.com/",
         "https://other.example.com/contract",
         owner.address,
-        500n
+        500n,
+        owner.address,
+        owner.address,
+        0n
       );
       await otherNft.waitForDeployment();
       await otherNft.safeMint(alice.address, TOKEN_1);

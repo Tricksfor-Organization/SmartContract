@@ -1,0 +1,43 @@
+name: Deploy mainnet
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_env:
+        type: choice
+        required: true
+        options: [ethereum-mainnet, polygon-mainnet, optimism-mainnet, bsc-mainnet, avalanche-mainnet]
+      release_tag:
+        description: Stable vMAJOR.MINOR.PATCH tag
+        required: true
+        type: string
+      deploy_metadata:
+        type: boolean
+        default: true
+      force:
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  stable-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::A stable release tag is required"; exit 1; }
+          gh release view "$RELEASE_TAG" >/dev/null
+  deploy:
+    needs: stable-tag
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      deploy_env: ${{ inputs.deploy_env }}
+      deploy_metadata: ${{ inputs.deploy_metadata }}
+      force: ${{ inputs.force }}
+      release_tag: ${{ inputs.release_tag }}
+      source_ref: ${{ inputs.release_tag }}
+    secrets: inherit

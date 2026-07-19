@@ -44,4 +44,14 @@ public static class ManifestWriter
     /// </summary>
     public static string GetFilePath(string outputRoot, string network, string contractName)
         => Path.Combine(outputRoot, network, $"{contractName}.json");
+
+    /// <summary>Loads an existing record when the manifest exists and is valid JSON.</summary>
+    public static ContractDeploymentRecord? Read(string outputRoot, string network, string contractName)
+    {
+        var filePath = GetFilePath(outputRoot, network, contractName);
+        if (!File.Exists(filePath))
+            return null;
+
+        return JsonSerializer.Deserialize<ContractDeploymentRecord>(File.ReadAllText(filePath), SerializerOptions);
+    }
 }

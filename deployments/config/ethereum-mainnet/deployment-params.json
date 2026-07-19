@@ -3,8 +3,12 @@
     "Network": "ethereum-mainnet",
     "ChainId": 1,
     "DeploymentsOutputPath": "deployments",
+    "AdminAddress": "",
+    "MinterAddress": "",
+    "StakingOwnerAddress": "",
+    "DefaultAdminDelay": 172800,
     "Nft": {
-      "Name": "TricksforBooster",
+      "Name": "Tricksfor Boosters - Ethereum",
       "Symbol": "TFB",
       "BaseUri": "https://nft.tricksfor.com/ethereum/metadata/",
       "ContractMetadataUri": "https://nft.tricksfor.com/ethereum/contract/collection.json",

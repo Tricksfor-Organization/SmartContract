@@ -24,8 +24,9 @@ Two independent Solidity contracts are deployed per chain:
 ### `TricksforBoosterNFT`
 
 ERC-721 NFT collection (OpenZeppelin). OpenSea-compatible: supports `tokenURI`, `contractURI`,
-and ERC-2981 royalties. Minting is role-gated (`MINTER_ROLE`) and can be paused by the default
-admin. Each deployed collection holds 600 tokens across three game themes (Coin, Dice, Rock
+and ERC-2981 royalties. Minting is role-gated (`MINTER_ROLE`), administration uses delayed
+`AccessControlDefaultAdminRules`, and minting can be paused by the default admin. The documented
+collection policy is 600 tokens across three game themes (Coin, Dice, Rock
 Paper Scissors) — a project specification constraint, not an on-chain enforced supply cap.
 
 ### `TricksforBoosterStaking`
@@ -39,8 +40,10 @@ event TokenUnstaked(address indexed staker, uint256 indexed tokenId, uint256 uns
 event EmergencyWithdrawn(address indexed originalStaker, uint256 indexed tokenId, address indexed recipient, uint256 withdrawnAt);
 ```
 
-Read methods (`isStaked`, `stakedOwnerOf`) always reflect on-chain truth and are guaranteed to
-be consistent with the event log. Reward calculation and game settlement are off-chain.
+Read methods (`isStaked`, `stakedOwnerOf`) reflect on-chain custody and event state. Ownership uses
+`Ownable2Step`; emergency withdrawals can only return tracked tokens to their original staker, and
+`rescueUntrackedToken` recovers only NFTs accidentally sent with direct `transferFrom`. Reward
+calculation and game settlement remain off-chain.
 
 ---
 
@@ -53,14 +56,14 @@ libraries/                     Solidity library helpers
 test/                          Hardhat contract tests
 tests/                         .NET test projects (unit, integration, deployment)
 scripts/                       Asset generation, validation, and deployment scripts
+SmartContract.sln              Root .NET solution used by CI and operators
 src/
   Tricksfor.Blockchain.Booster/          NuGet package — Nethereum DTOs, services, ABI/BIN
   Tricksfor.Blockchain.Booster.Deploy/   Deployment runner (not packaged)
-  Tricksfor.Blockchain.Nethereum/        Nethereum integration helpers
 nft-assets/
   source-images/               33 canonical PNG source images (coin/dice/rps × variant × tier)
   manifests/                   Chain-specific asset manifests
-  generated/                   Cloudflare Pages output (token + collection metadata)
+  {chain}/                     Generated Cloudflare Pages output for each chain
 deployments/config/            Per-environment deployment parameters
 docs/                          All implementation guides and specifications
 ```
@@ -70,8 +73,8 @@ docs/                          All implementation guides and specifications
 ## Quick Start
 
 ```bash
-# Install Node.js dependencies
-npm install
+# Node.js 22 LTS is required
+npm ci
 
 # Compile contracts
 npm run compile
@@ -81,31 +84,29 @@ npm run test
 
 # Run tests with coverage
 npm run test:coverage
+
+# Prepare the exact build information consumed by Slither 0.11.5
+npm run security:prepare
+
+# Build and test every retained .NET project
+dotnet test SmartContract.sln
 ```
 
 ---
 
 ## NFT Metadata Generation
 
-Use `generate-assets` to produce chain-specific token metadata and collection metadata
-into `nft-assets/generated/`:
+Use the environment manifest to produce chain-specific token and collection metadata:
 
 ```bash
-# Generate metadata for a single chain
-npm run generate-assets -- --chain polygon
-
-# Generate from a manifest file
-npm run generate-assets -- --manifest nft-assets/manifests/polygon.full.json
-
-# Generate for all 5 mainnet chains
-npm run generate-assets -- --all-mainnet --force
+node scripts/generate-nft-assets.js --env ethereum-sepolia --force
 ```
 
 Output:
 
 ```
-nft-assets/generated/{chain}/metadata/{tokenId}.json   ← token metadata (1–600)
-nft-assets/generated/{chain}/contract/collection.json  ← collection metadata
+nft-assets/{chain}/metadata/{tokenId}.json   ← token metadata (1–600)
+nft-assets/{chain}/contract/collection.json  ← collection metadata
 ```
 
 See [`docs/generate-assets.md`](docs/generate-assets.md) for the full option reference,
@@ -114,7 +115,8 @@ examples, and CI integration guide.
 ### Validate generated assets
 
 ```bash
-npm run validate:assets    # validate manifests and source images
+node scripts/validate-nft-assets.js --env ethereum-sepolia --manifest-only
+node scripts/validate-nft-assets.js --env ethereum-sepolia --chain-key ethereum --output-only
 npm run validate:output    # validate generated metadata output
 npm run test:snapshots     # snapshot tests for NFT metadata
 ```
@@ -123,28 +125,35 @@ npm run test:snapshots     # snapshot tests for NFT metadata
 
 ## Deployment Pipeline
 
-Deployments are triggered by publishing a GitHub Release. The release tag controls the target
-channel and networks:
+Automation is split by responsibility:
 
-| Tag pattern         | Channel            | Allowed targets       |
-|---------------------|--------------------|-----------------------|
-| `v1.2.3`            | Stable             | Mainnet or testnet    |
-| `v1.2.3-rc.1`       | Release candidate  | Testnet only          |
-| `v1.2.3-beta.1`     | Beta               | Testnet only          |
-| `v1.2.3-alpha.1`    | Alpha              | Testnet only          |
+| Workflow | Purpose |
+|---|---|
+| `CI` | Exact artifact check, Solidity/.NET tests, metadata checks, package inspection, workflow lint, audits |
+| `Deploy testnet` | Manual, protected, one Alchemy-backed testnet at a time, followed by verification and smoke flow |
+| `Deploy mainnet` | Manual stable-tag workflow; currently blocked by the production smoke and royalty issues in the runbook |
+| `Release NuGet package` | Publishes one package per release, independently of network deployment |
+| `Execute reviewed mainnet mint plan` | Dry-run or resumable minting from a separately reviewed token-recipient plan |
 
-The pipeline deploys to five mainnet chains (Ethereum, Polygon, Optimism, BSC, Avalanche) and
-their corresponding testnets. Each deployment:
+The current reusable deployment targets exactly one network and:
 
 1. Deploys NFT metadata and images to Cloudflare Pages (`nft.tricksfor.com`)
 2. Deploys both contracts to the target network
 3. Verifies contracts on the block explorer (if `VERIFY_ENABLED=true`)
-4. Publishes the `Tricksfor.SmartContracts` NuGet package (if `NUGET_PUBLISH_ENABLED=true`)
+4. Runs a mint/approve/stake/event-decode/unstake smoke flow and publishes records
 
-See [`docs/release-operations.md`](docs/release-operations.md) for the operator guide,
-[`docs/release-deployment-architecture.md`](docs/release-deployment-architecture.md) for the
-pipeline design, and [`docs/github-environments-setup.md`](docs/github-environments-setup.md)
-for the GitHub Environments configuration reference.
+The state-changing smoke flow is appropriate for controlled testnets but currently also runs in the
+mainnet workflow. Mainnet deployment is therefore blocked until it is replaced by a read-only path.
+Generated collection metadata also needs an explicit fee recipient synchronized with the on-chain
+royalty receiver.
+
+All 33 committed source PNGs are placeholders. Testnets can publish them with warnings for technical
+validation; mainnet metadata is blocked until final artwork and the collection image are supplied.
+Contract deployment without metadata publication is valid only when the configured URLs already
+contain the intended content and pass preflight.
+
+See the current [`docs/deployment.md`](docs/deployment.md) operator guide for protected environment
+configuration, workflow behavior, Alchemy testnet rollout, recovery, and artifacts.
 
 ---
 
@@ -153,14 +162,13 @@ for the GitHub Environments configuration reference.
 The `Tricksfor.SmartContracts` NuGet package (project:
 `src/Tricksfor.Blockchain.Booster/`) provides the C# integration layer for .NET consumers:
 
-- Typed event DTOs (`TokenStakedEventDTO`, `TokenUnstakedEventDTO`, `EmergencyWithdrawnEventDTO`)
+- Typed event DTOs, including the three preserved staking events and additive admin/rescue events
 - Function message types for staking and NFT interactions
 - Deployment message types (`TricksforBoosterNFTDeployment`, `TricksforBoosterStakingDeployment`)
 - `BoosterStakingService` and `BoosterNFTService` high-level wrappers
 - Embedded ABI and bytecode for both contracts
 
-Published to [nuget.org](https://www.nuget.org/packages/Tricksfor.SmartContracts). Pre-release
-builds are published to [GitHub Packages](https://github.com/orgs/Tricksfor-Organization/packages).
+The hardened constructors are a breaking deployment-message change and are released as package 2.x.
 
 See [`docs/nuget-packaging.md`](docs/nuget-packaging.md) for versioning strategy and packaging
 details.
@@ -182,8 +190,8 @@ Full documentation is indexed at [`docs/README.md`](docs/README.md). Key referen
 | NFT assets contributor guide | [`docs/nft-assets-contributor-guide.md`](docs/nft-assets-contributor-guide.md) |
 | Indexing specification | [`docs/indexing-spec.md`](docs/indexing-spec.md) |
 | Backend integration contract | [`docs/backend-integration-contract.md`](docs/backend-integration-contract.md) |
-| Release operations | [`docs/release-operations.md`](docs/release-operations.md) |
-| Deployment architecture | [`docs/release-deployment-architecture.md`](docs/release-deployment-architecture.md) |
+| Automated security review | [`docs/security-review-2026-07-19.md`](docs/security-review-2026-07-19.md) |
+| Hardened deployment | [`docs/deployment.md`](docs/deployment.md) |
 | OpenSea readiness checklist | [`docs/opensea-readiness-checklist.md`](docs/opensea-readiness-checklist.md) |
 | NuGet packaging | [`docs/nuget-packaging.md`](docs/nuget-packaging.md) |
 | Cloudflare Pages setup | [`docs/cloudflare-pages-setup.md`](docs/cloudflare-pages-setup.md) |

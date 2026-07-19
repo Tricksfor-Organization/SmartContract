@@ -135,6 +135,39 @@ public class DeploymentConfigTests
     }
 
     [Theory]
+    [InlineData("AdminAddress")]
+    [InlineData("MinterAddress")]
+    [InlineData("StakingOwnerAddress")]
+    public void ValidateConfig_RejectsMissingPrivilegedAddress(string propertyName)
+    {
+        var config = BuildValidConfig();
+        typeof(DeploymentConfig).GetProperty(propertyName)!.SetValue(config, string.Empty);
+
+        var ex = Assert.Throws<DeploymentException>(() => InvokeValidate(new DeploymentRunner(config)));
+        Assert.Contains(propertyName, ex.Message);
+    }
+
+    [Fact]
+    public void ValidateConfig_RejectsMalformedPrivilegedAddress()
+    {
+        var config = BuildValidConfig();
+        config.AdminAddress = "not-an-address";
+
+        var ex = Assert.Throws<DeploymentException>(() => InvokeValidate(new DeploymentRunner(config)));
+        Assert.Contains("AdminAddress", ex.Message);
+    }
+
+    [Fact]
+    public void ValidateConfig_RejectsDefaultAdminDelayOutsideUint48()
+    {
+        var config = BuildValidConfig();
+        config.DefaultAdminDelay = 281_474_976_710_656L;
+
+        var ex = Assert.Throws<DeploymentException>(() => InvokeValidate(new DeploymentRunner(config)));
+        Assert.Contains("DefaultAdminDelay", ex.Message);
+    }
+
+    [Theory]
     [InlineData(0)]
     [InlineData(500)]
     [InlineData(10_000)]
@@ -178,10 +211,15 @@ public class DeploymentConfigTests
         RpcUrl = "http://127.0.0.1:8545",
         ChainId = 31337,
         PrivateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+        AdminAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        MinterAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        StakingOwnerAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
         Nft = new NftConstructorArgs
         {
             Name = "TricksforBooster",
             Symbol = "TFB",
+            BaseUri = "https://example.test/nft/",
+            ContractMetadataUri = "https://example.test/nft/contract.json",
             RoyaltyFeeBasisPoints = 500,
         },
     };

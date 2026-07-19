@@ -23,7 +23,7 @@ dotnet add package Tricksfor.SmartContracts
 
 | Namespace | Contents |
 |---|---|
-| `Tricksfor.Blockchain.Booster.Contracts.Events` | `TokenStakedEventDTO`, `TokenUnstakedEventDTO`, `EmergencyWithdrawnEventDTO` |
+| `Tricksfor.Blockchain.Booster.Contracts.Events` | Preserved staking DTOs plus metadata-admin and untracked-rescue events |
 | `Tricksfor.Blockchain.Booster.Contracts.Functions` | Staking and NFT function message types |
 | `Tricksfor.Blockchain.Booster.Contracts.Deployment` | `TricksforBoosterNFTDeployment`, `TricksforBoosterStakingDeployment` |
 | `Tricksfor.Blockchain.Booster.Contracts.Outputs` | Output DTOs for multi-value function results |
@@ -120,7 +120,10 @@ var nftDeployment = new TricksforBoosterNFTDeployment
     BaseUri              = "https://api.tricksfor.com/metadata/",
     ContractMetadataUri  = "https://api.tricksfor.com/contract-metadata.json",
     RoyaltyReceiver      = royaltyWallet,
-    RoyaltyFeeBasisPoints = 500   // 5% (500 basis points)
+    RoyaltyFeeBasisPoints = 500,  // 5% (500 basis points)
+    InitialAdmin         = adminMultisig,
+    InitialMinter        = minterWallet,
+    DefaultAdminDelay    = 172800
 };
 
 var receipt = await web3.Eth
@@ -136,7 +139,7 @@ Console.WriteLine($"NFT contract deployed at: {receipt.ContractAddress}");
 
 | Package version | .NET | Nethereum | Solidity |
 |---|---|---|---|
-| 1.x | net8.0 | 6.1.x | 0.8.26 |
+| 2.x | net8.0 | 6.1.x | 0.8.26 |
 
 This package targets `net8.0`. It depends on `Nethereum.Web3` and `Nethereum.Contracts` (version 6.1.x).
 

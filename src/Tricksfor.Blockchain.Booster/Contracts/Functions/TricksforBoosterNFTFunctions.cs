@@ -20,6 +20,12 @@ namespace Tricksfor.Blockchain.Booster.Contracts.Functions
     [Function("DEFAULT_ADMIN_ROLE", "bytes32")]
     public class DefaultAdminRoleFunction : FunctionMessage { }
 
+    [Function("defaultAdmin", "address")]
+    public class DefaultAdminFunction : FunctionMessage { }
+
+    [Function("defaultAdminDelay", "uint48")]
+    public class DefaultAdminDelayFunction : FunctionMessage { }
+
     [Function("hasRole", "bool")]
     public class HasRoleFunction : FunctionMessage
     {
@@ -49,6 +55,9 @@ namespace Tricksfor.Blockchain.Booster.Contracts.Functions
 
     [Function("contractURI", "string")]
     public class ContractUriFunction : FunctionMessage { }
+
+    [Function("baseURI", "string")]
+    public class BaseUriFunction : FunctionMessage { }
 
     [Function("ownerOf", "address")]
     public class OwnerOfFunction : FunctionMessage

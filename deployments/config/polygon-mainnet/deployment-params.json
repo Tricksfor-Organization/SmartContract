@@ -3,8 +3,12 @@
     "Network": "polygon-mainnet",
     "ChainId": 137,
     "DeploymentsOutputPath": "deployments",
+    "AdminAddress": "",
+    "MinterAddress": "",
+    "StakingOwnerAddress": "",
+    "DefaultAdminDelay": 172800,
     "Nft": {
-      "Name": "TricksforBooster",
+      "Name": "Tricksfor Boosters - Polygon",
       "Symbol": "TFB",
       "BaseUri": "https://nft.tricksfor.com/polygon/metadata/",
       "ContractMetadataUri": "https://nft.tricksfor.com/polygon/contract/collection.json",

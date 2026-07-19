@@ -1,0 +1,28 @@
+name: Deploy testnet
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_env:
+        type: choice
+        required: true
+        options: [ethereum-sepolia, polygon-amoy, optimism-sepolia, bsc-testnet, avalanche-fuji]
+      deploy_metadata:
+        type: boolean
+        default: true
+      force:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      deploy_env: ${{ inputs.deploy_env }}
+      deploy_metadata: ${{ inputs.deploy_metadata }}
+      force: ${{ inputs.force }}
+      allow_placeholder_metadata: true
+    secrets: inherit

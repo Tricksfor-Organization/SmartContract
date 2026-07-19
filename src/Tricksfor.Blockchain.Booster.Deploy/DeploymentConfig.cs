@@ -37,6 +37,36 @@ public class DeploymentConfig
     /// </summary>
     public string DeploymentsOutputPath { get; set; } = "deployments";
 
+    /// <summary>Initial delayed default administrator for the NFT contract.</summary>
+    public string AdminAddress { get; set; } = string.Empty;
+
+    /// <summary>Initial account holding MINTER_ROLE.</summary>
+    public string MinterAddress { get; set; } = string.Empty;
+
+    /// <summary>Initial owner of the staking contract. Use a multisig on mainnet.</summary>
+    public string StakingOwnerAddress { get; set; } = string.Empty;
+
+    /// <summary>Delay in seconds for NFT default-admin transfers.</summary>
+    public long DefaultAdminDelay { get; set; }
+
+    /// <summary>Allows replacing contracts even when an existing manifest points to live bytecode.</summary>
+    public bool Force { get; set; }
+
+    /// <summary>Skip HTTP metadata URL checks, intended only for isolated local development.</summary>
+    public bool SkipMetadataReachability { get; set; }
+
+    /// <summary>Source revision recorded in manifests. CI should set this to GITHUB_SHA.</summary>
+    public string SourceCommit { get; set; } = string.Empty;
+
+    /// <summary>Token ID used by the state-changing smoke test.</summary>
+    public long SmokeTokenId { get; set; } = 1;
+
+    /// <summary>Path to the separately reviewed token-to-recipient mint plan.</summary>
+    public string MintPlanPath { get; set; } = string.Empty;
+
+    /// <summary>Validate the mint plan without submitting transactions.</summary>
+    public bool DryRun { get; set; }
+
     /// <summary>
     /// Constructor arguments for TricksforBoosterNFT.
     /// </summary>

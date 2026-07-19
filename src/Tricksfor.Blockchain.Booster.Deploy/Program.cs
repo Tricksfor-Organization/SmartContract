@@ -21,6 +21,7 @@ using Tricksfor.Blockchain.Booster.Deploy;
 //   Deployment__Network      — manifest output subfolder name (defaults to DEPLOY_ENV)
 // ---------------------------------------------------------------------------
 
+var command = args.FirstOrDefault()?.ToLowerInvariant() ?? "deploy";
 var env = Environment.GetEnvironmentVariable("DEPLOY_ENV") ?? "localhost";
 
 Console.WriteLine("=== Tricksfor Booster Deployment Runner ===");
@@ -48,8 +49,23 @@ Console.WriteLine();
 
 try
 {
-    var runner = new DeploymentRunner(config);
-    await runner.RunAsync();
+    config.Force = config.Force || args.Contains("--force", StringComparer.OrdinalIgnoreCase);
+    config.DryRun = config.DryRun || args.Contains("--dry-run", StringComparer.OrdinalIgnoreCase);
+
+    switch (command)
+    {
+        case "deploy":
+            await new DeploymentRunner(config).RunAsync();
+            break;
+        case "smoke":
+            await new SmokeRunner(config).RunAsync();
+            break;
+        case "mint":
+            await new MintRunner(config).RunAsync();
+            break;
+        default:
+            throw new DeploymentException("Unknown command. Use deploy, smoke, or mint.");
+    }
     return 0;
 }
 catch (DeploymentException ex)

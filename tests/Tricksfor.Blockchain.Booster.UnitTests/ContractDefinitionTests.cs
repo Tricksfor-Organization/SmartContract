@@ -38,7 +38,7 @@ public class ContractDefinitionTests
             .OrderBy(o => o)
             .ToList();
 
-        Assert.Equal(new[] { 1, 2, 3, 4, 5, 6 }, props);
+        Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, props);
     }
 
     [Fact]
@@ -77,6 +77,20 @@ public class ContractDefinitionTests
         Assert.Equal("address", attr.Type);
         Assert.Equal("nftContract_", attr.Name);
         Assert.Equal(1, attr.Order);
+    }
+
+    [Fact]
+    public void TricksforBoosterStakingDeployment_InitialOwner_IsAddressAtPosition2()
+    {
+        var prop = typeof(TricksforBoosterStakingDeployment)
+            .GetProperty(nameof(TricksforBoosterStakingDeployment.InitialOwner))!;
+        var attr = prop.GetCustomAttributes(typeof(ParameterAttribute), false)
+            .Cast<ParameterAttribute>()
+            .Single();
+
+        Assert.Equal("address", attr.Type);
+        Assert.Equal("initialOwner_", attr.Name);
+        Assert.Equal(2, attr.Order);
     }
 
     // -------------------------------------------------------------------------

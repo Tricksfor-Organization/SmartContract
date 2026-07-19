@@ -14,7 +14,7 @@ modify anything under `nft-assets/` or `deployments/config/`.
 3. [Generation](#3-generation)
 4. [Validation](#4-validation)
 5. [Cloudflare Pages Preparation](#5-cloudflare-pages-preparation)
-6. [Release Integration](#6-release-integration)
+6. [Protected Deployment Integration](#6-protected-deployment-integration)
 7. [Quick Reference](#7-quick-reference)
 
 ---
@@ -472,53 +472,44 @@ Use these printed values directly when configuring the contract deployment.
 
 ### Multi-chain setup
 
-All chains share a single Cloudflare Pages project per environment tier:
-
-| Environment tier | `CF_PAGES_PROJECT`      | `NFT_BASE_DOMAIN`           |
-|------------------|-------------------------|-----------------------------|
-| Mainnet          | `tricksfor-nft`         | `nft.tricksfor.com`         |
-| Testnet/preview  | `tricksfor-nft-preview` | `nft-preview.tricksfor.com` |
-
-Chain separation is achieved through the `/{chainKey}/` path prefix, not through separate
-projects.
+Generated URLs use a `/{chainKey}/` prefix. The current workflow uploads only the selected chain to
+an environment-named Pages branch, so contributors must not assume the fixed custom domain serves
+that branch. See [Cloudflare Pages Setup](cloudflare-pages-setup.md) before release use.
 
 ---
 
-## 6. Release Integration
+## 6. Protected Deployment Integration
 
 ### How the asset pipeline ties into the release workflow
 
-The release workflow (`release-deploy.yml`) enforces a strict job dependency chain:
+The reusable protected deployment workflow executes these steps in order when metadata publication
+is selected:
 
 ```
-resolve-environment
-  └── test
-        └── validate-assets            ← validates nft-assets/ and the deployment manifest
-              └── validate-generated-output  ← validates all-chain counts and distribution
-                    └── generate-nft-assets  ← generates chain-specific output tree
-                          └── deploy-metadata  ← deploys nft-assets/ to Cloudflare Pages
-                                └── deploy-contracts  ← deploys smart contracts
+validate selected source manifest
+  → generate selected chain output
+  → validate selected output
+  → stage selected chain and routing files
+  → upload with Wrangler
+  → deploy contracts
 ```
 
 No step in this chain starts until all upstream steps succeed.
 
 ### What must succeed before smart contract deployment starts
 
-The following must all pass before `deploy-contracts` runs:
+The following must all pass before contract deployment starts:
 
-1. **`test`** — all Hardhat tests pass.
-2. **`validate-assets`** — `scripts/validate-nft-assets.js` exits 0 against the deployment
-   manifest for the target environment.
-3. **`validate-generated-output`** — `scripts/validate-nft-output.js` exits 0 against
-   `nft-assets/generated/` across all chains.
-4. **`generate-nft-assets`** — `scripts/generate-nft-assets.js --env {env} --force` completes
-   without errors.
-5. **`deploy-metadata`** — the generated asset tree is successfully deployed to Cloudflare Pages
-   and live at `https://nft.tricksfor.com/{chainKey}/…`.
+1. CI passes for the exact source revision.
+2. `scripts/validate-nft-assets.js` accepts the selected source manifest.
+3. `scripts/generate-nft-assets.js --env {env} --force` completes.
+4. The selected generated output passes output validation.
+5. Wrangler uploads the staged selected-chain site.
+6. The exact fixed metadata URLs are reachable; operators must separately confirm their contents
+   match the upload.
 
-The contract deployment receives the `BASE_TOKEN_URI` and `CONTRACT_URI` values produced by
-`generate-nft-assets`. These URLs are live on Cloudflare Pages by the time the contract is
-deployed, ensuring the contract is initialised with URLs that already serve real content.
+The contract uses the URIs checked into `deployment-params.json`; they are not derived from the
+Cloudflare upload response.
 
 ### What a contributor must do before opening a release PR
 
@@ -530,10 +521,11 @@ deployed, ensuring the contract is initialised with URLs that already serve real
    `nft-assets/generated/`.
 5. Run `npm run validate:output` and resolve all errors.
 6. Run `npm run test:snapshots` to confirm no unexpected metadata drift.
-7. Commit all changes (source images, manifest, generated output) in the same PR.
+7. Commit the authoritative source images and manifests. Commit generated snapshots/output only
+   where repository policy specifically tracks them.
 
-CI repeats steps 2–5 automatically on every release trigger. If CI validation fails, no
-deployment occurs — the release must be fixed and re-triggered.
+CI repeats the manifest/source, generation, output, and snapshot checks on pull requests and pushes
+to `main`. If protected deployment validation fails, no metadata or contracts are deployed.
 
 ---
 

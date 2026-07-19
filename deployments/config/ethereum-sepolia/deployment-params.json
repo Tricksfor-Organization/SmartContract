@@ -3,8 +3,12 @@
     "Network": "ethereum-sepolia",
     "ChainId": 11155111,
     "DeploymentsOutputPath": "deployments",
+    "AdminAddress": "",
+    "MinterAddress": "",
+    "StakingOwnerAddress": "",
+    "DefaultAdminDelay": 0,
     "Nft": {
-      "Name": "TricksforBooster",
+      "Name": "Tricksfor Boosters - Ethereum",
       "Symbol": "TFB",
       "BaseUri": "https://nft-preview.tricksfor.com/ethereum/metadata/",
       "ContractMetadataUri": "https://nft-preview.tricksfor.com/ethereum/contract/collection.json",

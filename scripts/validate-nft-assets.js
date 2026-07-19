@@ -102,6 +102,9 @@ function parseArgs(argv) {
     manifest:         null,
     chainKey:         null,
     nftAssetsExplicit: false,
+    manifestOnly:     false,
+    outputOnly:       false,
+    allowPlaceholders: false,
   };
   for (let i = 2; i < argv.length; i++) {
     const flag = argv[i];
@@ -110,14 +113,17 @@ function parseArgs(argv) {
     else if (flag === '--env'       && next) { args.env      = next; i++; }
     else if (flag === '--manifest'  && next) { args.manifest = next; i++; }
     else if (flag === '--chain-key' && next) { args.chainKey = next; i++; }
+    else if (flag === '--manifest-only') { args.manifestOnly = true; }
+    else if (flag === '--output-only') { args.outputOnly = true; }
+    else if (flag === '--allow-placeholders') { args.allowPlaceholders = true; }
     else {
       console.error(`Unknown argument: ${flag}`);
       process.exit(1);
     }
   }
-  // --chain-key <key> is a shortcut for --nft-assets <nftAssets>/<key>
-  if (args.chainKey && !args.nftAssetsExplicit) {
-    args.nftAssets = path.join(args.nftAssets, args.chainKey);
+  if (args.manifestOnly && args.outputOnly) {
+    console.error('--manifest-only and --output-only are mutually exclusive');
+    process.exit(1);
   }
   return args;
 }
@@ -653,7 +659,7 @@ function validateManifestToOutput(manifest, base, nftAssetsDir, report) {
  */
 const PLACEHOLDER_MAX_BYTES = 200;
 
-function validateSourceImages(manifest, base, nftAssetsDir, report) {
+function validateSourceImages(manifest, base, nftAssetsDir, report, allowPlaceholders) {
   console.log('\n--- Source images (nft-assets/source-images/{theme}/) ---');
   const sourceDir = path.join(nftAssetsDir, 'source-images');
 
@@ -667,6 +673,19 @@ function validateSourceImages(manifest, base, nftAssetsDir, report) {
   let missing = 0;
   let placeholder = 0;
 
+  const collectionImage = path.join(nftAssetsDir, 'images', 'collection.png');
+  if (!fs.existsSync(collectionImage)) {
+    const message = 'images/collection.png: collection artwork referenced by generated contract metadata is missing';
+    if (allowPlaceholders) report.warn(message);
+    else report.error(message);
+    missing++;
+  } else if (fs.statSync(collectionImage).size <= PLACEHOLDER_MAX_BYTES) {
+    const message = 'images/collection.png: collection artwork looks like a placeholder';
+    if (allowPlaceholders) report.warn(message);
+    else report.error(message);
+    placeholder++;
+  }
+
   for (const sourceImage of [...referenced].sort()) {
     const sourcePath = path.join(sourceDir, sourceImage);
     if (!fs.existsSync(sourcePath)) {
@@ -679,11 +698,12 @@ function validateSourceImages(manifest, base, nftAssetsDir, report) {
     // Real artwork must exceed PLACEHOLDER_MAX_BYTES in size.
     const { size } = fs.statSync(sourcePath);
     if (size <= PLACEHOLDER_MAX_BYTES) {
-      report.error(
+      const message =
         `source-images/${sourceImage}: file is ${size} bytes — ` +
         `this looks like a placeholder. Replace with final artwork before deploying ` +
-        `(minimum size: ${PLACEHOLDER_MAX_BYTES + 1} bytes)`
-      );
+        `(minimum size: ${PLACEHOLDER_MAX_BYTES + 1} bytes)`;
+      if (allowPlaceholders) report.warn(message);
+      else report.error(message);
       placeholder++;
     }
   }
@@ -696,7 +716,7 @@ function validateSourceImages(manifest, base, nftAssetsDir, report) {
   }
 }
 
-function validateManifest(nftAssetsDir, args, report) {
+function validateManifest(outputDir, sourceRoot, args, report) {
   const manifestPath = findManifestPath(args);
 
   if (!manifestPath) {
@@ -752,15 +772,31 @@ function validateManifest(nftAssetsDir, args, report) {
 
   const base = path.basename(manifestPath);
 
+  if (args.env) {
+    const deploymentParamsPath = path.join('deployments', 'config', args.env, 'deployment-params.json');
+    if (fs.existsSync(deploymentParamsPath)) {
+      const deploymentParams = readJsonFile(deploymentParamsPath);
+      const expectedName = deploymentParams?.Deployment?.Nft?.Name;
+      if (expectedName && manifest.collectionName !== expectedName) {
+        report.error(
+          `${base}: collectionName "${manifest.collectionName}" does not match ` +
+          `Deployment.Nft.Name "${expectedName}"`
+        );
+      }
+    }
+  }
+
   // Validate manifest structure (spec §9 rules)
   validateManifestStructure(manifest, base, report, isExcerpt);
 
   if (!isExcerpt) {
     // Validate manifest-to-output consistency (all referenced files exist)
-    validateManifestToOutput(manifest, base, nftAssetsDir, report);
+    if (!args.manifestOnly) {
+      validateManifestToOutput(manifest, base, outputDir, report);
+    }
 
-    // Validate source images exist (spec §9 rule 14)
-    validateSourceImages(manifest, base, nftAssetsDir, report);
+    // Source images are always resolved from the common nft-assets/source-images root.
+    validateSourceImages(manifest, base, sourceRoot, report, args.allowPlaceholders);
   }
 }
 
@@ -770,34 +806,43 @@ function validateManifest(nftAssetsDir, args, report) {
 
 function main() {
   const args        = parseArgs(process.argv);
-  const nftAssetsDir = path.resolve(args.nftAssets);
+  const sourceRoot = path.resolve(args.nftAssets);
+  const outputDir = args.chainKey ? path.join(sourceRoot, args.chainKey) : sourceRoot;
 
   console.log('='.repeat(60));
   console.log('NFT Asset Validation');
   console.log('='.repeat(60));
-  console.log(`Assets directory: ${nftAssetsDir}`);
+  console.log(`Source root:      ${sourceRoot}`);
+  console.log(`Output directory: ${outputDir}`);
   if (args.chainKey) console.log(`Chain key:        ${args.chainKey}`);
   if (args.env)      console.log(`Environment:      ${args.env}`);
   if (args.manifest) console.log(`Manifest:         ${args.manifest}`);
 
-  if (!fs.existsSync(nftAssetsDir)) {
-    console.error(`\nFATAL: nft-assets directory not found: ${nftAssetsDir}`);
+  if (!fs.existsSync(sourceRoot)) {
+    console.error(`\nFATAL: nft-assets directory not found: ${sourceRoot}`);
+    process.exit(1);
+  }
+
+  if (!args.manifestOnly && !fs.existsSync(outputDir)) {
+    console.error(`\nFATAL: chain output directory not found: ${outputDir}`);
     process.exit(1);
   }
 
   const report = new Report();
 
-  // 1. Collection metadata — contractURI() target
-  validateCollectionMetadata(nftAssetsDir, report);
+  if (!args.manifestOnly) {
+    // 1. Collection metadata — contractURI() target
+    validateCollectionMetadata(outputDir, report);
 
-  // 2. Token metadata files
-  const tokenIds = validateTokenMetadata(nftAssetsDir, report);
+    // 2. Token metadata files
+    const tokenIds = validateTokenMetadata(outputDir, report);
 
-  // 3. Token image files
-  validateTokenImages(nftAssetsDir, tokenIds, report);
+    // 3. Token image files
+    validateTokenImages(outputDir, tokenIds, report);
+  }
 
   // 4. Manifest (if present): structure + manifest-to-output consistency
-  validateManifest(nftAssetsDir, args, report);
+  validateManifest(outputDir, sourceRoot, args, report);
 
   // Summary
   console.log('\n' + '='.repeat(60));

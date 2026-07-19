@@ -56,6 +56,9 @@ public class DevChainIntegrationTests
             ContractMetadataUri = "https://meta.tricksfor.gg/booster/contract.json",
             RoyaltyReceiver = deployerAddress,
             RoyaltyFeeBasisPoints = 500, // 5%
+            InitialAdmin = deployerAddress,
+            InitialMinter = deployerAddress,
+            DefaultAdminDelay = 0,
         };
 
         var nftReceipt = await BoosterNFTService.DeployContractAndWaitForReceiptAsync(web3, nftDeployment);
@@ -66,6 +69,7 @@ public class DevChainIntegrationTests
         var stakingDeployment = new TricksforBoosterStakingDeployment
         {
             NftContract = nftAddress,
+            InitialOwner = deployerAddress,
         };
 
         var stakingReceipt = await BoosterStakingService.DeployContractAndWaitForReceiptAsync(web3, stakingDeployment);

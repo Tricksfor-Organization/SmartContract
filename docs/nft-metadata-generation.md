@@ -16,7 +16,7 @@ Pages deployment and contract deployment pipeline.
    - [5.1. Validation Sample](#51-validation-sample)
 6. [Manifest Requirements](#6-manifest-requirements)
 7. [Generated File Formats](#7-generated-file-formats)
-8. [Release Workflow Integration](#8-release-workflow-integration)
+8. [Protected Workflow Integration](#8-protected-workflow-integration)
 9. [Multi-Chain Deployment](#9-multi-chain-deployment)
 10. [Related Documents](#10-related-documents)
 
@@ -29,7 +29,7 @@ from an authoritative asset manifest and deployed as static files to Cloudflare 
 
 There are two generation pathways:
 
-### Pathway A — Manifest-driven (release pipeline)
+### Pathway A — Manifest-driven (protected deployment workflow)
 
 ```
 nft-manifest.json (deployments/config/{env}/)
@@ -42,14 +42,15 @@ scripts/generate-nft-assets.js
         └─► nft-assets/{chainKey}/images/{tokenId}.png      (one per token, copied from source)
         │
         ▼
-Cloudflare Pages deployment (deploy-metadata job)
+Selected-chain staging and Cloudflare Pages direct upload
         │
         ▼
-BASE_TOKEN_URI and CONTRACT_URI → contract deployment (deploy-contracts job)
+Reachability check of checked-in contract URLs → contract deployment
 ```
 
-Generation runs before contract deployment. The contract is deployed with the exact URLs
-that are live on Cloudflare Pages.
+Generation runs before contract deployment. Base and contract URIs come from the selected checked-in
+deployment parameter file. Operators must prove that Cloudflare branch/custom-domain routing serves
+the newly uploaded content at those exact URLs.
 
 ### Pathway B — Standalone metadata generator (approved manifests)
 
@@ -429,17 +430,18 @@ to this JSON file, served at `https://nft.tricksfor.com/{chainKey}/contract/coll
 }
 ```
 
-> **⚠ Important:** The `fee_recipient` field is a placeholder burn address. Replace it with the
-> actual royalty recipient address before mainnet deployment. Using the burn address means OpenSea
-> royalty payments are permanently lost.
+> **Important:** The `fee_recipient` field is currently a placeholder burn address. Mainnet is
+> blocked until an explicit approved royalty receiver is supplied through the authoritative source
+> configuration and used by both metadata generation and contract deployment. Using the burn address
+> would make marketplace royalty payments unrecoverable; do not patch generated files manually.
 
 #### `contractURI()` output per chain
 
 The table below summarises the `contractURI()` URL and resulting chain-specific fields for each
 supported chain. The `description` and `external_link` fields are identical across chains.
 `seller_fee_basis_points` is `500` in all generated files; only `name` and `image` are
-chain-specific. `fee_recipient` is a placeholder in all generated files and **must** be replaced
-with the actual royalty recipient address before mainnet deployment (see warning above).
+chain-specific. `fee_recipient` remains a mainnet blocker in all generated files until the generator
+and deployment configuration consume the same approved royalty receiver (see warning above).
 
 | `chainKey` | `CONTRACT_URI` | Collection `name` | Collection `image` |
 |---|---|---|---|
@@ -459,23 +461,24 @@ node scripts/generate-nft-metadata.js --all-mainnet --force
 
 ---
 
-## 8. Release Workflow Integration
+## 8. Protected Workflow Integration
 
-Metadata generation is built directly into the release workflow as a dedicated
-`generate-nft-assets` job that runs after asset validation and before Cloudflare Pages
-deployment. Developers do **not** need to generate or commit generated files locally.
+Metadata generation is built into the reusable deployment job when `deploy_metadata=true`.
+Developers do not need to commit the selected generated output solely for the deployment run.
 
 ```
-test
- └── validate-assets   (validates manifests, images, source structure)
-       └── generate-nft-assets   (runs generate-nft-assets.js; uploads artifact)
-             └── deploy-metadata   (downloads artifact; deploys to Cloudflare Pages)
-                   └── deploy-contracts   (contract deployment)
-                         ├── verify-contracts
-                         └── publish-nuget
+validate source manifest
+  → generate selected chain
+  → validate selected output
+  → stage selected chain and routing files
+  → Wrangler Pages upload
+  → deploy or resume both contracts
+  → optional verification
+  → smoke test
+  → deployment artifact
 ```
 
-### Step-by-step release sequence
+### Step-by-step deployment sequence
 
 1. **Finalise the manifest** — ensure `deployments/config/{env}/nft-manifest.json` is complete
    and passes validation (`node scripts/validate-nft-assets.js --env {env}`).
@@ -484,24 +487,17 @@ test
    updated source images under `nft-assets/source-images/`) to the release branch. The workflow
    generates all output files automatically — generated files do **not** need to be committed.
 
-3. **Publish the release** — the `release-deploy.yml` workflow runs automatically and:
-   - Validates manifests and assets (`validate-assets` job).
-   - Generates all chain-specific metadata and image files (`generate-nft-assets` job).
-   - Uploads the generated output as the `nft-generated-{env}-{tag}` artifact.
-   - Deploys the generated output to Cloudflare Pages (`deploy-metadata` job).
-   - Derives `BASE_TOKEN_URI` and `CONTRACT_URI` from the live Pages deployment.
-   - Deploys contracts with the final stable metadata URLs (`deploy-contracts` job).
+3. **Validate in CI** — ensure the `metadata` job passes for the exact source revision.
 
-4. **Derive contract parameters** — the `deploy-metadata` job resolves the final `BASE_TOKEN_URI`
-   and `CONTRACT_URI` from the Cloudflare Pages deployment and passes them as environment variable
-   overrides to `deploy-contracts`:
-   ```yaml
-   Deployment__Nft__BaseUri:             https://nft.tricksfor.com/{chainKey}/metadata/
-   Deployment__Nft__ContractMetadataUri: https://nft.tricksfor.com/{chainKey}/contract/collection.json
-   ```
+4. **Dispatch the protected workflow** — use `Deploy testnet`, or after all mainnet blockers are
+   resolved, `Deploy mainnet`, with `deploy_metadata=true`.
 
-The contract is always deployed with the URLs that are live on Cloudflare Pages, ensuring
-on-chain URIs and hosted metadata are consistent from the moment the contract is deployed.
+5. **Verify hosted content** — compare the exact configured token and collection URLs with the
+   generated release content. A successful Pages upload alone does not prove the fixed custom domain
+   serves the selected branch.
+
+6. **Deploy contracts** — the runner performs HTTP reachability checks before sending transactions
+   and then uses the base/contract URIs from `deployment-params.json`.
 
 ### Pre-release checklist
 
@@ -517,14 +513,13 @@ Before publishing a release:
 
 ## 9. Multi-Chain Deployment
 
-Each supported chain deployment generates its own output tree inside `nft-assets/`. All chains
-share a single Cloudflare Pages project per environment tier; chain separation is achieved
-through the per-chain subdirectory path prefix.
+Each supported chain deployment generates its own output tree inside `nft-assets/`. The URL model
+uses per-chain path prefixes, but the current workflow uploads one chain to an environment-named
+Pages branch. Do not assume a shared custom domain serves that branch without an explicitly tested
+routing design.
 
-| Environment tier | Pages project | Domain | Chains served |
-|---|---|---|---|
-| All mainnet | `tricksfor-nft` | `nft.tricksfor.com` | `ethereum`, `polygon`, `optimism`, `bsc`, `avalanche` |
-| All testnet | `tricksfor-nft-preview` | `nft-preview.tricksfor.com` | Same |
+See [Cloudflare Pages Setup](cloudflare-pages-setup.md) for the unresolved branch/custom-domain
+routing requirement and supported design options.
 
 To generate output for multiple chains in one repo state:
 
@@ -555,5 +550,5 @@ the same content. Generation can be re-run at any time to regenerate or verify f
 | [`docs/nft-asset-validation.md`](nft-asset-validation.md) | Validation script documentation |
 | [`docs/nft-copy-spec.md`](nft-copy-spec.md) | Collection names, token names, and description templates |
 | [`docs/cloudflare-pages-setup.md`](cloudflare-pages-setup.md) | Cloudflare Pages project configuration |
-| [`docs/release-deployment-architecture.md`](release-deployment-architecture.md) | Full release pipeline architecture |
+| [`docs/deployment.md`](deployment.md) | Current protected deployment runbook |
 | [`nft-assets/README.md`](../nft-assets/README.md) | nft-assets directory overview |

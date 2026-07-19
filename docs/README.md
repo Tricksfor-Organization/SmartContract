@@ -8,7 +8,7 @@ This index provides a single entry point to all implementation guidance, referen
 
 | Document | Description |
 |---|---|
-| [Booster NFT Staking Specification](booster-nft-staking-spec.md) *(coming soon)* | Full specification for the Booster NFT and staking contracts: state model, custody flow, event schema, and invariants |
+| Booster NFT Staking Specification *(planned)* | A dedicated full specification has not yet been added; use the contract source, backend integration contract, architecture guardrails, and security review meanwhile |
 | [Backend Integration Contract](backend-integration-contract.md) | How backend services consume on-chain staking state: event semantics, read methods, consistency rules, and worked examples |
 
 ---
@@ -17,10 +17,12 @@ This index provides a single entry point to all implementation guidance, referen
 
 | Document | Description |
 |---|---|
-| [Release Operations Guide](release-operations.md) | Single operator reference for the release pipeline: required GitHub Environments, secrets, variables, deployment parameters, release tag conventions, network mapping, approval model, failure recovery, and artifact locations |
+| [Deployment Operator Runbook](deployment.md) | Current source of truth, exact setup, testnet rollout, mainnet blockers/readiness, recovery, verification, NuGet, and minting |
+| [Archived Release Operations Guide](release-operations.md) | Compatibility pointer explaining which former workflow assumptions are obsolete |
 | [GitHub Environments Setup](github-environments-setup.md) | Step-by-step GitHub UI configuration reference for environment secrets, variables, and protection rules |
-| [Release Deployment Architecture](release-deployment-architecture.md) | Source-of-truth architecture for the release-driven multi-network deployment pipeline: trigger model, environment strategy, secrets model, network strategy (Ethereum, Polygon, Optimism, BNB Smart Chain, Avalanche), verification, NuGet publishing, versioning, and failure handling |
-| [Deployment Instructions](deployment.md) *(coming soon)* | Step-by-step instructions for deploying both contracts to a target network, including constructor arguments, verification, and post-deployment checks |
+| [Archived Release Deployment Architecture](release-deployment-architecture.md) | Compatibility pointer from the deleted all-in-one workflow to the current architecture |
+| [Cloudflare Pages Setup](cloudflare-pages-setup.md) | Current Wrangler selected-chain upload model and unresolved branch/custom-domain routing requirement |
+| [Verification Troubleshooting](verification-troubleshooting.md) | Current blocking verification behavior, safe reruns, and exact manual verification commands |
 
 ---
 
@@ -82,6 +84,7 @@ This index provides a single entry point to all implementation guidance, referen
 | Document | Description |
 |---|---|
 | [Architecture Guardrails](ai/architecture-guardrails.md) | Architectural separation rules, event stability expectations, state model rules, testing expectations, security review expectations, and indexing compatibility requirements |
+| [Automated Security Review — 2026-07-19](security-review-2026-07-19.md) | Reproducible Slither results, state-machine invariants, reviewed properties, and residual operational risks |
 
 ---
 

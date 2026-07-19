@@ -365,26 +365,29 @@ Errors (✗) cause exit code `1` and block the release workflow.
 
 ## 8. Workflow Integration
 
-Both validators run as jobs in `.github/workflows/release-deploy.yml`, before any deployment.
-The job graph is:
+Validation runs in both CI and the reusable protected deployment workflow:
 
 ```
-resolve-environment
-  └── test
-        └── validate-assets            ← validates nft-assets/ and optional manifest
-              └── validate-generated-output  ← validates all-chain counts and distribution
-                    └── generate-nft-assets  ← generates chain-specific output
-                          └── deploy-metadata  ← deploys to Cloudflare Pages only if validation passes
-                                └── deploy-contracts
+CI metadata job
+  → validate every testnet manifest and common source tree
+  → generate and validate every selected chain output
+  → validate cross-chain output and snapshots
+
+Protected deployment with deploy_metadata=true
+  → validate selected manifest/source
+  → generate selected chain
+  → validate selected output
+  → stage and upload selected metadata
+  → deploy contracts
 ```
 
-Neither validation job requires environment secrets — they read only files committed to the
-repository (and the `deploy_env` output from `resolve-environment` for `validate-assets`).
+Validation itself reads committed files and does not require secrets. Cloudflare upload and contract
+deployment use the selected GitHub Environment only after validation succeeds.
 
-If `validate-assets` or `validate-generated-output` fails:
-- `generate-nft-assets` is skipped.
-- `deploy-metadata` is skipped.
-- `deploy-contracts` is skipped.
+If selected source or output validation fails:
+
+- metadata upload is skipped;
+- contract deployment is skipped;
 - No assets are deployed; no contracts are deployed.
 
 ---

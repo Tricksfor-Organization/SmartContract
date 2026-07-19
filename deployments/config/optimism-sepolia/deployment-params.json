@@ -3,8 +3,12 @@
     "Network": "optimism-sepolia",
     "ChainId": 11155420,
     "DeploymentsOutputPath": "deployments",
+    "AdminAddress": "",
+    "MinterAddress": "",
+    "StakingOwnerAddress": "",
+    "DefaultAdminDelay": 0,
     "Nft": {
-      "Name": "TricksforBooster",
+      "Name": "Tricksfor Boosters - Optimism",
       "Symbol": "TFB",
       "BaseUri": "https://nft-preview.tricksfor.com/optimism/metadata/",
       "ContractMetadataUri": "https://nft-preview.tricksfor.com/optimism/contract/collection.json",
