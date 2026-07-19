@@ -37,7 +37,9 @@ coverage/
 coverage.json
 # Exclude third-party and generated artifacts; our own contract ABIs (*.json) are committed
 artifacts/@openzeppelin/
-artifacts/build-info/
+# Commit synchronized solc build information used for verification; ignore other Hardhat build info.
+artifacts/build-info/*
+!artifacts/build-info/solc-0_8_26-*.json
 artifacts/**/*.dbg.json
 artifacts/**/*.d.ts
 artifacts/contracts/test/ReentrantERC721.sol/IReentrantStakingTarget.json

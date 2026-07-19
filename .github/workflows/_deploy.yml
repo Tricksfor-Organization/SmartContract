@@ -148,4 +148,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag }}
-        run: gh release upload "$RELEASE_TAG" deployments/${DEPLOY_ENV}/* --clobber
+        run: gh release upload "$RELEASE_TAG" "deployments/${DEPLOY_ENV}/"* --clobber
