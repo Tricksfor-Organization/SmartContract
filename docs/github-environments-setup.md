@@ -1,6 +1,9 @@
 # GitHub Environments Setup
 
-This document describes the required GitHub configuration for the release deployment workflow (`release-deploy.yml`).
+> **Historical:** use the environment and secret matrix in the current
+> [Hardened Deployment Guide](deployment.md). This page describes the superseded workflow.
+
+This document describes the former GitHub configuration for `release-deploy.yml`.
 
 For the deployment architecture and design decisions, see [`docs/release-deployment-architecture.md`](release-deployment-architecture.md).
 

@@ -1,5 +1,8 @@
 # Release Operations Guide
 
+> **Historical:** the all-in-one `release-deploy.yml` workflow described below was replaced. Use
+> the current [Hardened Deployment Guide](deployment.md) and split workflows in `.github/workflows/`.
+
 This guide is the single operator reference for configuring, triggering, and recovering the
 Tricksfor SmartContract release pipeline. It covers everything an operator needs to deploy
 contracts, verify them on block explorers, and publish the NuGet integration package.

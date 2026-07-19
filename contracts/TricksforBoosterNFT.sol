@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /// @title TricksforBoosterNFT
@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 ///         OpenSea-compatible: supports tokenURI, contractURI, and ERC-2981 royalties.
 ///         Minting is role-gated (MINTER_ROLE) and can be paused by the default admin.
 /// @dev Does not include staking logic — staking is handled by TricksforBoosterStaking.
-contract TricksforBoosterNFT is ERC721, ERC2981, AccessControl, Pausable {
+contract TricksforBoosterNFT is ERC721, ERC2981, AccessControlDefaultAdminRules, Pausable {
     // -------------------------------------------------------------------------
     // Roles
     // -------------------------------------------------------------------------
@@ -25,6 +25,14 @@ contract TricksforBoosterNFT is ERC721, ERC2981, AccessControl, Pausable {
 
     /// @notice Zero address supplied where a non-zero address is required.
     error ZeroAddress();
+
+    // -------------------------------------------------------------------------
+    // Events
+    // -------------------------------------------------------------------------
+
+    event BaseURIUpdated(string previousURI, string newURI);
+    event ContractURIUpdated(string previousURI, string newURI);
+    event DefaultRoyaltyUpdated(address indexed receiver, uint96 feeBasisPoints);
 
     // -------------------------------------------------------------------------
     // State
@@ -43,20 +51,27 @@ contract TricksforBoosterNFT is ERC721, ERC2981, AccessControl, Pausable {
     /// @param contractMetadataURI_   URI for OpenSea collection-level metadata
     /// @param royaltyReceiver_       Address that receives royalty payments
     /// @param royaltyFeeBasisPoints_ Royalty fee in basis points (10 000 = 100%)
+    /// @param initialAdmin_          Initial default administrator
+    /// @param initialMinter_         Initial account authorized to mint
+    /// @param defaultAdminDelay_     Delay in seconds for default-admin transfers
     constructor(
         string memory name_,
         string memory symbol_,
         string memory baseURI_,
         string memory contractMetadataURI_,
         address royaltyReceiver_,
-        uint96 royaltyFeeBasisPoints_
-    ) ERC721(name_, symbol_) {
-        if (royaltyReceiver_ == address(0)) revert ZeroAddress();
+        uint96 royaltyFeeBasisPoints_,
+        address initialAdmin_,
+        address initialMinter_,
+        uint48 defaultAdminDelay_
+    ) ERC721(name_, symbol_) AccessControlDefaultAdminRules(defaultAdminDelay_, initialAdmin_) {
+        if (royaltyReceiver_ == address(0) || initialAdmin_ == address(0) || initialMinter_ == address(0)) {
+            revert ZeroAddress();
+        }
         _baseTokenURI = baseURI_;
         _contractMetadataURI = contractMetadataURI_;
         _setDefaultRoyalty(royaltyReceiver_, royaltyFeeBasisPoints_);
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
+        _grantRole(MINTER_ROLE, initialMinter_);
     }
 
     // -------------------------------------------------------------------------
@@ -78,20 +93,26 @@ contract TricksforBoosterNFT is ERC721, ERC2981, AccessControl, Pausable {
     /// @notice Updates the base URI used to construct per-token metadata URIs.
     /// @param baseURI_ New base URI string.
     function setBaseURI(string calldata baseURI_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        string memory previousURI = _baseTokenURI;
         _baseTokenURI = baseURI_;
+        emit BaseURIUpdated(previousURI, baseURI_);
     }
 
     /// @notice Updates the collection-level metadata URI (OpenSea contractURI extension).
     /// @param contractMetadataURI_ New collection metadata URI.
     function setContractURI(string calldata contractMetadataURI_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        string memory previousURI = _contractMetadataURI;
         _contractMetadataURI = contractMetadataURI_;
+        emit ContractURIUpdated(previousURI, contractMetadataURI_);
     }
 
     /// @notice Updates the default royalty receiver and fee for all tokens.
     /// @param receiver       Address that receives royalty payments.
     /// @param feeBasisPoints Royalty fee in basis points (10 000 = 100%).
     function setRoyaltyInfo(address receiver, uint96 feeBasisPoints) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (receiver == address(0)) revert ZeroAddress();
         _setDefaultRoyalty(receiver, feeBasisPoints);
+        emit DefaultRoyaltyUpdated(receiver, feeBasisPoints);
     }
 
     /// @notice Pauses minting. Does not affect transfers.
@@ -113,6 +134,11 @@ contract TricksforBoosterNFT is ERC721, ERC2981, AccessControl, Pausable {
         return _contractMetadataURI;
     }
 
+    /// @notice Returns the base URI used to construct token metadata URLs.
+    function baseURI() external view returns (string memory) {
+        return _baseTokenURI;
+    }
+
     // -------------------------------------------------------------------------
     // Internal overrides
     // -------------------------------------------------------------------------
@@ -130,7 +156,7 @@ contract TricksforBoosterNFT is ERC721, ERC2981, AccessControl, Pausable {
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC2981, AccessControl)
+        override(ERC721, ERC2981, AccessControlDefaultAdminRules)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);

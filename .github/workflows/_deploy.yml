@@ -1,0 +1,151 @@
+name: Reusable protected deployment
+
+on:
+  workflow_call:
+    inputs:
+      deploy_env:
+        required: true
+        type: string
+      deploy_metadata:
+        required: true
+        type: boolean
+      force:
+        required: false
+        default: false
+        type: boolean
+      release_tag:
+        required: false
+        default: ""
+        type: string
+      source_ref:
+        required: false
+        default: ""
+        type: string
+      allow_placeholder_metadata:
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: contracts-${{ inputs.deploy_env }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.deploy_env }}
+    env:
+      DEPLOY_ENV: ${{ inputs.deploy_env }}
+      RPC_URL: ${{ secrets.RPC_URL }}
+      ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_API_KEY }}
+      Deployment__RpcUrl: ${{ secrets.RPC_URL }}
+      Deployment__PrivateKey: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+      Deployment__AdminAddress: ${{ vars.ADMIN_ADDRESS }}
+      Deployment__MinterAddress: ${{ vars.MINTER_ADDRESS }}
+      Deployment__StakingOwnerAddress: ${{ vars.STAKING_OWNER_ADDRESS }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.source_ref || github.sha }}
+      - name: Record exact checked-out source commit
+        run: echo "Deployment__SourceCommit=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: npm ci
+      - run: npm run compile
+      - run: dotnet build SmartContract.sln --configuration Release
+      - name: Validate production artwork and generate selected metadata
+        if: inputs.deploy_metadata
+        shell: bash
+        env:
+          ALLOW_PLACEHOLDER_METADATA: ${{ inputs.allow_placeholder_metadata }}
+        run: |
+          validation_args=()
+          if [[ "$ALLOW_PLACEHOLDER_METADATA" == "true" ]]; then validation_args+=(--allow-placeholders); fi
+          node scripts/validate-nft-assets.js --env "$DEPLOY_ENV" --manifest-only "${validation_args[@]}"
+          node scripts/generate-nft-assets.js --env "$DEPLOY_ENV" --force
+          chain_key="$(node -p "require('./deployments/config/${DEPLOY_ENV}/nft-manifest.json').chainKey")"
+          node scripts/validate-nft-assets.js --env "$DEPLOY_ENV" --chain-key "$chain_key" --output-only "${validation_args[@]}"
+          echo "CHAIN_KEY=$chain_key" >> "$GITHUB_ENV"
+      - name: Validate metadata configuration without publishing
+        if: ${{ ! inputs.deploy_metadata }}
+        run: node scripts/validate-nft-assets.js --env "$DEPLOY_ENV" --manifest-only --allow-placeholders
+      - name: Stage selected chain output
+        if: inputs.deploy_metadata
+        shell: bash
+        run: |
+          mkdir -p "site/$CHAIN_KEY"
+          cp -R "nft-assets/$CHAIN_KEY/." "site/$CHAIN_KEY/"
+          cp nft-assets/_headers nft-assets/_redirects site/
+      - name: Upload selected metadata to Cloudflare Pages
+        if: inputs.deploy_metadata
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site --project-name=${{ vars.CF_PAGES_PROJECT }} --branch=${{ inputs.deploy_env }}
+      - name: Install selected deployment configuration
+        shell: bash
+        run: cp "deployments/config/$DEPLOY_ENV/deployment-params.json" "src/Tricksfor.Blockchain.Booster.Deploy/bin/Release/net8.0/appsettings.$DEPLOY_ENV.json"
+      - name: Deploy or resume contracts
+        shell: bash
+        env:
+          FORCE_DEPLOY: ${{ inputs.force }}
+        run: |
+          force_arg=""
+          if [[ "$FORCE_DEPLOY" == "true" ]]; then force_arg="--force"; fi
+          dotnet src/Tricksfor.Blockchain.Booster.Deploy/bin/Release/net8.0/Tricksfor.Blockchain.Booster.Deploy.dll deploy $force_arg
+      - name: Verify with synchronized Hardhat build information
+        if: vars.VERIFY_ENABLED == 'true'
+        shell: bash
+        env:
+          NETWORK_KEY: ${{ vars.NETWORK_KEY }}
+        run: |
+          nft_manifest="deployments/$DEPLOY_ENV/TricksforBoosterNFT.json"
+          staking_manifest="deployments/$DEPLOY_ENV/TricksforBoosterStaking.json"
+          nft_address="$(jq -r .address "$nft_manifest")"
+          staking_address="$(jq -r .address "$staking_manifest")"
+          mapfile -t nft_args < <(jq -r '.constructorArgs[]' "$nft_manifest")
+          mapfile -t staking_args < <(jq -r '.constructorArgs[]' "$staking_manifest")
+          npx hardhat verify --build-profile production --network "$NETWORK_KEY" "$nft_address" "${nft_args[@]}" | tee "deployments/$DEPLOY_ENV/nft-verification.txt"
+          npx hardhat verify --build-profile production --network "$NETWORK_KEY" "$staking_address" "${staking_args[@]}" | tee "deployments/$DEPLOY_ENV/staking-verification.txt"
+      - name: Run state-changing smoke test
+        run: dotnet src/Tricksfor.Blockchain.Booster.Deploy/bin/Release/net8.0/Tricksfor.Blockchain.Booster.Deploy.dll smoke
+      - name: Publish deployment summary
+        shell: bash
+        run: |
+          nft_manifest="deployments/$DEPLOY_ENV/TricksforBoosterNFT.json"
+          staking_manifest="deployments/$DEPLOY_ENV/TricksforBoosterStaking.json"
+          smoke_result="deployments/$DEPLOY_ENV/smoke-result.json"
+          {
+            echo "## $DEPLOY_ENV deployment"
+            echo
+            echo "| Contract | Address | Transaction | Gas used |"
+            echo "|---|---|---|---:|"
+            jq -r '"| NFT | `\(.address)` | `\(.transactionHash)` | \(.gasUsed) |"' "$nft_manifest"
+            jq -r '"| Staking | `\(.address)` | `\(.transactionHash)` | \(.gasUsed) |"' "$staking_manifest"
+            echo
+            echo "### Smoke result"
+            jq -r '"Token `\(.tokenId)` ended with owner `\(.finalOwner)` and staked=`\(.finalStaked)`.\n\nTokenStaked: `\(.tokenStaked | tostring)`\n\nTokenUnstaked: `\(.tokenUnstaked | tostring)`\n\nReads: `\(.readResults | tostring)`"' "$smoke_result"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: deployment-${{ inputs.deploy_env }}-${{ github.run_id }}
+          path: deployments/${{ inputs.deploy_env }}/
+          if-no-files-found: error
+      - name: Attach permanent records to release
+        if: inputs.release_tag != '' && success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: gh release upload "$RELEASE_TAG" deployments/${DEPLOY_ENV}/* --clobber

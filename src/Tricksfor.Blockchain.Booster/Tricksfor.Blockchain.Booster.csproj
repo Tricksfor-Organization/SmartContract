@@ -26,7 +26,7 @@
     <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
 
     <!-- Package version is injected at pack time via /p:PackageVersion from the release tag -->
-    <!-- Do not hard-code a version here; see .github/workflows/release-deploy.yml            -->
+    <!-- Do not hard-code a version here; see .github/workflows/release-package.yml           -->
 
     <!-- Symbol package — produces a .snupkg uploaded to nuget.org's symbol server -->
     <IncludeSymbols>true</IncludeSymbols>
@@ -35,11 +35,17 @@
     <!-- Documentation -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <Deterministic>true</Deterministic>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Nethereum.Web3" Version="6.1.0" />
     <PackageReference Include="Nethereum.Contracts" Version="6.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

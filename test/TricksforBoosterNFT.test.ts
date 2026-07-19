@@ -1,7 +1,10 @@
 import { expect } from "chai";
-import hre from "hardhat";
+import { network } from "hardhat";
 import { TricksforBoosterNFT } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
+
+const { ethers } = await network.create();
+const hre = { ethers };
 
 describe("TricksforBoosterNFT", function () {
   const NAME = "Tricksfor Booster";
@@ -9,6 +12,7 @@ describe("TricksforBoosterNFT", function () {
   const BASE_URI = "https://metadata.tricksfor.com/booster/";
   const CONTRACT_URI = "https://metadata.tricksfor.com/booster/contract";
   const ROYALTY_BASIS_POINTS = 500n; // 5%
+  const DEFAULT_ADMIN_DELAY = 86_400n;
 
   let nft: TricksforBoosterNFT;
   let owner: HardhatEthersSigner;
@@ -30,7 +34,10 @@ describe("TricksforBoosterNFT", function () {
       BASE_URI,
       CONTRACT_URI,
       royaltyReceiver.address,
-      ROYALTY_BASIS_POINTS
+      ROYALTY_BASIS_POINTS,
+      owner.address,
+      owner.address,
+      DEFAULT_ADMIN_DELAY
     )) as TricksforBoosterNFT;
     await nft.waitForDeployment();
 
@@ -56,8 +63,16 @@ describe("TricksforBoosterNFT", function () {
       expect(await nft.hasRole(MINTER_ROLE, owner.address)).to.be.true;
     });
 
+    it("stores the configured default-admin delay", async function () {
+      expect(await nft.defaultAdminDelay()).to.equal(DEFAULT_ADMIN_DELAY);
+    });
+
     it("returns the correct contractURI", async function () {
       expect(await nft.contractURI()).to.equal(CONTRACT_URI);
+    });
+
+    it("returns the configured baseURI", async function () {
+      expect(await nft.baseURI()).to.equal(BASE_URI);
     });
 
     it("returns correct royalty info for a sale", async function () {
@@ -84,7 +99,52 @@ describe("TricksforBoosterNFT", function () {
     it("reverts construction with zero royalty receiver address", async function () {
       const factory = await hre.ethers.getContractFactory("TricksforBoosterNFT");
       await expect(
-        factory.deploy(NAME, SYMBOL, BASE_URI, CONTRACT_URI, hre.ethers.ZeroAddress, ROYALTY_BASIS_POINTS)
+        factory.deploy(
+          NAME,
+          SYMBOL,
+          BASE_URI,
+          CONTRACT_URI,
+          hre.ethers.ZeroAddress,
+          ROYALTY_BASIS_POINTS,
+          owner.address,
+          owner.address,
+          DEFAULT_ADMIN_DELAY
+        )
+      ).to.be.revertedWithCustomError(nft, "ZeroAddress");
+    });
+
+    it("honors a separately configured initial minter", async function () {
+      const factory = await hre.ethers.getContractFactory("TricksforBoosterNFT");
+      const configured = await factory.deploy(
+        NAME,
+        SYMBOL,
+        BASE_URI,
+        CONTRACT_URI,
+        royaltyReceiver.address,
+        ROYALTY_BASIS_POINTS,
+        owner.address,
+        minter.address,
+        DEFAULT_ADMIN_DELAY
+      );
+      await configured.waitForDeployment();
+      expect(await configured.hasRole(MINTER_ROLE, minter.address)).to.be.true;
+      expect(await configured.hasRole(MINTER_ROLE, owner.address)).to.be.false;
+    });
+
+    it("reverts construction with a zero initial minter", async function () {
+      const factory = await hre.ethers.getContractFactory("TricksforBoosterNFT");
+      await expect(
+        factory.deploy(
+          NAME,
+          SYMBOL,
+          BASE_URI,
+          CONTRACT_URI,
+          royaltyReceiver.address,
+          ROYALTY_BASIS_POINTS,
+          owner.address,
+          hre.ethers.ZeroAddress,
+          DEFAULT_ADMIN_DELAY
+        )
       ).to.be.revertedWithCustomError(nft, "ZeroAddress");
     });
   });
@@ -180,7 +240,9 @@ describe("TricksforBoosterNFT", function () {
   describe("setBaseURI", function () {
     it("updates the base URI (admin only)", async function () {
       const newBase = "https://updated.tricksfor.com/";
-      await nft.setBaseURI(newBase);
+      await expect(nft.setBaseURI(newBase))
+        .to.emit(nft, "BaseURIUpdated")
+        .withArgs(BASE_URI, newBase);
       await nft.safeMint(alice.address, 1n);
       expect(await nft.tokenURI(1n)).to.equal(`${newBase}1`);
     });
@@ -199,7 +261,9 @@ describe("TricksforBoosterNFT", function () {
   describe("setContractURI", function () {
     it("updates contractURI (admin only)", async function () {
       const newURI = "https://updated.tricksfor.com/contract";
-      await nft.setContractURI(newURI);
+      await expect(nft.setContractURI(newURI))
+        .to.emit(nft, "ContractURIUpdated")
+        .withArgs(CONTRACT_URI, newURI);
       expect(await nft.contractURI()).to.equal(newURI);
     });
 
@@ -218,7 +282,9 @@ describe("TricksforBoosterNFT", function () {
     it("updates royalty receiver and fee (admin only)", async function () {
       const newBps = 1000n; // 10%
       await nft.safeMint(alice.address, 1n);
-      await nft.setRoyaltyInfo(bob.address, newBps);
+      await expect(nft.setRoyaltyInfo(bob.address, newBps))
+        .to.emit(nft, "DefaultRoyaltyUpdated")
+        .withArgs(bob.address, newBps);
       const salePrice = hre.ethers.parseEther("1");
       const [receiver, amount] = await nft.royaltyInfo(1n, salePrice);
       expect(receiver).to.equal(bob.address);
@@ -229,6 +295,11 @@ describe("TricksforBoosterNFT", function () {
       await expect(nft.connect(alice).setRoyaltyInfo(alice.address, 500n))
         .to.be.revertedWithCustomError(nft, "AccessControlUnauthorizedAccount")
         .withArgs(alice.address, DEFAULT_ADMIN_ROLE);
+    });
+
+    it("reverts for a zero royalty receiver", async function () {
+      await expect(nft.setRoyaltyInfo(hre.ethers.ZeroAddress, 500n))
+        .to.be.revertedWithCustomError(nft, "ZeroAddress");
     });
   });
 

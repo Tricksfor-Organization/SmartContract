@@ -14,6 +14,9 @@ namespace Tricksfor.Blockchain.Booster.Contracts.Functions
     [Function("owner", "address")]
     public class StakingOwnerFunction : FunctionMessage { }
 
+    [Function("pendingOwner", "address")]
+    public class PendingOwnerFunction : FunctionMessage { }
+
     [Function("paused", "bool")]
     public class StakingPausedFunction : FunctionMessage { }
 
@@ -107,6 +110,16 @@ namespace Tricksfor.Blockchain.Booster.Contracts.Functions
         public string Recipient { get; set; } = string.Empty;
     }
 
+    [Function("rescueUntrackedToken")]
+    public class RescueUntrackedTokenFunction : FunctionMessage
+    {
+        [Parameter("uint256", "tokenId", 1)]
+        public BigInteger TokenId { get; set; }
+
+        [Parameter("address", "recipient", 2)]
+        public string Recipient { get; set; } = string.Empty;
+    }
+
     [Function("pause")]
     public class StakingPauseFunction : FunctionMessage { }
 
@@ -119,6 +132,9 @@ namespace Tricksfor.Blockchain.Booster.Contracts.Functions
         [Parameter("address", "newOwner", 1)]
         public string NewOwner { get; set; } = string.Empty;
     }
+
+    [Function("acceptOwnership")]
+    public class AcceptOwnershipFunction : FunctionMessage { }
 
     [Function("renounceOwnership")]
     public class RenounceOwnershipFunction : FunctionMessage { }

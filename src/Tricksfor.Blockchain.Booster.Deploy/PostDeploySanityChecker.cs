@@ -30,12 +30,27 @@ public sealed class PostDeploySanityChecker
     public async Task<IReadOnlyList<SanityCheckResult>> RunAsync(
         DeploymentConfig config,
         string nftAddress,
-        string stakingAddress)
+        string stakingAddress,
+        string expectedRoyaltyReceiver)
     {
         var nftService = new BoosterNFTService(_web3, nftAddress);
         var stakingService = new BoosterStakingService(_web3, stakingAddress);
 
         var results = new List<SanityCheckResult>();
+
+        var nftCode = await _web3.Eth.GetCode.SendRequestAsync(nftAddress);
+        results.Add(new SanityCheckResult(
+            "NFT bytecode",
+            !string.IsNullOrWhiteSpace(nftCode) && nftCode is not "0x" and not "0x0",
+            "present",
+            string.IsNullOrWhiteSpace(nftCode) || nftCode is "0x" or "0x0" ? "missing" : "present"));
+
+        var stakingCode = await _web3.Eth.GetCode.SendRequestAsync(stakingAddress);
+        results.Add(new SanityCheckResult(
+            "Staking bytecode",
+            !string.IsNullOrWhiteSpace(stakingCode) && stakingCode is not "0x" and not "0x0",
+            "present",
+            string.IsNullOrWhiteSpace(stakingCode) || stakingCode is "0x" or "0x0" ? "missing" : "present"));
 
         // NFT name()
         var nftName = await nftService.NameQueryAsync();
@@ -52,6 +67,65 @@ public sealed class PostDeploySanityChecker
             string.Equals(nftSymbol, config.Nft.Symbol, StringComparison.Ordinal),
             config.Nft.Symbol,
             nftSymbol));
+
+        var baseUri = await nftService.BaseUriQueryAsync();
+        results.Add(new SanityCheckResult(
+            "NFT baseURI()",
+            string.Equals(baseUri, config.Nft.BaseUri, StringComparison.Ordinal),
+            config.Nft.BaseUri,
+            baseUri));
+
+        var contractUri = await nftService.ContractUriQueryAsync();
+        results.Add(new SanityCheckResult(
+            "NFT contractURI()",
+            string.Equals(contractUri, config.Nft.ContractMetadataUri, StringComparison.Ordinal),
+            config.Nft.ContractMetadataUri,
+            contractUri));
+
+        foreach (var (label, interfaceId) in new[]
+        {
+            ("ERC-165", "01ffc9a7"),
+            ("ERC-721", "80ac58cd"),
+            ("ERC-2981", "2a55205a"),
+        })
+        {
+            var supported = await nftService.SupportsInterfaceQueryAsync(Convert.FromHexString(interfaceId));
+            results.Add(new SanityCheckResult($"NFT {label}", supported, "true", supported.ToString().ToLowerInvariant()));
+        }
+
+        var royalty = await nftService.RoyaltyInfoQueryAsync(1, 10_000);
+        results.Add(new SanityCheckResult(
+            "NFT royaltyInfo() receiver",
+            string.Equals(royalty.Receiver, expectedRoyaltyReceiver, StringComparison.OrdinalIgnoreCase),
+            expectedRoyaltyReceiver,
+            royalty.Receiver));
+        results.Add(new SanityCheckResult(
+            "NFT royaltyInfo() amount",
+            royalty.RoyaltyAmount == config.Nft.RoyaltyFeeBasisPoints,
+            config.Nft.RoyaltyFeeBasisPoints.ToString(),
+            royalty.RoyaltyAmount.ToString()));
+
+        var defaultAdmin = await nftService.DefaultAdminQueryAsync();
+        results.Add(new SanityCheckResult(
+            "NFT defaultAdmin()",
+            string.Equals(defaultAdmin, config.AdminAddress, StringComparison.OrdinalIgnoreCase),
+            config.AdminAddress,
+            defaultAdmin));
+
+        var defaultAdminDelay = await nftService.DefaultAdminDelayQueryAsync();
+        results.Add(new SanityCheckResult(
+            "NFT defaultAdminDelay()",
+            defaultAdminDelay == config.DefaultAdminDelay,
+            config.DefaultAdminDelay.ToString(),
+            defaultAdminDelay.ToString()));
+
+        var minterRole = await nftService.MinterRoleQueryAsync();
+        var hasMinterRole = await nftService.HasRoleQueryAsync(minterRole, config.MinterAddress);
+        results.Add(new SanityCheckResult(
+            "NFT configured minter role",
+            hasMinterRole,
+            "true",
+            hasMinterRole.ToString().ToLowerInvariant()));
 
         // NFT paused()
         var nftPaused = await nftService.PausedQueryAsync();
@@ -76,6 +150,13 @@ public sealed class PostDeploySanityChecker
             !stakingPaused,
             "false",
             stakingPaused.ToString().ToLowerInvariant()));
+
+        var stakingOwner = await stakingService.OwnerQueryAsync();
+        results.Add(new SanityCheckResult(
+            "Staking owner()",
+            string.Equals(stakingOwner, config.StakingOwnerAddress, StringComparison.OrdinalIgnoreCase),
+            config.StakingOwnerAddress,
+            stakingOwner));
 
         return results;
     }

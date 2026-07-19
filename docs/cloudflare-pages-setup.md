@@ -1,5 +1,9 @@
 # Cloudflare Pages Setup
 
+> The Pages account/project setup remains applicable, but the workflow examples below describe the
+> superseded release workflow. Current deployments use `cloudflare/wrangler-action@v3` to direct-
+> upload only the selected chain's staged output. See [Hardened Deployment Guide](deployment.md).
+
 This guide describes how to create and configure a Cloudflare Pages project for hosting
 Tricksfor Booster NFT metadata and images, and how to connect it to the release workflow.
 

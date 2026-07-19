@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run artifacts:check
+      - run: npm test
+      - run: npm run test:coverage
+      - name: npm production vulnerability audit
+        run: npm audit --omit=dev --audit-level=high
+      - name: Capture development-tool advisory report
+        shell: bash
+        run: npm audit --json > npm-audit-development.json || test -s npm-audit-development.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: npm-development-audit
+          path: npm-audit-development.json
+
+  dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet restore SmartContract.sln
+      - run: dotnet build SmartContract.sln --configuration Release --no-restore
+      - run: dotnet test SmartContract.sln --configuration Release --no-build
+      - name: NuGet vulnerability audit
+        shell: bash
+        run: |
+          dotnet list SmartContract.sln package --vulnerable --include-transitive | tee /tmp/nuget-audit.txt
+          if grep -qE 'has the following vulnerable packages|Top-level Package.*Severity' /tmp/nuget-audit.txt; then exit 1; fi
+      - name: Pack and inspect NuGet artifacts
+        shell: bash
+        run: |
+          package_version="2.0.0-ci.${GITHUB_RUN_NUMBER}"
+          dotnet pack src/Tricksfor.Blockchain.Booster/Tricksfor.Blockchain.Booster.csproj --configuration Release --no-build --output artifacts/nuget /p:PackageVersion="$package_version"
+          test "$(find artifacts/nuget -name '*.nupkg' ! -name '*.snupkg' | wc -l)" -eq 1
+          test "$(find artifacts/nuget -name '*.snupkg' | wc -l)" -eq 1
+          unzip -l artifacts/nuget/*.nupkg | grep -E 'lib/net8.0/Tricksfor.Blockchain.Booster.(dll|xml)|README.nuget.md'
+          unzip -l artifacts/nuget/*.snupkg | grep 'lib/net8.0/Tricksfor.Blockchain.Booster.pdb'
+          unzip -p artifacts/nuget/*.snupkg 'lib/net8.0/Tricksfor.Blockchain.Booster.pdb' | strings | grep -q 'raw.githubusercontent.com/Tricksfor-Organization/SmartContract'
+          mkdir -p /tmp/tricksfor-package-consumer
+          dotnet new console --framework net8.0 --output /tmp/tricksfor-package-consumer
+          dotnet add /tmp/tricksfor-package-consumer package Tricksfor.SmartContracts --version "$package_version" --no-restore
+          dotnet restore /tmp/tricksfor-package-consumer --source "$GITHUB_WORKSPACE/artifacts/nuget" --source https://api.nuget.org/v3/index.json
+          printf '%s\n' 'using Tricksfor.Blockchain.Booster.Contracts.Deployment;' 'if (!TricksforBoosterNFTDeployment.BYTECODE.StartsWith("0x") || TricksforBoosterNFTDeployment.ABI.Length == 0) throw new Exception("Missing NFT artifacts");' 'if (!TricksforBoosterStakingDeployment.BYTECODE.StartsWith("0x") || TricksforBoosterStakingDeployment.ABI.Length == 0) throw new Exception("Missing staking artifacts");' > /tmp/tricksfor-package-consumer/Program.cs
+          dotnet run --project /tmp/tricksfor-package-consumer
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: nuget-ci
+          path: artifacts/nuget/*
+
+  metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+      - name: Validate manifests and common source tree
+        shell: bash
+        run: |
+          for deploy_env in ethereum-sepolia polygon-amoy optimism-sepolia bsc-testnet avalanche-fuji; do
+            node scripts/validate-nft-assets.js --env "$deploy_env" --manifest-only --allow-placeholders
+          done
+      - name: Generate and validate every chain output
+        shell: bash
+        run: |
+          for deploy_env in ethereum-sepolia polygon-amoy optimism-sepolia bsc-testnet avalanche-fuji; do
+            node scripts/generate-nft-assets.js --env "$deploy_env" --force
+            chain_key="$(node -p "require('./deployments/config/${deploy_env}/nft-manifest.json').chainKey")"
+            node scripts/validate-nft-assets.js --env "$deploy_env" --chain-key "$chain_key" --output-only --allow-placeholders
+          done
+          node scripts/validate-nft-output.js
+          node scripts/test-metadata-snapshots.js
+
+  workflow-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - run: docker run --rm -v "${GITHUB_WORKSPACE}:/repo" -w /repo rhysd/actionlint:1.7.7

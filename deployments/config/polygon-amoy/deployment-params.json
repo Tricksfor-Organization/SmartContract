@@ -3,8 +3,12 @@
     "Network": "polygon-amoy",
     "ChainId": 80002,
     "DeploymentsOutputPath": "deployments",
+    "AdminAddress": "",
+    "MinterAddress": "",
+    "StakingOwnerAddress": "",
+    "DefaultAdminDelay": 0,
     "Nft": {
-      "Name": "TricksforBooster",
+      "Name": "Tricksfor Boosters - Polygon",
       "Symbol": "TFB",
       "BaseUri": "https://nft-preview.tricksfor.com/polygon/metadata/",
       "ContractMetadataUri": "https://nft-preview.tricksfor.com/polygon/contract/collection.json",

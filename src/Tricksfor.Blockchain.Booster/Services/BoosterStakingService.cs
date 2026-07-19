@@ -63,6 +63,10 @@ namespace Tricksfor.Blockchain.Booster.Services
             => _web3.Eth.GetContractQueryHandler<StakingOwnerFunction>()
                 .QueryAsync<string>(_contractAddress, new StakingOwnerFunction());
 
+        public Task<string> PendingOwnerQueryAsync()
+            => _web3.Eth.GetContractQueryHandler<PendingOwnerFunction>()
+                .QueryAsync<string>(_contractAddress, new PendingOwnerFunction());
+
         public Task<bool> PausedQueryAsync()
             => _web3.Eth.GetContractQueryHandler<StakingPausedFunction>()
                 .QueryAsync<bool>(_contractAddress, new StakingPausedFunction());
@@ -138,6 +142,24 @@ namespace Tricksfor.Blockchain.Booster.Services
                     _contractAddress,
                     new EmergencyWithdrawFunction { TokenId = tokenId, Recipient = recipient });
 
+        public Task<TransactionReceipt> RescueUntrackedTokenRequestAndWaitForReceiptAsync(
+            BigInteger tokenId,
+            string recipient)
+            => _web3.Eth.GetContractTransactionHandler<RescueUntrackedTokenFunction>()
+                .SendRequestAndWaitForReceiptAsync(
+                    _contractAddress,
+                    new RescueUntrackedTokenFunction { TokenId = tokenId, Recipient = recipient });
+
+        public Task<TransactionReceipt> TransferOwnershipRequestAndWaitForReceiptAsync(string newOwner)
+            => _web3.Eth.GetContractTransactionHandler<TransferOwnershipFunction>()
+                .SendRequestAndWaitForReceiptAsync(
+                    _contractAddress,
+                    new TransferOwnershipFunction { NewOwner = newOwner });
+
+        public Task<TransactionReceipt> AcceptOwnershipRequestAndWaitForReceiptAsync()
+            => _web3.Eth.GetContractTransactionHandler<AcceptOwnershipFunction>()
+                .SendRequestAndWaitForReceiptAsync(_contractAddress, new AcceptOwnershipFunction());
+
         public Task<TransactionReceipt> PauseRequestAndWaitForReceiptAsync()
             => _web3.Eth.GetContractTransactionHandler<StakingPauseFunction>()
                 .SendRequestAndWaitForReceiptAsync(_contractAddress, new StakingPauseFunction());
@@ -167,6 +189,9 @@ namespace Tricksfor.Blockchain.Booster.Services
         /// </summary>
         public List<EventLog<EmergencyWithdrawnEventDTO>> DecodeEmergencyWithdrawnEvents(TransactionReceipt receipt)
             => receipt.DecodeAllEvents<EmergencyWithdrawnEventDTO>();
+
+        public List<EventLog<UntrackedTokenRescuedEventDTO>> DecodeUntrackedTokenRescuedEvents(TransactionReceipt receipt)
+            => receipt.DecodeAllEvents<UntrackedTokenRescuedEventDTO>();
 
         /// <summary>
         /// Returns a filter input for querying TokenStaked events by staker address.

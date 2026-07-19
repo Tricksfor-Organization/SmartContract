@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
@@ -26,7 +27,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 /// @dev    Pause gates new staking only. Unstaking is always available so players can
 ///         always recover their assets. emergencyWithdraw is an explicit, named, and
 ///         event-emitting admin path — it is not hidden.
-contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721Receiver {
+contract TricksforBoosterStaking is Ownable2Step, ReentrancyGuard, Pausable, IERC721Receiver {
     // -------------------------------------------------------------------------
     // Errors
     // -------------------------------------------------------------------------
@@ -48,6 +49,15 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721R
 
     /// @notice Token received from an unsupported NFT contract.
     error UnsupportedNFTContract();
+
+    /// @notice Emergency withdrawals can only return a tracked token to its original staker.
+    error InvalidEmergencyRecipient();
+
+    /// @notice Rescue is only available for tokens that have no staking record.
+    error TokenIsTracked();
+
+    /// @notice Rescue requires the staking contract to currently hold the token.
+    error TokenNotHeld();
 
     // -------------------------------------------------------------------------
     // Events (integration-critical — do not rename, reorder, or re-index)
@@ -79,6 +89,9 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721R
         uint256 withdrawnAt
     );
 
+    /// @notice Emitted when an untracked NFT sent with transferFrom is recovered by the owner.
+    event UntrackedTokenRescued(address indexed recipient, uint256 indexed tokenId, uint256 rescuedAt);
+
     // -------------------------------------------------------------------------
     // State
     // -------------------------------------------------------------------------
@@ -103,8 +116,9 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721R
     // -------------------------------------------------------------------------
 
     /// @param nftContract_ Address of the TricksforBoosterNFT contract.
-    constructor(address nftContract_) Ownable(msg.sender) {
-        if (nftContract_ == address(0)) revert ZeroAddress();
+    /// @param initialOwner_ Initial contract owner. Mainnet deployments should use a multisig.
+    constructor(address nftContract_, address initialOwner_) Ownable(initialOwner_) {
+        if (nftContract_ == address(0) || initialOwner_ == address(0)) revert ZeroAddress();
         nftContract = IERC721(nftContract_);
     }
 
@@ -177,14 +191,28 @@ contract TricksforBoosterStaking is Ownable, ReentrancyGuard, Pausable, IERC721R
     /// @param tokenId   The token ID to withdraw.
     /// @param recipient The address to send the token to.
     function emergencyWithdraw(uint256 tokenId, address recipient) external onlyOwner nonReentrant {
-        if (_stakedBy[tokenId] == address(0)) revert TokenNotStaked();
-        if (recipient == address(0)) revert ZeroAddress();
-
         address originalStaker = _stakedBy[tokenId];
+        if (originalStaker == address(0)) revert TokenNotStaked();
+        if (recipient == address(0)) revert ZeroAddress();
+        if (recipient != originalStaker) revert InvalidEmergencyRecipient();
+
         _clearStake(originalStaker, tokenId);
         nftContract.transferFrom(address(this), recipient, tokenId);
 
         emit EmergencyWithdrawn(originalStaker, tokenId, recipient, block.timestamp);
+    }
+
+    /// @notice Recovers an NFT that was sent directly with transferFrom and therefore did
+    ///         not invoke onERC721Received or create a staking record.
+    /// @param tokenId   The untracked token held by this contract.
+    /// @param recipient The non-zero address that receives the recovered token.
+    function rescueUntrackedToken(uint256 tokenId, address recipient) external onlyOwner nonReentrant {
+        if (recipient == address(0)) revert ZeroAddress();
+        if (_stakedBy[tokenId] != address(0)) revert TokenIsTracked();
+        if (nftContract.ownerOf(tokenId) != address(this)) revert TokenNotHeld();
+
+        nftContract.transferFrom(address(this), recipient, tokenId);
+        emit UntrackedTokenRescued(recipient, tokenId, block.timestamp);
     }
 
     // -------------------------------------------------------------------------

@@ -1,5 +1,8 @@
 # Release-Driven Deployment Architecture
 
+> **Historical:** this records the superseded all-in-one release design. The current architecture
+> and operator instructions are in the [Hardened Deployment Guide](deployment.md).
+
 This document is the source-of-truth design reference for the Tricksfor SmartContract deployment and NuGet publishing pipeline. All implementation issues for GitHub Actions workflows should reference this document directly.
 
 ---

@@ -3,8 +3,12 @@
     "Network": "avalanche-fuji",
     "ChainId": 43113,
     "DeploymentsOutputPath": "deployments",
+    "AdminAddress": "",
+    "MinterAddress": "",
+    "StakingOwnerAddress": "",
+    "DefaultAdminDelay": 0,
     "Nft": {
-      "Name": "TricksforBooster",
+      "Name": "Tricksfor Boosters - Avalanche",
       "Symbol": "TFB",
       "BaseUri": "https://nft-preview.tricksfor.com/avalanche/metadata/",
       "ContractMetadataUri": "https://nft-preview.tricksfor.com/avalanche/contract/collection.json",

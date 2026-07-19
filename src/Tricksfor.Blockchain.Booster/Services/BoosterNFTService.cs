@@ -62,6 +62,14 @@ namespace Tricksfor.Blockchain.Booster.Services
             => _web3.Eth.GetContractQueryHandler<DefaultAdminRoleFunction>()
                 .QueryAsync<byte[]>(_contractAddress, new DefaultAdminRoleFunction());
 
+        public Task<string> DefaultAdminQueryAsync()
+            => _web3.Eth.GetContractQueryHandler<DefaultAdminFunction>()
+                .QueryAsync<string>(_contractAddress, new DefaultAdminFunction());
+
+        public Task<BigInteger> DefaultAdminDelayQueryAsync()
+            => _web3.Eth.GetContractQueryHandler<DefaultAdminDelayFunction>()
+                .QueryAsync<BigInteger>(_contractAddress, new DefaultAdminDelayFunction());
+
         public Task<bool> HasRoleQueryAsync(byte[] role, string account)
             => _web3.Eth.GetContractQueryHandler<HasRoleFunction>()
                 .QueryAsync<bool>(_contractAddress, new HasRoleFunction { Role = role, Account = account });
@@ -81,6 +89,10 @@ namespace Tricksfor.Blockchain.Booster.Services
         public Task<string> ContractUriQueryAsync()
             => _web3.Eth.GetContractQueryHandler<ContractUriFunction>()
                 .QueryAsync<string>(_contractAddress, new ContractUriFunction());
+
+        public Task<string> BaseUriQueryAsync()
+            => _web3.Eth.GetContractQueryHandler<BaseUriFunction>()
+                .QueryAsync<string>(_contractAddress, new BaseUriFunction());
 
         public Task<string> OwnerOfQueryAsync(BigInteger tokenId)
             => _web3.Eth.GetContractQueryHandler<OwnerOfFunction>()

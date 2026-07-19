@@ -36,4 +36,40 @@ public class ContractDeploymentRecord
     /// </summary>
     [JsonPropertyName("constructorArgs")]
     public object[] ConstructorArgs { get; init; } = Array.Empty<object>();
+
+    [JsonPropertyName("chainId")]
+    public long ChainId { get; init; }
+
+    [JsonPropertyName("deployer")]
+    public string Deployer { get; init; } = string.Empty;
+
+    [JsonPropertyName("transactionStatus")]
+    public string TransactionStatus { get; init; } = string.Empty;
+
+    [JsonPropertyName("gasUsed")]
+    public string GasUsed { get; init; } = string.Empty;
+
+    [JsonPropertyName("sourceCommit")]
+    public string SourceCommit { get; init; } = string.Empty;
+
+    [JsonPropertyName("compiler")]
+    public string Compiler { get; init; } = "solc 0.8.26";
+
+    [JsonPropertyName("compilerSettings")]
+    public string CompilerSettings { get; init; } = "optimizer=true,runs=200,evmVersion=cancun";
+
+    [JsonPropertyName("creationCodeHash")]
+    public string CreationCodeHash { get; init; } = string.Empty;
+
+    [JsonPropertyName("runtimeCodeHash")]
+    public string RuntimeCodeHash { get; init; } = string.Empty;
+
+    [JsonPropertyName("finalAdmin")]
+    public string FinalAdmin { get; init; } = string.Empty;
+
+    [JsonPropertyName("finalMinter")]
+    public string FinalMinter { get; init; } = string.Empty;
+
+    [JsonPropertyName("finalOwner")]
+    public string FinalOwner { get; init; } = string.Empty;
 }

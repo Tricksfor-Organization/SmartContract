@@ -3,8 +3,12 @@
     "Network": "optimism-mainnet",
     "ChainId": 10,
     "DeploymentsOutputPath": "deployments",
+    "AdminAddress": "",
+    "MinterAddress": "",
+    "StakingOwnerAddress": "",
+    "DefaultAdminDelay": 172800,
     "Nft": {
-      "Name": "TricksforBooster",
+      "Name": "Tricksfor Boosters - Optimism",
       "Symbol": "TFB",
       "BaseUri": "https://nft.tricksfor.com/optimism/metadata/",
       "ContractMetadataUri": "https://nft.tricksfor.com/optimism/contract/collection.json",

@@ -78,4 +78,18 @@ namespace Tricksfor.Blockchain.Booster.Contracts.Events
         [Parameter("uint256", "withdrawnAt", 4, false)]
         public BigInteger WithdrawnAt { get; set; }
     }
+
+    /// <summary>Emitted when an untracked direct transfer is recovered.</summary>
+    [Event("UntrackedTokenRescued")]
+    public class UntrackedTokenRescuedEventDTO : IEventDTO
+    {
+        [Parameter("address", "recipient", 1, true)]
+        public string Recipient { get; set; } = string.Empty;
+
+        [Parameter("uint256", "tokenId", 2, true)]
+        public BigInteger TokenId { get; set; }
+
+        [Parameter("uint256", "rescuedAt", 3, false)]
+        public BigInteger RescuedAt { get; set; }
+    }
 }
