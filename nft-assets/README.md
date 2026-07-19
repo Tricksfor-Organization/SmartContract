@@ -93,19 +93,20 @@ Each chain deployment consumes its own chain-specific base URLs:
 | BSC       | `https://nft.tricksfor.com/bsc/metadata/`          | `https://nft.tricksfor.com/bsc/contract/collection.json`     |
 | Avalanche | `https://nft.tricksfor.com/avalanche/metadata/`    | `https://nft.tricksfor.com/avalanche/contract/collection.json`|
 
-Contract deployments must pass these chain-specific values as `Deployment__Nft__BaseUri` and
-`Deployment__Nft__ContractMetadataUri`. The configured URLs must include the `/{chainKey}/`
-path segment shown above so they match the generated Cloudflare Pages asset layout.
+Contract deployments read these chain-specific values from
+`deployments/config/{env}/deployment-params.json`. The configured URLs must include the
+`/{chainKey}/` path segment shown above so they match the generated Pages asset layout.
 
-The `deploy-metadata` job in `release-deploy.yml` reads the `chainKey` from
-`deployments/config/{env}/nft-manifest.json` and constructs the chain-specific URLs
-automatically, then passes them as output variables to the `deploy-contracts` job.
+The current protected workflow reads `chainKey` from `nft-manifest.json`, stages and uploads only
+that chain, and then uses the already checked-in contract URLs. It does not construct URLs from the
+Cloudflare response. Confirm that Pages branch/custom-domain routing serves the uploaded content at
+the configured URLs before deployment.
 
 ---
 
-## Generating Static Assets (release pipeline)
+## Generating Static Assets (protected deployment pipeline)
 
-`scripts/generate-nft-assets.js` is used by the release pipeline to generate token metadata,
+`scripts/generate-nft-assets.js` is used by the protected deployment workflow to generate token metadata,
 collection metadata, and token images from an authoritative deployment manifest:
 
 ```bash
@@ -217,8 +218,10 @@ all valid values, and examples covering every game theme and booster tier.
 }
 ```
 
-The `fee_recipient` field uses `0x000000000000000000000000000000000000dEaD` as a placeholder.
-**Before publishing to mainnet, replace it with the actual royalty recipient address.**
+The `fee_recipient` field currently uses `0x000000000000000000000000000000000000dEaD`
+as a placeholder. Mainnet is blocked until the authoritative generator/configuration accepts the
+approved royalty receiver and the contract uses that same address. Do not patch generated files
+manually.
 
 See [`docs/metadata/contract-example.json`](../docs/metadata/contract-example.json) for the field reference.
 
@@ -241,4 +244,3 @@ Chain-specific subdirectories are served at their respective paths under the sha
 All chains share a single Cloudflare Pages project per environment tier. Chain separation is
 achieved through the per-chain subdirectory structure (`/ethereum/`, `/polygon/`, etc.) within
 that single project.
-

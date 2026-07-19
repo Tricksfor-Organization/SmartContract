@@ -8,7 +8,7 @@ This index provides a single entry point to all implementation guidance, referen
 
 | Document | Description |
 |---|---|
-| [Booster NFT Staking Specification](booster-nft-staking-spec.md) *(coming soon)* | Full specification for the Booster NFT and staking contracts: state model, custody flow, event schema, and invariants |
+| Booster NFT Staking Specification *(planned)* | A dedicated full specification has not yet been added; use the contract source, backend integration contract, architecture guardrails, and security review meanwhile |
 | [Backend Integration Contract](backend-integration-contract.md) | How backend services consume on-chain staking state: event semantics, read methods, consistency rules, and worked examples |
 
 ---
@@ -17,10 +17,12 @@ This index provides a single entry point to all implementation guidance, referen
 
 | Document | Description |
 |---|---|
-| [Hardened Deployment Guide](deployment.md) | Current source of truth for protected deployments, Alchemy testnets, verification, resumability, smoke tests, and mint plans |
-| [Legacy Release Operations Guide](release-operations.md) | Historical guide for the superseded all-in-one release workflow |
+| [Deployment Operator Runbook](deployment.md) | Current source of truth, exact setup, testnet rollout, mainnet blockers/readiness, recovery, verification, NuGet, and minting |
+| [Archived Release Operations Guide](release-operations.md) | Compatibility pointer explaining which former workflow assumptions are obsolete |
 | [GitHub Environments Setup](github-environments-setup.md) | Step-by-step GitHub UI configuration reference for environment secrets, variables, and protection rules |
-| [Legacy Release Deployment Architecture](release-deployment-architecture.md) | Historical design for the superseded all-in-one release workflow |
+| [Archived Release Deployment Architecture](release-deployment-architecture.md) | Compatibility pointer from the deleted all-in-one workflow to the current architecture |
+| [Cloudflare Pages Setup](cloudflare-pages-setup.md) | Current Wrangler selected-chain upload model and unresolved branch/custom-domain routing requirement |
+| [Verification Troubleshooting](verification-troubleshooting.md) | Current blocking verification behavior, safe reruns, and exact manual verification commands |
 
 ---
 

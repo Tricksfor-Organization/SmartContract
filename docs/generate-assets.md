@@ -230,8 +230,10 @@ Token IDs 1–600 are deterministic and fixed across all chains:
 }
 ```
 
-> **⚠ Important:** `fee_recipient` uses a placeholder burn address. Replace it with the actual
-> royalty recipient address before mainnet deployment.
+> **Important:** `fee_recipient` is currently generated as a placeholder burn address. Mainnet is
+> blocked until an explicit approved royalty receiver is supplied through the authoritative source
+> configuration and used by both metadata generation and contract deployment. Do not patch generated
+> files manually.
 
 ---
 
@@ -239,8 +241,9 @@ Token IDs 1–600 are deterministic and fixed across all chains:
 
 ### Validating generated output in CI
 
-The `validate-generated-output` job in `release-deploy.yml` validates the pre-committed
-`nft-assets/generated/` content automatically on every release:
+The `metadata` job in `.github/workflows/ci.yml` validates every testnet manifest and common source
+tree, generates each selected chain output, validates those outputs, runs the cross-chain output
+validator, and checks metadata snapshots on pull requests and pushes to `main`.
 
 ```yaml
 - name: Validate generated NFT output
@@ -265,13 +268,14 @@ Or for a single chain driven by a manifest committed to the repository:
 
 ### Release pipeline
 
-The release pipeline (`release-deploy.yml`) uses `scripts/generate-nft-assets.js` for the
-full manifest-driven release build (which also copies token images). The `generate-assets`
-command produces the `nft-assets/generated/` metadata tree used for Cloudflare Pages and
-contributor review.
+The reusable protected deployment workflow uses `scripts/generate-nft-assets.js` for the selected
+environment when `deploy_metadata=true`. It validates source inputs, generates one chain output,
+validates that output, stages only that chain plus Cloudflare routing files, and uploads it with
+Wrangler. Contract URLs remain the checked-in values; the workflow does not derive them from the
+upload response.
 
-For a full description of the release pipeline see
-[`docs/release-deployment-architecture.md`](release-deployment-architecture.md).
+For the current workflow and hosting requirements, see the
+[Deployment Operator Runbook](deployment.md) and [Cloudflare Pages Setup](cloudflare-pages-setup.md).
 
 ---
 

@@ -131,20 +131,26 @@ Automation is split by responsibility:
 |---|---|
 | `CI` | Exact artifact check, Solidity/.NET tests, metadata checks, package inspection, workflow lint, audits |
 | `Deploy testnet` | Manual, protected, one Alchemy-backed testnet at a time, followed by verification and smoke flow |
-| `Deploy mainnet` | Manual stable-tag deployment with environment approval and a per-network concurrency lock |
+| `Deploy mainnet` | Manual stable-tag workflow; currently blocked by the production smoke and royalty issues in the runbook |
 | `Release NuGet package` | Publishes one package per release, independently of network deployment |
 | `Execute reviewed mainnet mint plan` | Dry-run or resumable minting from a separately reviewed token-recipient plan |
 
-Each protected deployment targets exactly one network and:
+The current reusable deployment targets exactly one network and:
 
 1. Deploys NFT metadata and images to Cloudflare Pages (`nft.tricksfor.com`)
 2. Deploys both contracts to the target network
 3. Verifies contracts on the block explorer (if `VERIFY_ENABLED=true`)
-4. Runs a mint/approve/stake/event-decode/unstake smoke flow and publishes permanent records
+4. Runs a mint/approve/stake/event-decode/unstake smoke flow and publishes records
 
-All 33 committed source PNGs are placeholders. Metadata publishing is deliberately blocked until
-they are replaced with final artwork. Contract deployment can be run without metadata publishing
-only when the configured metadata URLs already exist and pass the runner preflight.
+The state-changing smoke flow is appropriate for controlled testnets but currently also runs in the
+mainnet workflow. Mainnet deployment is therefore blocked until it is replaced by a read-only path.
+Generated collection metadata also needs an explicit fee recipient synchronized with the on-chain
+royalty receiver.
+
+All 33 committed source PNGs are placeholders. Testnets can publish them with warnings for technical
+validation; mainnet metadata is blocked until final artwork and the collection image are supplied.
+Contract deployment without metadata publication is valid only when the configured URLs already
+contain the intended content and pass preflight.
 
 See the current [`docs/deployment.md`](docs/deployment.md) operator guide for protected environment
 configuration, workflow behavior, Alchemy testnet rollout, recovery, and artifacts.

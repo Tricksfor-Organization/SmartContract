@@ -70,14 +70,13 @@ dotnet pack src/Tricksfor.Blockchain.Booster/Tricksfor.Blockchain.Booster.csproj
 | Git tag | NuGet version | Meaning |
 |---|---|---|
 | `v1.2.3` | `1.2.3` | Stable release — published to nuget.org |
-| `v1.2.3-rc.1` | `1.2.3-rc.1` | Release candidate — published to GitHub Packages only |
-| `v1.2.3-beta.2` | `1.2.3-beta.2` | Beta — published to GitHub Packages only |
-| `v1.2.3-alpha.1` | `1.2.3-alpha.1` | Alpha — published to GitHub Packages only |
+| `v1.2.3-rc.1` | `1.2.3-rc.1` | Not accepted by the current release workflow |
+| `v1.2.3-beta.2` | `1.2.3-beta.2` | Not accepted by the current release workflow |
+| `v1.2.3-alpha.1` | `1.2.3-alpha.1` | Not accepted by the current release workflow |
 
-Pre-release packages are not published to nuget.org unless `NUGET_PUBLISH_ENABLED` is explicitly
-configured and the tag matches the stable pattern. See
-[release-deployment-architecture.md §8](./release-deployment-architecture.md#8-nuget-publishing-model)
-for the publish gate logic.
+The current `Release NuGet package` workflow accepts only stable `vMAJOR.MINOR.PATCH` tags and
+publishes them to nuget.org. It does not publish pre-release packages or use an environment-level
+publish flag.
 
 ---
 
@@ -123,26 +122,18 @@ The following changes are **not** breaking (MINOR or PATCH):
 
 ## Publishing flow
 
-Publishing is fully automated and triggered by a GitHub Release. The workflow is defined in
-`.github/workflows/release-deploy.yml`.
+Publishing is independent of contract deployment. The workflow is defined in
+`.github/workflows/release-package.yml` and runs when a GitHub Release is published or is manually
+dispatched with an existing stable tag.
 
 ```
-GitHub Release published
-        │
-        ▼
-  test job
-        │
-        ▼
-  deploy-contracts job (environment-scoped)
-        │  (propagates NUGET_PUBLISH_ENABLED from environment variable)
-        └─► publish-nuget job
-                  │
-                  ├── validate version format (fail fast on bad tag)
-                  ├── dotnet pack → .nupkg + .snupkg (version from release tag)
-                  ├── upload .nupkg + .snupkg as workflow artifacts (always)
-                  ├── dotnet nuget push .nupkg → nuget.org   (stable releases)
-                  ├── dotnet nuget push .snupkg → nuget.org symbol server   (stable releases)
-                  └── dotnet nuget push .nupkg → GitHub Packages   (pre-release)
+published GitHub Release or manual stable tag
+  → validate vMAJOR.MINOR.PATCH
+  → test SmartContract.sln
+  → pack .nupkg and .snupkg
+  → push to nuget.org with --skip-duplicate
+  → upload workflow artifact
+  → attach packages to the GitHub Release
 ```
 
 ### Manual pack (local verification)
@@ -178,11 +169,11 @@ The `.snupkg` contains the PDB file, which helps consumers debug the package and
 Source-level step-into debugging typically also requires SourceLink metadata to be configured during
 the build; the symbol package alone does not guarantee that experience.
 
-It is pushed to the nuget.org symbol server as part of the stable release workflow and uploaded as a
-workflow artifact on every run regardless of publish outcome.
+It is included in the pack output, uploaded with the workflow artifact, and attached to the GitHub
+Release. The current workflow pushes only the `.nupkg`; it does not separately push the `.snupkg` to
+the nuget.org symbol server. Add and validate that publication step if hosted symbols are required.
 
-GitHub Packages does not support the `.snupkg` format; only the main `.nupkg` is pushed to GitHub
-Packages for pre-release versions.
+The current workflow does not publish to GitHub Packages.
 
 ---
 
@@ -191,12 +182,8 @@ Packages for pre-release versions.
 | Name | Type | Scope | Purpose |
 |---|---|---|---|
 | `NUGET_API_KEY` | Secret | Repository | API key for nuget.org push |
-| `GITHUB_TOKEN` | Automatic | Repository | API key for GitHub Packages push |
-| `NUGET_PUBLISH_ENABLED` | Variable | Environment | Set `true` to enable publishing for a given environment |
+| `GITHUB_TOKEN` | Automatic | Repository | Read the tag/release and attach package files |
 
-`NUGET_PUBLISH_ENABLED` is read from the GitHub Environment associated with the `deploy-contracts`
-job. The `publish-nuget` job receives the value as a job output, so it honours the per-environment
-setting without needing its own environment scope (and without triggering an extra approval gate on
-mainnet environments).
+No GitHub Environment or `NUGET_PUBLISH_ENABLED` variable is involved in package publication.
 
 See [github-environments-setup.md](./github-environments-setup.md) for configuration instructions.

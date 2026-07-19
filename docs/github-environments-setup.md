@@ -1,162 +1,147 @@
 # GitHub Environments Setup
 
-> **Historical:** use the environment and secret matrix in the current
-> [Hardened Deployment Guide](deployment.md). This page describes the superseded workflow.
+This page is the current GitHub configuration reference for the manual testnet and mainnet
+deployment workflows. The full operating sequence is in the
+[Deployment Operator Runbook](deployment.md).
 
-This document describes the former GitHub configuration for `release-deploy.yml`.
+## 1. Create the environments
 
-For the deployment architecture and design decisions, see [`docs/release-deployment-architecture.md`](release-deployment-architecture.md).
+Open **Repository → Settings → Environments → New environment** and create:
 
----
+| Environment         | Stage   | Chain ID | `NETWORK_KEY`      |
+| ------------------- | ------- | -------: | ------------------ |
+| `ethereum-sepolia`  | Testnet | 11155111 | `sepolia`          |
+| `ethereum-mainnet`  | Mainnet |        1 | `mainnet`          |
+| `polygon-amoy`      | Testnet |    80002 | `polygon_amoy`     |
+| `polygon-mainnet`   | Mainnet |      137 | `polygon`          |
+| `optimism-sepolia`  | Testnet | 11155420 | `optimism_sepolia` |
+| `optimism-mainnet`  | Mainnet |       10 | `optimism`         |
+| `bsc-testnet`       | Testnet |       97 | `bsc_testnet`      |
+| `bsc-mainnet`       | Mainnet |       56 | `bsc`              |
+| `avalanche-fuji`    | Testnet |    43113 | `avalanche_fuji`   |
+| `avalanche-mainnet` | Mainnet |    43114 | `avalanche`        |
 
-## Required GitHub Environments
+Environment names must match the `deploy_env` choices in `deploy-testnet.yml`,
+`deploy-mainnet.yml`, and `mint-mainnet.yml` exactly.
 
-Create one GitHub Environment per deploy target under **Settings → Environments**:
+## 2. Configure protection rules
 
-| Environment name  | Chain             | Stage   |
-|-------------------|-------------------|---------|
-| `ethereum-sepolia` | Ethereum          | Testnet |
-| `ethereum-mainnet` | Ethereum          | Mainnet |
-| `polygon-amoy`    | Polygon           | Testnet |
-| `polygon-mainnet` | Polygon           | Mainnet |
-| `optimism-sepolia` | Optimism          | Testnet |
-| `optimism-mainnet` | Optimism          | Mainnet |
-| `bsc-testnet`     | BNB Smart Chain   | Testnet |
-| `bsc-mainnet`     | BNB Smart Chain   | Mainnet |
-| `avalanche-fuji`  | Avalanche         | Testnet |
-| `avalanche-mainnet` | Avalanche       | Mainnet |
+For each mainnet environment:
 
----
+1. Open **Settings → Environments → {environment}**.
+2. Enable **Required reviewers** and add the approved contract-release reviewers.
+3. Prevent self-review when repository policy supports it.
+4. Restrict deployment branches/tags to the approved release policy.
+5. Optionally configure a wait timer as a cancellation window.
+6. Save the protection rules.
 
-## Environment Protection Rules
+Testnet environments may omit reviewers, but they should still restrict deployments to trusted
+branches. The `Deploy testnet` workflow is manual; testnets are not automatically deployed when a
+release is published.
 
-### All `*-mainnet` environments
+## 3. Add environment secrets
 
-Configure the following protections under **Settings → Environments → {env-name}**:
+In each environment, select **Environment secrets → Add secret**.
 
-- **Required reviewers**: add at least one named approver; the deployment will be paused until approved.
-- **Deployment branches**: restrict to the repository's default branch (or a specific release branch pattern).
-- **Wait timer** (optional): 5 minutes provides a cancellation window.
+| Secret                 | Required                   | Description                                           |
+| ---------------------- | -------------------------- | ----------------------------------------------------- |
+| `RPC_URL`              | Always                     | Full JSON-RPC URL, including provider key             |
+| `DEPLOYER_PRIVATE_KEY` | Always                     | 32-byte private key for the funded deployment account |
+| `EXPLORER_API_KEY`     | If verification is enabled | Etherscan API V2-compatible key                       |
+| `CLOUDFLARE_API_TOKEN` | If metadata is published   | Token scoped for Pages direct upload                  |
 
-### Testnet environments
+Security requirements:
 
-No approvals required. Auto-deploy on release.
+- Never store these values as workflow inputs or repository files.
+- Use a separate deployment account from personal and treasury accounts.
+- Do not reuse a mainnet deployment key on testnets.
+- Rotate a credential immediately if it appears in logs or shell history.
+- Review provider/API-token scope before each mainnet release.
 
----
+## 4. Add environment variables
 
-## Secrets (per environment)
+In each environment, select **Environment variables → Add variable**.
 
-Set the following **Environment Secrets** for each environment:
+| Variable                | Required                   | Description                                 |
+| ----------------------- | -------------------------- | ------------------------------------------- |
+| `ADMIN_ADDRESS`         | Always                     | Initial delayed NFT default administrator   |
+| `MINTER_ADDRESS`        | Always                     | Initial NFT `MINTER_ROLE` holder            |
+| `STAKING_OWNER_ADDRESS` | Always                     | Initial staking owner                       |
+| `NETWORK_KEY`           | If verification is enabled | Exact value from the environment table      |
+| `VERIFY_ENABLED`        | Recommended                | Exact lowercase `true` enables verification |
+| `CLOUDFLARE_ACCOUNT_ID` | If metadata is published   | Cloudflare account ID                       |
+| `CF_PAGES_PROJECT`      | If metadata is published   | Pages project receiving the staged site     |
 
-| Secret name          | Description                                       |
-|----------------------|---------------------------------------------------|
-| `RPC_URL`            | JSON-RPC endpoint URL for the target network      |
-| `DEPLOYER_PRIVATE_KEY` | Hex-encoded private key of the deployer wallet  |
-| `EXPLORER_API_KEY`   | Block explorer API key (required if `VERIFY_ENABLED=true`) |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with **Cloudflare Pages: Edit** permission |
+Address rules:
 
-> **Security:** These values must never be committed, logged, or passed as workflow inputs. They are injected exclusively via the GitHub Environment secrets mechanism.
+- All three addresses must be non-zero, 20-byte hexadecimal addresses.
+- For the current state-changing testnet smoke flow, `MINTER_ADDRESS` must equal the address derived
+  from `DEPLOYER_PRIVATE_KEY`.
+- On mainnet, `ADMIN_ADDRESS` and `STAKING_OWNER_ADDRESS` must differ from the deployer and should be
+  independently reviewed multisigs.
+- Do not configure mainnet until the state-changing mainnet smoke and royalty-receiver blockers in
+  the deployment runbook are closed.
 
----
+## 5. Values not used by current workflows
 
-## Variables (per environment)
+Do not add these values for the current workflow unless another integration independently requires
+them:
 
-Set the following **Environment Variables** for each environment:
+| Obsolete deployment value        | Current source                          |
+| -------------------------------- | --------------------------------------- |
+| Repository variable `DEPLOY_ENV` | Manual workflow `deploy_env` input      |
+| Environment variable `CHAIN_ID`  | Checked-in deployment parameter file    |
+| `NFT_BASE_DOMAIN`                | Checked-in metadata/deployment URLs     |
+| `NUGET_PUBLISH_ENABLED`          | NuGet publishing is a separate workflow |
+| `EXPLORER_NAME`                  | Not consumed by the current workflow    |
+| `EXPLORER_BASE_URL`              | Not consumed by the current workflow    |
 
-| Variable name         | Required | Description                                                    | Example                |
-|-----------------------|----------|----------------------------------------------------------------|------------------------|
-| `CHAIN_ID`            | Yes      | EVM chain ID for the target network                           | `11155111`             |
-| `NETWORK_KEY`         | Yes      | Hardhat network name for the `--network` flag during verification | `sepolia`          |
-| `CLOUDFLARE_ACCOUNT_ID` | Yes    | Cloudflare account ID (visible in the dashboard URL)          | `a1b2c3d4e5f6...`      |
-| `CF_PAGES_PROJECT`    | Yes      | Cloudflare Pages project name for NFT asset hosting           | `tricksfor-nft`        |
-| `NFT_BASE_DOMAIN`     | No       | Custom domain for the Pages site (without protocol or trailing slash); falls back to `{project}.pages.dev` | `nft.tricksfor.com` |
-| `VERIFY_ENABLED`      | No       | Set to `true` to enable block-explorer verification           | `true`                 |
-| `NUGET_PUBLISH_ENABLED` | No     | Set to `true` to publish the NuGet package on deploy          | `false`                |
-| `EXPLORER_NAME`       | No       | Human-readable block explorer name, written to the deployment manifest's `verification.explorerName` field | `Etherscan` |
-| `EXPLORER_BASE_URL`   | No       | Block explorer contract browser URL prefix (without trailing slash), used to build `verification.explorerUrl` | `https://etherscan.io/address` |
+## 6. Repository-level NuGet secret
 
-> **`DEPLOY_ENV` is not an environment variable.** It must be set as a **repository-level variable** under **Settings → Secrets and variables → Actions → Variables**. The `resolve-environment` job runs without an environment scope and cannot read per-environment variables; it reads `DEPLOY_ENV` exclusively from the repository level.
+Open **Settings → Secrets and variables → Actions → Secrets → New repository secret** and add:
 
-`EXPLORER_NAME` and `EXPLORER_BASE_URL` are optional convenience fields. If not set, `verification.explorerName` and `verification.explorerUrl` in the manifest will be empty strings. They are useful for operators who want rich manifest output and have no impact on whether verification succeeds or fails.
+| Secret          | Required                 | Description                                  |
+| --------------- | ------------------------ | -------------------------------------------- |
+| `NUGET_API_KEY` | When publishing releases | nuget.org key for `Tricksfor.SmartContracts` |
 
-For Cloudflare Pages setup details, see [`docs/cloudflare-pages-setup.md`](cloudflare-pages-setup.md).
+This secret is consumed only by `release-package.yml`. `GITHUB_TOKEN` is supplied automatically by
+GitHub Actions.
 
-### NETWORK_KEY values per environment
+## 7. Cloudflare configuration
 
-| Environment name   | `NETWORK_KEY` value | `EXPLORER_NAME`              | `EXPLORER_BASE_URL`                         |
-|--------------------|---------------------|------------------------------|---------------------------------------------|
-| `ethereum-sepolia`  | `sepolia`           | `Etherscan (Sepolia)`        | `https://sepolia.etherscan.io/address`      |
-| `ethereum-mainnet`  | `mainnet`           | `Etherscan`                  | `https://etherscan.io/address`              |
-| `polygon-amoy`      | `polygon_amoy`      | `PolygonScan (Amoy)`         | `https://amoy.polygonscan.com/address`      |
-| `polygon-mainnet`   | `polygon`           | `PolygonScan`                | `https://polygonscan.com/address`           |
-| `optimism-sepolia`  | `optimism_sepolia`  | `Optimism Explorer (Sepolia)`| `https://sepolia-optimism.etherscan.io/address` |
-| `optimism-mainnet`  | `optimism`          | `Optimism Explorer`          | `https://optimistic.etherscan.io/address`   |
-| `bsc-testnet`       | `bsc_testnet`       | `BscScan (Testnet)`          | `https://testnet.bscscan.com/address`       |
-| `bsc-mainnet`       | `bsc`               | `BscScan`                    | `https://bscscan.com/address`               |
-| `avalanche-fuji`    | `avalanche_fuji`    | `Snowtrace (Fuji)`           | `https://testnet.snowtrace.io/address`      |
-| `avalanche-mainnet` | `avalanche`         | `Snowtrace`                  | `https://snowtrace.io/address`              |
+If `deploy_metadata=true`, complete [Cloudflare Pages Setup](cloudflare-pages-setup.md) and add the
+Cloudflare secret and variables to the selected environment.
 
----
+The workflow deploys to a Pages branch named exactly after the environment. Confirm that the Pages
+project and custom-domain routing serve that branch at the fixed URLs in the selected
+`deployment-params.json` and `nft-manifest.json`. A successful upload alone does not prove that the
+contract URLs resolve to the new deployment.
 
-## Repository-Level Secrets
+## 8. Configuration review checklist
 
-Set the following **Repository Secrets** under **Settings → Secrets and variables → Actions**:
+Before the first deployment to an environment:
 
-| Secret name    | Description                                                         |
-|----------------|---------------------------------------------------------------------|
-| `NUGET_API_KEY` | nuget.org API key for publishing `Tricksfor.SmartContracts` |
+- [ ] Environment name exactly matches a workflow choice.
+- [ ] RPC URL returns the expected chain ID.
+- [ ] Deployer public address is recorded without exposing its key.
+- [ ] Deployer has enough native currency.
+- [ ] Admin, minter, and staking owner addresses were independently checked.
+- [ ] Current testnet minter/deployer requirement is satisfied.
+- [ ] Mainnet reviewer protection is enabled where applicable.
+- [ ] `NETWORK_KEY` matches the table.
+- [ ] Explorer key is configured when verification is enabled.
+- [ ] Cloudflare project/branch/custom-domain routing is proven when metadata is published.
+- [ ] Repository `NUGET_API_KEY` is configured only if package publication is intended.
 
----
+## 9. Adding a network
 
-## Repository-Level Variables
+Adding a network requires code and documentation changes; creating an environment alone is not
+enough.
 
-Set the following **Repository Variable** under **Settings → Secrets and variables → Actions → Variables**:
-
-| Variable name | Required | Description                                                                    |
-|---------------|----------|--------------------------------------------------------------------------------|
-| `DEPLOY_ENV`  | Yes      | The target GitHub Environment for deployments (e.g. `ethereum-sepolia`). Must be set as a repository-level variable — the `resolve-environment` job runs without an environment scope and can only read repository-level variables. |
-
----
-
-## Deployment Parameter Files
-
-Non-secret constructor arguments (NFT name, symbol, URIs, royalty config) are stored in checked-in JSON files:
-
-```
-deployments/config/
-├── ethereum-sepolia/deployment-params.json
-├── ethereum-mainnet/deployment-params.json
-├── polygon-amoy/deployment-params.json
-├── polygon-mainnet/deployment-params.json
-├── optimism-sepolia/deployment-params.json
-├── optimism-mainnet/deployment-params.json
-├── bsc-testnet/deployment-params.json
-├── bsc-mainnet/deployment-params.json
-├── avalanche-fuji/deployment-params.json
-└── avalanche-mainnet/deployment-params.json
-```
-
-Edit the appropriate file before deploying to update NFT name, symbol, base URI, contract URI, or royalty configuration for that network. See [`docs/release-deployment-architecture.md`](release-deployment-architecture.md#6-deployment-parameter-model) for the full parameter schema.
-
----
-
-## Triggering a Deployment
-
-1. Ensure the target GitHub Environment is configured with all required secrets and variables (including Cloudflare Pages credentials — see [`docs/cloudflare-pages-setup.md`](cloudflare-pages-setup.md)).
-2. Ensure the `DEPLOY_ENV` **repository variable** is set to the desired environment name. `DEPLOY_ENV` must be a repository-level variable — the `resolve-environment` job runs without an environment scope and can only read repository-level variables.
-3. Ensure all token metadata JSON files and images are present under `nft-assets/` before publishing the release.
-4. Update `deployments/config/{env}/deployment-params.json` if NFT name, symbol, or royalty parameters need to change (base URI and contract URI are resolved from the `deploy-metadata` job automatically).
-5. Publish a GitHub Release with the appropriate tag:
-   - Stable releases (`v1.2.3`) can target any environment, including mainnet.
-   - Pre-release tags (`v1.2.3-rc.1`, `v1.2.3-beta.1`) are restricted to testnet environments.
-6. If the target is a mainnet environment, approve the deployment when prompted by GitHub's required reviewers gate.
-
----
-
-## Adding a New Network
-
-1. Create a GitHub Environment named `{chain}-{stage}` and populate its secrets and variables using the tables above (including `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CF_PAGES_PROJECT`, and optionally `NFT_BASE_DOMAIN`).
-2. Add an entry to the network tables in this document.
-3. Add a new `deployments/config/{chain}-{stage}/deployment-params.json` file.
-4. Ensure the Hardhat network and verification configuration in `hardhat.config.ts` includes the new chain.
-5. No changes to the workflow file are required.
+1. Add the Hardhat network and chain ID.
+2. Add the environment choice to the appropriate workflows.
+3. Add `deployments/config/{environment}/deployment-params.json`.
+4. Add `deployments/config/{environment}/nft-manifest.json`.
+5. Add metadata routing and validation coverage.
+6. Add the environment and network key to this guide.
+7. Test compilation, verification, deployment, resume, and smoke behavior before enabling mainnet.
