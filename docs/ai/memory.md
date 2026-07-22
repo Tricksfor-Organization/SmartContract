@@ -115,8 +115,10 @@ The `TricksforBoosterNFT` contract must maintain the following for marketplace c
 - `contractURI()` — returns collection-level metadata URI (OpenSea extension)
 - `royaltyInfo(uint256 tokenId, uint256 salePrice)` — returns royalty recipient and amount (ERC-2981)
 - `Transfer` events on all ownership changes — required by ERC-721 and indexed by marketplaces
-- `supportsInterface` correctly advertises ERC-721, ERC-165, and ERC-2981 support
-- `ERC721Enumerable` is **not** used by default (adds gas cost without OpenSea benefit)
+- `supportsInterface` correctly advertises ERC-721, ERC-721 Metadata, ERC-721 Enumerable, ERC-165,
+  and ERC-2981 support
+- `ERC721Enumerable` is intentionally enabled for direct frontend wallet and collection discovery.
+  It is not required by OpenSea, adds mint/transfer gas cost, and does not guarantee stable order.
 
 ---
 

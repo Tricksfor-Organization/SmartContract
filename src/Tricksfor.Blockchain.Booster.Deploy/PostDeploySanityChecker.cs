@@ -86,6 +86,7 @@ public sealed class PostDeploySanityChecker
         {
             ("ERC-165", "01ffc9a7"),
             ("ERC-721", "80ac58cd"),
+            ("ERC-721 Enumerable", "780e9d63"),
             ("ERC-2981", "2a55205a"),
         })
         {

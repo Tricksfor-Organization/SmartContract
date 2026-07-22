@@ -63,3 +63,18 @@ slither . \
   --fail-medium \
   --json slither-report.json
 ```
+
+## Post-review change — ERC-721 Enumerable (2026-07-22)
+
+`TricksforBoosterNFT` now inherits OpenZeppelin `ERC721Enumerable` to support direct frontend
+wallet and collection discovery. This adds standard enumerable storage writes to mint and transfer
+operations, so those operations cost more gas than the reviewed non-enumerable version. The
+contract still uses explicit single-token minting; OpenZeppelin's unsupported batch-mint path is
+not exposed.
+
+Tests cover interface detection, global and per-owner enumeration, transfer updates, out-of-range
+indexes, and Nethereum enumeration across stake/unstake custody. Enumeration order is explicitly
+unspecified. The updated run passed 102 Hardhat tests with 95.83% NFT line coverage and all 76 .NET
+tests (31 package unit, 37 deployment, and 8 Nethereum integration). This addendum records the
+focused change and does not claim a new full Slither or third-party audit until the reproduction
+commands above are rerun on the updated commit.

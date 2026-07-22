@@ -95,7 +95,8 @@ Before implementing, confirm the following:
 
 - [ ] **Indexer impact**: Will the backend indexer still reconstruct staking state correctly after this change?
 - [ ] **Nethereum DTO impact**: Does this change require updating typed event DTOs or function message classes?
-- [ ] **OpenSea impact**: Does this change affect `tokenURI`, `contractURI`, or ERC-2981 royalty support?
+- [ ] **OpenSea / NFT interface impact**: Does this change affect `tokenURI`, `contractURI`,
+  ERC-721 Enumerable, or ERC-2981 royalty support?
 - [ ] **ABI/BIN artifact**: Does this change require regenerating and committing updated ABI/BIN artifacts?
 - [ ] **Read method alignment**: Are all `isStaked` / `stakedOwnerOf` / other read methods still consistent with the new event semantics?
 

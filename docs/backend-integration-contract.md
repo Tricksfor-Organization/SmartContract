@@ -13,6 +13,7 @@ The smart contracts are the authoritative source of truth for the following:
 | Responsibility | Contract |
 |---|---|
 | Booster NFT ownership (who holds which token) | `TricksforBoosterNFT` (ERC-721) |
+| Current NFT enumeration (`totalSupply`, `tokenByIndex`, `tokenOfOwnerByIndex`) | `TricksforBoosterNFT` (ERC-721 Enumerable) |
 | Stake / unstake state transitions | `TricksforBoosterStaking` |
 | Event emission on every state change | `TricksforBoosterStaking` |
 | Current-state read methods (`isStaked`, `stakedOwnerOf`) | `TricksforBoosterStaking` |
@@ -37,6 +38,19 @@ Both events are emitted exactly once per state transition. There are no silent s
 | `stakedOwnerOf(uint256 tokenId)` | `address` | Original owner (staker) of a currently staked token; reverts or returns zero address if not staked |
 
 These read methods always reflect on-chain truth at the queried block. They are guaranteed to be consistent with the event log: if a `TokenStaked` event exists for a token with no subsequent `TokenUnstaked` event, `isStaked(tokenId)` will return `true`.
+
+### NFT enumeration and player portfolios
+
+Use `balanceOf(wallet)` plus `tokenOfOwnerByIndex(wallet, index)` to enumerate NFTs currently held
+by a wallet. Use `totalSupply()` plus `tokenByIndex(index)` for collection-wide reconciliation.
+Enumeration order is unspecified and may change after transfers, so callers must not use the index
+as a persistent token identifier.
+
+Custodial staking changes the ERC-721 owner to the staking contract. Consequently,
+`tokenOfOwnerByIndex(player, ...)` contains only the player's unstaked NFTs. To build a complete
+player portfolio, combine that result with `getWalletStakedTokens(player)` from the staking
+contract (or the confirmed staking event index). Do not attribute every token enumerated under the
+staking contract to the staking-contract owner; resolve its original staker through staking state.
 
 ---
 

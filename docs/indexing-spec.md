@@ -57,6 +57,11 @@ The `TricksforBoosterNFT` contract emits standard ERC-721 `Transfer` events on e
 - Tracing the full ownership history of a token
 - Audit and debugging purposes
 
+The NFT contract also implements ERC-721 Enumerable. `totalSupply`, `tokenByIndex`, and
+`tokenOfOwnerByIndex` may be used for bounded current-state reconciliation, but they do not provide
+history and their index order is not stable. A staked token enumerates under the staking contract;
+use staking state to resolve the original staker.
+
 ---
 
 ## Event Identity

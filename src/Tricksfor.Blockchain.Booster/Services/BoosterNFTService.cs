@@ -102,6 +102,20 @@ namespace Tricksfor.Blockchain.Booster.Services
             => _web3.Eth.GetContractQueryHandler<BalanceOfFunction>()
                 .QueryAsync<BigInteger>(_contractAddress, new BalanceOfFunction { Owner = ownerAddress });
 
+        public Task<BigInteger> TotalSupplyQueryAsync()
+            => _web3.Eth.GetContractQueryHandler<TotalSupplyFunction>()
+                .QueryAsync<BigInteger>(_contractAddress, new TotalSupplyFunction());
+
+        public Task<BigInteger> TokenByIndexQueryAsync(BigInteger index)
+            => _web3.Eth.GetContractQueryHandler<TokenByIndexFunction>()
+                .QueryAsync<BigInteger>(_contractAddress, new TokenByIndexFunction { Index = index });
+
+        public Task<BigInteger> TokenOfOwnerByIndexQueryAsync(string ownerAddress, BigInteger index)
+            => _web3.Eth.GetContractQueryHandler<TokenOfOwnerByIndexFunction>()
+                .QueryAsync<BigInteger>(
+                    _contractAddress,
+                    new TokenOfOwnerByIndexFunction { Owner = ownerAddress, Index = index });
+
         public Task<RoyaltyInfoOutputDTO> RoyaltyInfoQueryAsync(BigInteger tokenId, BigInteger salePrice)
             => _web3.Eth.GetContractQueryHandler<RoyaltyInfoFunction>()
                 .QueryDeserializingToObjectAsync<RoyaltyInfoOutputDTO>(

@@ -542,7 +542,7 @@
   "linkReferences": {},
   "deployedLinkReferences": {},
   "immutableReferences": {
-    "9788": [
+    "10252": [
       {
         "length": 32,
         "start": 670
@@ -578,5 +578,5 @@
     ]
   },
   "inputSourceName": "contracts/TricksforBoosterStaking.sol",
-  "buildInfoId": "solc-0_8_26-2940a0bf7433fbb858475891fd4d03553b51db3322b46d171911ad73848093b6"
+  "buildInfoId": "solc-0_8_26-984e3da0ea7a4cb6316d037d7053b51a1bbe4566d9a30d0f82f96c5a0d9ed7ee"
 }

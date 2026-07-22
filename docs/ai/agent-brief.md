@@ -72,7 +72,8 @@ Before writing or modifying any contract code, work through the following:
 - Do not add reward logic, token payouts, or point accumulation to the contracts.
 - Do not remove or rename event parameters without flagging it as a breaking change.
 - Do not use `require` with long strings in hot paths — prefer custom errors (`error Unauthorized()`).
-- Do not use `ERC721Enumerable` unless on-chain enumeration is explicitly justified.
+- Preserve the explicitly approved `ERC721Enumerable` support for frontend wallet and collection
+  discovery. Document its gas cost and unstable ordering; do not describe it as required by OpenSea.
 - Do not add cleverly abstracted code when explicit logic is clearer.
 - Do not generate migrations or deployment scripts without confirming they align with the deployment assumptions in `memory.md`.
 

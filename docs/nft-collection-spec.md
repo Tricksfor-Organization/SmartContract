@@ -40,6 +40,20 @@ optional metadata `Chain` attributes, refer to the chain naming table in
 - Each contract contains tokens from **all three game themes**: `coin`, `dice`, and `rps`.
 - Contracts are independent. There is no cross-chain bridging or token sharing.
 - Token IDs start at `1` and run sequentially to `600` within each contract.
+- The contract implements ERC-721 Enumerable (`IERC721Enumerable`, interface ID `0x780e9d63`).
+
+### 2.1 Enumeration behavior
+
+Frontends may discover currently held NFTs with `balanceOf(owner)` and
+`tokenOfOwnerByIndex(owner, index)`, and may inspect the minted collection with `totalSupply()` and
+`tokenByIndex(index)`. Enumeration reports minted on-chain supply; it does not enforce or replace
+the documented 600-token allocation policy.
+
+Enumeration order is not stable and must not be treated as token-ID or mint order. Transfers use
+swap-and-pop indexing, so clients must read indexes from `0` through the latest balance or supply
+minus one and tolerate the list changing between blocks. While an NFT is staked, its ERC-721 owner
+is the staking contract. Use `getWalletStakedTokens(wallet)` to discover tokens beneficially staked
+by the original wallet.
 
 ---
 

@@ -193,6 +193,60 @@ public class DevChainIntegrationTests
         Assert.Equal(token1, unstakedEvents1[0].Event.TokenId);
     }
 
+    /// <summary>
+    /// Verifies that the Nethereum enumerable queries follow ERC-721 custody while
+    /// staking continues to preserve the original staker in its own state.
+    /// </summary>
+    [Fact]
+    public async Task Enumerable_TracksMintStakeAndUnstakeCustody()
+    {
+        var (nftService, stakingService, _, stakingAddress) =
+            await DeployContractsAsync(_node.Web3Account0);
+
+        var wallet = HardhatNodeFixture.Account0Address;
+        var token1 = new BigInteger(101);
+        var token2 = new BigInteger(909);
+
+        await nftService.SafeMintRequestAndWaitForReceiptAsync(wallet, token1);
+        await nftService.SafeMintRequestAndWaitForReceiptAsync(wallet, token2);
+
+        Assert.Equal(2, await nftService.TotalSupplyQueryAsync());
+        Assert.Equal(
+            new[] { token1, token2 },
+            new[]
+            {
+                await nftService.TokenByIndexQueryAsync(0),
+                await nftService.TokenByIndexQueryAsync(1),
+            }.OrderBy(tokenId => tokenId));
+        Assert.Equal(
+            new[] { token1, token2 },
+            new[]
+            {
+                await nftService.TokenOfOwnerByIndexQueryAsync(wallet, 0),
+                await nftService.TokenOfOwnerByIndexQueryAsync(wallet, 1),
+            }.OrderBy(tokenId => tokenId));
+
+        await nftService.SetApprovalForAllRequestAndWaitForReceiptAsync(stakingAddress, approved: true);
+        await stakingService.StakeRequestAndWaitForReceiptAsync(token1);
+
+        Assert.Equal(2, await nftService.TotalSupplyQueryAsync());
+        Assert.Equal(token2, await nftService.TokenOfOwnerByIndexQueryAsync(wallet, 0));
+        Assert.Equal(token1, await nftService.TokenOfOwnerByIndexQueryAsync(stakingAddress, 0));
+        Assert.Equal(wallet, await stakingService.StakedOwnerOfQueryAsync(token1), StringComparer.OrdinalIgnoreCase);
+
+        await stakingService.UnstakeRequestAndWaitForReceiptAsync(token1);
+
+        Assert.Equal(2, await nftService.TotalSupplyQueryAsync());
+        Assert.Equal(
+            new[] { token1, token2 },
+            new[]
+            {
+                await nftService.TokenOfOwnerByIndexQueryAsync(wallet, 0),
+                await nftService.TokenOfOwnerByIndexQueryAsync(wallet, 1),
+            }.OrderBy(tokenId => tokenId));
+        Assert.Equal(0, await nftService.BalanceOfQueryAsync(stakingAddress));
+    }
+
     // =========================================================================
     // Negative scenarios
     // =========================================================================

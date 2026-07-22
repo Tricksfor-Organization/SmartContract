@@ -2,16 +2,23 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /// @title TricksforBoosterNFT
-/// @notice ERC-721 NFT collection for Tricksfor Booster items.
+/// @notice ERC-721 Enumerable NFT collection for Tricksfor Booster items.
 ///         OpenSea-compatible: supports tokenURI, contractURI, and ERC-2981 royalties.
 ///         Minting is role-gated (MINTER_ROLE) and can be paused by the default admin.
 /// @dev Does not include staking logic — staking is handled by TricksforBoosterStaking.
-contract TricksforBoosterNFT is ERC721, ERC2981, AccessControlDefaultAdminRules, Pausable {
+contract TricksforBoosterNFT is
+    ERC721,
+    ERC721Enumerable,
+    ERC2981,
+    AccessControlDefaultAdminRules,
+    Pausable
+{
     // -------------------------------------------------------------------------
     // Roles
     // -------------------------------------------------------------------------
@@ -148,6 +155,23 @@ contract TricksforBoosterNFT is ERC721, ERC2981, AccessControlDefaultAdminRules,
         return _baseTokenURI;
     }
 
+    /// @dev Keeps ERC-721 ownership and enumerable indexes synchronized on mint and transfer.
+    function _update(address to, uint256 tokenId, address auth)
+        internal
+        override(ERC721, ERC721Enumerable)
+        returns (address)
+    {
+        return super._update(to, tokenId, auth);
+    }
+
+    /// @dev Resolves the balance hook shared by ERC721 and ERC721Enumerable.
+    function _increaseBalance(address account, uint128 value)
+        internal
+        override(ERC721, ERC721Enumerable)
+    {
+        super._increaseBalance(account, value);
+    }
+
     // -------------------------------------------------------------------------
     // Interface support
     // -------------------------------------------------------------------------
@@ -156,7 +180,7 @@ contract TricksforBoosterNFT is ERC721, ERC2981, AccessControlDefaultAdminRules,
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC2981, AccessControlDefaultAdminRules)
+        override(ERC721, ERC721Enumerable, ERC2981, AccessControlDefaultAdminRules)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);

@@ -38,7 +38,7 @@ Contract inheritance chains must be kept short and purposeful. Prefer compositio
 
 ### Rule 5: Use OpenZeppelin battle-tested components
 Always prefer OpenZeppelin contracts over custom implementations for:
-- `ERC721` base contract
+- `ERC721Enumerable` for the NFT contract's required wallet and global enumeration reads
 - `Ownable` / `AccessControl` for admin functions
 - `ReentrancyGuard` for external call protection
 - `Pausable` for emergency stop
