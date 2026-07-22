@@ -63,9 +63,37 @@ public sealed class SmokeRunner
 
         var supportsErc165 = await nft.SupportsInterfaceQueryAsync(Convert.FromHexString("01ffc9a7"));
         var supportsErc721 = await nft.SupportsInterfaceQueryAsync(Convert.FromHexString("80ac58cd"));
+        var supportsErc721Enumerable = await nft.SupportsInterfaceQueryAsync(Convert.FromHexString("780e9d63"));
         var supportsErc2981 = await nft.SupportsInterfaceQueryAsync(Convert.FromHexString("2a55205a"));
-        if (!supportsErc165 || !supportsErc721 || !supportsErc2981)
-            throw new DeploymentException("Smoke interface validation failed for ERC-165, ERC-721, or ERC-2981.");
+        if (!supportsErc165 || !supportsErc721 || !supportsErc721Enumerable || !supportsErc2981)
+            throw new DeploymentException(
+                "Smoke interface validation failed for ERC-165, ERC-721, ERC-721 Enumerable, or ERC-2981.");
+
+        var totalSupply = await nft.TotalSupplyQueryAsync();
+        var ownerBalance = await nft.BalanceOfQueryAsync(account.Address);
+        var ownerEnumerationContainsToken = false;
+        for (var index = BigInteger.Zero; index < ownerBalance; index++)
+        {
+            if (await nft.TokenOfOwnerByIndexQueryAsync(account.Address, index) == tokenId)
+            {
+                ownerEnumerationContainsToken = true;
+                break;
+            }
+        }
+        if (!ownerEnumerationContainsToken)
+            throw new DeploymentException("Smoke token is missing from tokenOfOwnerByIndex enumeration.");
+
+        var globalEnumerationContainsToken = false;
+        for (var index = BigInteger.Zero; index < totalSupply; index++)
+        {
+            if (await nft.TokenByIndexQueryAsync(index) == tokenId)
+            {
+                globalEnumerationContainsToken = true;
+                break;
+            }
+        }
+        if (!globalEnumerationContainsToken)
+            throw new DeploymentException("Smoke token is missing from tokenByIndex enumeration.");
 
         var royalty = await nft.RoyaltyInfoQueryAsync(tokenId, 10_000);
         var expectedRoyaltyReceiver = string.IsNullOrWhiteSpace(_config.Nft.RoyaltyReceiver)
@@ -108,7 +136,11 @@ public sealed class SmokeRunner
                 tokenUri,
                 supportsErc165,
                 supportsErc721,
+                supportsErc721Enumerable,
                 supportsErc2981,
+                totalSupply = totalSupply.ToString(),
+                ownerEnumerationContainsToken,
+                globalEnumerationContainsToken,
                 royaltyReceiver = royalty.Receiver,
                 royaltyAmount = royalty.RoyaltyAmount.ToString(),
             },

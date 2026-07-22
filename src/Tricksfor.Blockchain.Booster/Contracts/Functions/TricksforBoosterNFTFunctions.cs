@@ -73,6 +73,26 @@ namespace Tricksfor.Blockchain.Booster.Contracts.Functions
         public string Owner { get; set; } = string.Empty;
     }
 
+    [Function("totalSupply", "uint256")]
+    public class TotalSupplyFunction : FunctionMessage { }
+
+    [Function("tokenByIndex", "uint256")]
+    public class TokenByIndexFunction : FunctionMessage
+    {
+        [Parameter("uint256", "index", 1)]
+        public BigInteger Index { get; set; }
+    }
+
+    [Function("tokenOfOwnerByIndex", "uint256")]
+    public class TokenOfOwnerByIndexFunction : FunctionMessage
+    {
+        [Parameter("address", "owner", 1)]
+        public string Owner { get; set; } = string.Empty;
+
+        [Parameter("uint256", "index", 2)]
+        public BigInteger Index { get; set; }
+    }
+
     [Function("getApproved", "address")]
     public class GetApprovedFunction : FunctionMessage
     {

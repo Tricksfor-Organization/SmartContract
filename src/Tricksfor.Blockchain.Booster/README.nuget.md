@@ -103,6 +103,24 @@ var receipt = await service.StakeRequestAndWaitForReceiptAsync(tokenId);
 var stakedEvents = service.DecodeTokenStakedEvents(receipt);
 ```
 
+### Enumerate NFTs held by a wallet
+
+```csharp
+var nft = new BoosterNFTService(web3, nftContractAddress);
+var balance = await nft.BalanceOfQueryAsync(walletAddress);
+var tokenIds = new List<BigInteger>();
+
+for (var index = BigInteger.Zero; index < balance; index++)
+{
+    tokenIds.Add(await nft.TokenOfOwnerByIndexQueryAsync(walletAddress, index));
+}
+```
+
+The service also exposes `TotalSupplyQueryAsync()` and `TokenByIndexQueryAsync(index)`. Enumerable
+indexes are not stable ordering keys. A staked token is held and enumerated under the staking
+contract address; combine these reads with `GetWalletStakedTokensQueryAsync(walletAddress)` when a
+UI needs to show both unstaked and staked Boosters.
+
 ### Deploy a contract (testnet / local)
 
 ```csharp

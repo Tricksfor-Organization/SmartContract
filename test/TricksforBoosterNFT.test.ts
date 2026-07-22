@@ -85,12 +85,14 @@ describe("TricksforBoosterNFT", function () {
       expect(amount).to.equal(salePrice * ROYALTY_BASIS_POINTS / 10_000n);
     });
 
-    it("supports ERC-721, ERC-2981, ERC-165, and AccessControl interfaces", async function () {
+    it("supports ERC-721, ERC-721 Enumerable, ERC-2981, ERC-165, and AccessControl interfaces", async function () {
       const ERC721_ID = "0x80ac58cd";
+      const ERC721_ENUMERABLE_ID = "0x780e9d63";
       const ERC2981_ID = "0x2a55205a";
       const ERC165_ID = "0x01ffc9a7";
       const ACCESS_CONTROL_ID = "0x7965db0b";
       expect(await nft.supportsInterface(ERC721_ID)).to.be.true;
+      expect(await nft.supportsInterface(ERC721_ENUMERABLE_ID)).to.be.true;
       expect(await nft.supportsInterface(ERC2981_ID)).to.be.true;
       expect(await nft.supportsInterface(ERC165_ID)).to.be.true;
       expect(await nft.supportsInterface(ACCESS_CONTROL_ID)).to.be.true;
@@ -146,6 +148,57 @@ describe("TricksforBoosterNFT", function () {
           DEFAULT_ADMIN_DELAY
         )
       ).to.be.revertedWithCustomError(nft, "ZeroAddress");
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // ERC-721 enumeration
+  // ---------------------------------------------------------------------------
+
+  describe("enumeration", function () {
+    it("starts with an empty enumerable supply", async function () {
+      expect(await nft.totalSupply()).to.equal(0n);
+    });
+
+    it("enumerates explicitly assigned token IDs globally and by owner", async function () {
+      await nft.safeMint(alice.address, 42n);
+      await nft.safeMint(bob.address, 7n);
+      await nft.safeMint(alice.address, 1001n);
+
+      expect(await nft.totalSupply()).to.equal(3n);
+      expect([
+        await nft.tokenByIndex(0n),
+        await nft.tokenByIndex(1n),
+        await nft.tokenByIndex(2n),
+      ]).to.have.members([42n, 7n, 1001n]);
+      expect([
+        await nft.tokenOfOwnerByIndex(alice.address, 0n),
+        await nft.tokenOfOwnerByIndex(alice.address, 1n),
+      ]).to.have.members([42n, 1001n]);
+      expect(await nft.tokenOfOwnerByIndex(bob.address, 0n)).to.equal(7n);
+    });
+
+    it("updates owner enumeration after a transfer without changing total supply", async function () {
+      await nft.safeMint(alice.address, 10n);
+      await nft.safeMint(alice.address, 20n);
+
+      await nft.connect(alice).transferFrom(alice.address, bob.address, 10n);
+
+      expect(await nft.totalSupply()).to.equal(2n);
+      expect(await nft.balanceOf(alice.address)).to.equal(1n);
+      expect(await nft.tokenOfOwnerByIndex(alice.address, 0n)).to.equal(20n);
+      expect(await nft.tokenOfOwnerByIndex(bob.address, 0n)).to.equal(10n);
+    });
+
+    it("reverts when a global or owner index is out of bounds", async function () {
+      await nft.safeMint(alice.address, 1n);
+
+      await expect(nft.tokenByIndex(1n))
+        .to.be.revertedWithCustomError(nft, "ERC721OutOfBoundsIndex")
+        .withArgs(hre.ethers.ZeroAddress, 1n);
+      await expect(nft.tokenOfOwnerByIndex(alice.address, 1n))
+        .to.be.revertedWithCustomError(nft, "ERC721OutOfBoundsIndex")
+        .withArgs(alice.address, 1n);
     });
   });
 

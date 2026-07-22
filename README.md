@@ -23,11 +23,16 @@ Two independent Solidity contracts are deployed per chain:
 
 ### `TricksforBoosterNFT`
 
-ERC-721 NFT collection (OpenZeppelin). OpenSea-compatible: supports `tokenURI`, `contractURI`,
-and ERC-2981 royalties. Minting is role-gated (`MINTER_ROLE`), administration uses delayed
+ERC-721 NFT collection (OpenZeppelin) with ERC-721 Enumerable support for `totalSupply`,
+`tokenByIndex`, and `tokenOfOwnerByIndex` reads. OpenSea-compatible: supports `tokenURI`,
+`contractURI`, and ERC-2981 royalties. Minting is role-gated (`MINTER_ROLE`), administration uses delayed
 `AccessControlDefaultAdminRules`, and minting can be paused by the default admin. The documented
 collection policy is 600 tokens across three game themes (Coin, Dice, Rock
 Paper Scissors) — a project specification constraint, not an on-chain enforced supply cap.
+
+Enumeration follows current on-chain custody: while a token is staked it is enumerated under the
+staking contract, not the original wallet. Frontends should combine wallet enumeration with
+`getWalletStakedTokens(wallet)` when presenting both unstaked and staked Boosters.
 
 ### `TricksforBoosterStaking`
 

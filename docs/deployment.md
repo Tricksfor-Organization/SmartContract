@@ -232,7 +232,8 @@ Do not call the deployment successful until all of these are checked:
 - workflow summary contains both non-zero addresses;
 - both deployment transaction receipts succeeded;
 - deployed runtime bytecode exists at both addresses;
-- NFT name, symbol, URIs, interfaces, royalty result, admin, minter, and pause state are correct;
+- NFT name, symbol, URIs, ERC-165/ERC-721/ERC-721 Enumerable/ERC-2981 interfaces, royalty result,
+  admin, minter, and pause state are correct;
 - staking owner and NFT linkage are correct;
 - verification transcripts show success when verification was enabled;
 - `smoke-result.json` contains mint/approve/stake/unstake transaction hashes;

@@ -63,8 +63,8 @@ This index provides a single entry point to all implementation guidance, referen
 
 | Document | Description |
 |---|---|
-| [OpenSea Readiness Checklist](opensea-readiness-checklist.md) | Deployment-ready checklist covering ERC-721 compliance, metadata output, `tokenURI` / `contractURI` / ERC-2981 royalty configuration, staking UX implications, and pre-launch smoke tests |
-| [OpenSea Compatibility Skill](ai/skills/opensea-compatibility-skill.md) | Pre-PR checklist covering ERC-721 compliance, metadata output, `tokenURI` / `contractURI` / ERC-2981 royalty support, and staking UX implications for marketplace listings |
+| [OpenSea Readiness Checklist](opensea-readiness-checklist.md) | Deployment-ready checklist covering ERC-721 and Enumerable interfaces, metadata output, `tokenURI` / `contractURI` / ERC-2981 royalty configuration, staking UX implications, and pre-launch smoke tests |
+| [OpenSea Compatibility Skill](ai/skills/opensea-compatibility-skill.md) | Pre-PR checklist covering ERC-721 and Enumerable interfaces, metadata output, `tokenURI` / `contractURI` / ERC-2981 royalty support, and staking UX implications for marketplace listings |
 
 ---
 

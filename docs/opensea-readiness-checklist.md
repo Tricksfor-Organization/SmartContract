@@ -6,15 +6,19 @@ This checklist must be completed before deploying the `TricksforBoosterNFT` coll
 
 ## 1. ERC-721 Compliance
 
-- [ ] `supportsInterface` returns `true` for all required interface IDs:
+- [ ] `supportsInterface` returns `true` for all project-advertised interface IDs (Enumerable is a
+  Tricksfor frontend feature, not an OpenSea requirement):
   - ERC-165: `0x01ffc9a7`
   - ERC-721: `0x80ac58cd`
   - ERC-721 Metadata: `0x5b5e139f`
+  - ERC-721 Enumerable: `0x780e9d63`
   - ERC-2981 (royalties): `0x2a55205a`
 - [ ] `Transfer` events are emitted for every ownership change (mint, transfer, burn) as required by ERC-721 and expected by marketplace indexers
 - [ ] `Approval` and `ApprovalForAll` events are emitted correctly
 - [ ] `ownerOf(tokenId)` returns the correct current owner for every minted token
 - [ ] `balanceOf(address)` returns the correct token count per wallet
+- [ ] `totalSupply()`, `tokenByIndex(index)`, and `tokenOfOwnerByIndex(owner, index)` track mint and transfer custody correctly
+- [ ] Frontend code does not assume enumerable index order is stable
 - [ ] `tokenURI(tokenId)` reverts for unminted token IDs (OpenZeppelin default behaviour; behaviour is consistent with contract design)
 
 ---
@@ -132,9 +136,12 @@ Run these checks against the deployed contract on a testnet before deploying to 
 - [ ] Call `royaltyInfo(1, 10000)` — confirm the result is `(royaltyReceiver, 500)` for a 5% royalty (or the configured value)
 - [ ] Call `supportsInterface(0x2a55205a)` — confirm it returns `true` (ERC-2981)
 - [ ] Call `supportsInterface(0x80ac58cd)` — confirm it returns `true` (ERC-721)
+- [ ] Call `supportsInterface(0x780e9d63)` — confirm it returns `true` (ERC-721 Enumerable)
+- [ ] Confirm `totalSupply()` includes token 1 and `tokenOfOwnerByIndex(testWallet, index)` can find it
 - [ ] Import the collection on OpenSea testnet and confirm the collection and token metadata render correctly
 - [ ] Transfer the test token to a second wallet and confirm `ownerOf(1)` reflects the new owner
 - [ ] Stake the test token and confirm `isStaked(1)` returns `true` and the token no longer shows in the original wallet on OpenSea
+- [ ] While staked, confirm enumerable custody moves from the test wallet to the staking contract
 - [ ] Unstake the test token and confirm `isStaked(1)` returns `false` and the token reappears in the original wallet
 
 ---

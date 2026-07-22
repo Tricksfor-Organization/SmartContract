@@ -32,7 +32,7 @@ This repository contains the Solidity smart contracts and Nethereum integration 
 
 | Contract | Responsibility |
 |---|---|
-| `BoosterNFT` (ERC-721) | Minting, ownership, metadata, royalties, OpenSea compatibility |
+| `BoosterNFT` (ERC-721 Enumerable) | Minting, ownership, enumeration, metadata, royalties, OpenSea compatibility |
 | `BoosterStaking` | NFT custody during staking period, stake/unstake event emission |
 
 These contracts are **intentionally separate**. Do not merge them.
@@ -78,7 +78,9 @@ The `BoosterNFT` contract must:
 - Implement `contractURI()` returning collection-level metadata (OpenSea extension)
 - Implement ERC-2981 (`royaltyInfo`) for on-chain royalty information
 - Emit `Transfer` events on all ownership changes (standard ERC-721 requirement)
-- Not use `ERC721Enumerable` by default unless on-chain enumeration is justified — it increases gas costs without benefiting OpenSea compatibility
+- Implement ERC-721 Enumerable for direct frontend wallet and collection discovery. This is a
+  project UX decision, not an OpenSea requirement, and its additional mint/transfer gas cost is
+  accepted. Enumeration order must never be treated as stable.
 
 ---
 

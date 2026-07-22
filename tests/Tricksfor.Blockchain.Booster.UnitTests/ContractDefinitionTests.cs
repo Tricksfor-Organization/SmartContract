@@ -134,6 +134,52 @@ public class ContractDefinitionTests
         Assert.Equal(2, attr.Order);
     }
 
+    [Fact]
+    public void TotalSupplyFunction_HasCorrectFunctionName()
+    {
+        var attr = typeof(TotalSupplyFunction)
+            .GetCustomAttributes(typeof(FunctionAttribute), false)
+            .Cast<FunctionAttribute>()
+            .Single();
+
+        Assert.Equal("totalSupply", attr.Name);
+    }
+
+    [Fact]
+    public void TokenByIndexFunction_Index_IsUint256AtPosition1()
+    {
+        var prop = typeof(TokenByIndexFunction).GetProperty(nameof(TokenByIndexFunction.Index))!;
+        var attr = prop.GetCustomAttributes(typeof(ParameterAttribute), false)
+            .Cast<ParameterAttribute>()
+            .Single();
+
+        Assert.Equal("uint256", attr.Type);
+        Assert.Equal("index", attr.Name);
+        Assert.Equal(1, attr.Order);
+    }
+
+    [Fact]
+    public void TokenOfOwnerByIndexFunction_HasCorrectParameters()
+    {
+        var ownerProp = typeof(TokenOfOwnerByIndexFunction)
+            .GetProperty(nameof(TokenOfOwnerByIndexFunction.Owner))!;
+        var ownerAttr = ownerProp.GetCustomAttributes(typeof(ParameterAttribute), false)
+            .Cast<ParameterAttribute>()
+            .Single();
+        var indexProp = typeof(TokenOfOwnerByIndexFunction)
+            .GetProperty(nameof(TokenOfOwnerByIndexFunction.Index))!;
+        var indexAttr = indexProp.GetCustomAttributes(typeof(ParameterAttribute), false)
+            .Cast<ParameterAttribute>()
+            .Single();
+
+        Assert.Equal("address", ownerAttr.Type);
+        Assert.Equal("owner", ownerAttr.Name);
+        Assert.Equal(1, ownerAttr.Order);
+        Assert.Equal("uint256", indexAttr.Type);
+        Assert.Equal("index", indexAttr.Name);
+        Assert.Equal(2, indexAttr.Order);
+    }
+
     // -------------------------------------------------------------------------
     // Staking write functions
     // -------------------------------------------------------------------------
